@@ -1,3 +1,40 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "event-concert",
+      "description": "A lively music concert at night.",
+      "imageUrl": "https://images.unsplash.com/photo-1658227633934-b589ca17d602?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxtdXNpYyUyMGNvbmNlcnR8ZW58MHx8fHwxNzYzNzc2MzY4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "music concert"
+    },
+    {
+      "id": "event-tech-meetup",
+      "description": "People networking at a tech conference.",
+      "imageUrl": "https://images.unsplash.com/photo-1746937618165-c8dc7f11dd77?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx0ZWNoJTIwbWVldHVwfGVufDB8fHx8MTc2Mzc3OTgxM3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "tech meetup"
+    },
+    {
+      "id": "event-art-exhibit",
+      "description": "An art gallery with modern paintings.",
+      "imageUrl": "https://images.unsplash.com/photo-1569783721854-33a99b4c0bae?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxhcnQlMjBnYWxsZXJ5fGVufDB8fHx8MTc2Mzc3ODAzN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "art gallery"
+    },
+    {
+      "id": "directory-coffee-shop",
+      "description": "A cozy coffee shop interior.",
+      "imageUrl": "https://images.unsplash.com/photo-1511081692775-05d0f180a065?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjb2ZmZWUlMjBzaG9wfGVufDB8fHx8MTc2Mzc5Mjc4N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "coffee shop"
+    },
+    {
+      "id": "directory-coworking",
+      "description": "A modern open-plan coworking office space.",
+      "imageUrl": "https://images.unsplash.com/photo-1562664348-cb222fdcfa86?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxjb3dvcmtpbmclMjBzcGFjZXxlbnwwfHx8fDE3NjM3OTY0NDR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "coworking space"
+    },
+    {
+      "id": "directory-bookstore",
+      "description": "A bookstore with shelves full of books.",
+      "imageUrl": "https://images.unsplash.com/photo-1648405898502-c07cdf83d1af?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxib29rJTIwc3RvcmV8ZW58MHx8fHwxNzYzNzk4OTUwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "book store"
+    }
+  ]
 }
