@@ -10,26 +10,19 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
-import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { EventPlaceholder } from '../ui/placeholders';
+
 
 function EventCard({
   rec,
 }: {
   rec: PersonalizedEventRecommendationsOutput['recommendations'][0];
 }) {
-  const placeholder = PlaceHolderImages.find(p => p.id.includes('event')) || PlaceHolderImages[0];
   return (
     <Link href="#">
       <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-lg hover:-translate-y-1">
-        <div className="relative h-40 w-full">
-          <Image
-            src={placeholder.imageUrl}
-            alt={rec.eventName}
-            fill
-            className="object-cover"
-            data-ai-hint={placeholder.imageHint}
-          />
+        <div className="relative h-40 w-full bg-muted flex items-center justify-center">
+          <EventPlaceholder className="w-16 h-16 text-muted-foreground/30" />
         </div>
         <CardHeader>
           <CardTitle className="font-headline text-lg line-clamp-2">

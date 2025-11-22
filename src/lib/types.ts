@@ -65,7 +65,7 @@ export interface Venue {
   isFeaturedOnLanding?: boolean;
 }
 
-export interface DirectoryEntry {
+export interface DirectoryPlaceholder {
   id: string;
   name: string;
   description: string;

@@ -9,26 +9,19 @@ import {
 } from '@/ai/flows/personalized-directory-recommendations';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
-import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { ImagePlaceholder } from '../ui/placeholders';
 
 function DirectoryCard({
   item,
 }: {
   item: PersonalizedDirectoryRecommendationsOutput[0];
 }) {
-    const placeholder = PlaceHolderImages.find(p => p.id.includes('directory')) || PlaceHolderImages[0];
   return (
     <Link href="#">
       <div className="overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-md">
-        <Image
-          src={placeholder.imageUrl}
-          alt={item.name}
-          width={400}
-          height={225}
-          className="aspect-video w-full object-cover"
-          data-ai-hint={placeholder.imageHint}
-        />
+        <div className="aspect-video w-full object-cover bg-muted flex items-center justify-center">
+            <ImagePlaceholder className="w-16 h-16 text-muted-foreground/30" />
+        </div>
         <div className="p-4">
           <h3 className="font-semibold">{item.name}</h3>
           <p className="text-sm text-muted-foreground">{item.category}</p>
