@@ -55,7 +55,7 @@ const withPWA = withPWAInit({
       },
     },
     {
-      urlPattern: /^https?.*/,
+      urlPattern: /^https?.* /,
       handler: 'NetworkFirst',
       options: {
         cacheName: 'offlineCache',
@@ -69,6 +69,11 @@ const withPWA = withPWAInit({
 
 
 const nextConfig: NextConfig = {
+  devIndicators: {
+    allowedDevOrigins: [
+      'https://6000-firebase-studio-1763798265683.cluster-y3k7ko3fang56qzieg3trwgyfg.cloudworkstations.dev',
+    ],
+  },
   images: {
     remotePatterns: [
       {
@@ -107,4 +112,3 @@ const nextConfig: NextConfig = {
 
 export default withPWA(nextConfig);
 
-    
