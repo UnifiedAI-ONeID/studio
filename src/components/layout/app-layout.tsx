@@ -5,9 +5,42 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import AvidityLogo from '@/components/logo';
 import Header from './header';
-import SideNav from './side-nav';
 import BottomNav from './bottom-nav';
 import LandingTopNav from '../landing/landing-top-nav';
+import {
+  Sidebar,
+  SidebarProvider,
+  SidebarTrigger,
+  SidebarInset,
+  SidebarHeader,
+  SidebarContent,
+  SidebarFooter,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarSeparator,
+} from '@/components/ui/sidebar';
+import {
+  LayoutDashboard,
+  Calendar,
+  List,
+  Users2,
+  UserCircle,
+  Settings,
+} from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+
+const topNavItems = [
+  { href: '/home', icon: LayoutDashboard, label: 'Home' },
+  { href: '/events', icon: Calendar, label: 'Events' },
+  { href: '/directory', icon: List, label: 'Directory' },
+  { href: '/commons', icon: Users2, label: 'Commons' },
+];
+
+const bottomNavItems = [
+  { href: '/profile', icon: UserCircle, label: 'Profile' },
+  { href: '/settings', icon: Settings, label: 'Settings' },
+];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, prompted } = useAuth();
@@ -20,22 +53,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!loading) {
       if (user && (isAuthPage || isLandingPage)) {
-        // If user is logged in and on an auth page or landing page, redirect to home
         router.replace('/home');
       } else if (!user && !isAuthPage && !isLandingPage && !prompted) {
-        // If user is not logged in and not on a public page, redirect to landing
-         router.replace('/');
+        router.replace('/');
       }
     }
   }, [user, loading, router, isAuthPage, isLandingPage, prompted]);
 
   if (isLandingPage && !user) {
     return (
-       <>
+      <>
         <LandingTopNav />
         <main>{children}</main>
       </>
-    )
+    );
   }
 
   if (isAuthPage) {
@@ -56,19 +87,60 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
+  
+  const userInitial = user?.displayName?.charAt(0).toUpperCase() || '?';
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-gray-100 dark:bg-black">
-      <div className="flex flex-1">
-        <SideNav />
-        <div className="flex flex-1 flex-col">
-          <Header />
-          <main className="flex-1 overflow-y-auto p-4 pb-20 md:p-6 md:pb-6 lg:p-8">
-            {children}
-          </main>
-        </div>
-      </div>
-      <BottomNav />
-    </div>
+    <SidebarProvider>
+      <Sidebar>
+        <SidebarHeader>
+          <div className="flex items-center gap-2">
+            <AvidityLogo className="h-8 w-8 text-primary" />
+            <span className="font-headline text-xl tracking-tight">Avidity</span>
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarMenu>
+            {topNavItems.map((item) => (
+              <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={
+                    (pathname.startsWith(item.href) && item.href !== '/home') ||
+                    (pathname === '/home' && item.href === '/home')
+                  }
+                >
+                  <Link href={item.href}>
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarContent>
+        <SidebarFooter>
+           <SidebarMenu>
+            {bottomNavItems.map((item) => (
+              <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton asChild isActive={pathname.startsWith(item.href)}>
+                  <Link href={item.href}>
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarFooter>
+      </Sidebar>
+      <SidebarInset>
+        <Header />
+        <main className="flex-1 overflow-y-auto p-4 pb-20 md:p-6 md:pb-6 lg:p-8">
+          {children}
+        </main>
+        <BottomNav />
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
