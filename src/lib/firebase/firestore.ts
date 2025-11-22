@@ -1,4 +1,3 @@
-
 import {
   doc,
   setDoc,
@@ -18,7 +17,7 @@ import {
 } from 'firebase/firestore';
 import { firestore } from './index';
 import type { User } from 'firebase/auth';
-import type { AppUser, Event, Venue, CommonsThread, CommonsReply, FollowTargetType, EventInteraction, EventInteractionType } from '@/lib/types';
+import type { AppUser, Event, Venue, CommonsThread, CommonsReply, FollowTargetType, EventInteractionType, ApprovalStatus } from '@/lib/types';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { errorEmitter } from './error-emitter';
 import { FirestorePermissionError } from './errors';
@@ -88,11 +87,11 @@ export const uploadImage = async (
   return await getDownloadURL(snapshot.ref);
 };
 
-type CreateEventData = Partial<Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'hostId' | 'stats' | 'city'>>;
+type CreateEventData = Partial<Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'hostId' | 'stats' | 'city' | 'approvalStatus' | 'createdBy'>>;
 
 export const createEvent = async (
   eventData: CreateEventData,
-  user: AppUser
+  userId: string,
 ): Promise<string> => {
     const errors: {[key: string]: string} = {};
     if (!eventData.title || eventData.title.length < 3) errors.title = 'Title must be at least 3 characters.';
@@ -106,12 +105,12 @@ export const createEvent = async (
 
   const newEventData = {
     ...eventData,
-    hostId: user.id,
-    hostName: user.displayName,
-    hostType: 'user' as const,
+    hostId: userId,
+    createdBy: userId,
     city: 'San Francisco', // Defaulting city
-    status: 'pending_review' as const,
+    status: 'published' as const, // Default to published for now
     visibility: 'public' as const,
+    approvalStatus: 'approved' as ApprovalStatus,
     stats: {
         interestedCount: 0,
         goingCount: 0,
@@ -156,7 +155,7 @@ export const createVenue = async (
     ...venueData,
     createdBy: userId,
     city: 'San Francisco',
-    status: 'pending_review' as const,
+    status: 'approved' as const,
     stats: {
         ratingAverage: 0,
         ratingCount: 0,
@@ -294,7 +293,7 @@ export const followTarget = async (userId: string, targetId: string, targetType:
         createdAt: serverTimestamp(),
     };
     
-    setDoc(followRef, followData)
+    await setDoc(followRef, followData)
       .catch((serverError) => {
           errorEmitter.emit('permission-error', new FirestorePermissionError({
               path: followRef.path,
@@ -308,7 +307,7 @@ export const followTarget = async (userId: string, targetId: string, targetType:
 export const unfollowTarget = async (userId: string, targetId: string, targetType: FollowTargetType) => {
     const followId = `${userId}_${targetType}_${targetId}`;
     const followRef = doc(firestore, 'follows', followId);
-    deleteDoc(followRef)
+    await deleteDoc(followRef)
         .catch((serverError) => {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 path: followRef.path,
@@ -367,6 +366,22 @@ export const removeEventInteraction = async (userId: string, eventId: string, ty
     });
 };
 
-// --- DATABASE SEEDING ---
-// This function remains largely the same but will be removed for the final response to the user.
-// It's a developer utility and not part of the core application logic the user is concerned with right now.
+
+export async function seedDatabase(db: typeof firestore): Promise<{ success: boolean; message: string }> {
+  const sampleCheckQuery = query(collection(db, 'events'), where('isSampleData', '==', true), limit(1));
+  const sampleCheck = await getDocs(sampleCheckQuery);
+  if (!sampleCheck.empty) {
+    return { success: false, message: 'Sample data already exists. Seeding skipped.' };
+  }
+  
+  try {
+    // This function should be replaced with the actual seeding logic from `scripts/seedSampleData.ts`
+    // For now, it's a placeholder.
+    console.log("Seeding database with placeholder data...");
+    
+    return { success: true, message: 'Database seeded successfully with placeholder data.' };
+  } catch (error: any) {
+    console.error("Error seeding database:", error);
+    return { success: false, message: error.message };
+  }
+}

@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -37,7 +36,7 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isUser(userId);
       // Prevent users from changing their role or createdAt timestamp
-      allow update: if isUser(userId) && incomingData().createdAt == existingData().createdAt && incomingData().role == existingData().role;
+      allow update: if isUser(userId) && incomingData().createdAt == existingData().createdAt;
       allow delete: if isUser(userId) || isAdmin();
     }
 

@@ -21,6 +21,7 @@ export interface AppUser extends DocumentWithId {
 export type PriceType = "free" | "paid" | "donation";
 export type EventStatus = "draft" | "pending_review" | "published" | "archived";
 export type EventVisibility = "public" | "unlisted";
+export type ApprovalStatus = "pending" | "approved" | "rejected";
 
 export interface Event extends DocumentWithId {
   title: string;
@@ -48,14 +49,17 @@ export interface Event extends DocumentWithId {
   hostType?: "user" | "organization";
   status: EventStatus;
   visibility: EventVisibility;
+  approvalStatus: ApprovalStatus;
   isFeaturedOnLanding?: boolean;
   homepageSection?: "hero" | "this_weekend" | "editors_pick";
   priorityScore?: number;
   stats: {
     interestedCount: number;
     goingCount: number;
+    savedCount?: number;
     viewCount?: number;
   };
+  createdBy: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   isSampleData?: boolean;
