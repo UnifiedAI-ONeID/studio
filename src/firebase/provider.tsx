@@ -2,17 +2,11 @@
 import {
   createContext,
   useState,
-  useEffect,
   useMemo,
   ReactNode,
   useContext
 } from 'react';
 import { User as FirebaseUser, Auth } from 'firebase/auth';
-import {
-  doc,
-  onSnapshot,
-  DocumentReference,
-} from 'firebase/firestore';
 import {
   initializeFirebase,
   auth as fAuth,
@@ -40,10 +34,12 @@ export const AuthContext = createContext<AuthState>({
 });
 
 
-export const FirebaseContext = createContext<{
+export interface FirebaseContextValue {
   auth: Auth;
   firestore: Firestore;
-} | null>(null);
+}
+
+export const FirebaseContext = createContext<FirebaseContextValue | null>(null);
 
 export function FirebaseProvider({ children }: { children: ReactNode }) {
   const { auth, firestore } = useMemo(() => initializeFirebase(), []);
@@ -60,7 +56,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export const useFirebase = (): {auth: Auth, firestore: Firestore} => {
+export const useFirebase = (): FirebaseContextValue => {
   const context = useContext(FirebaseContext);
   if (!context) {
     throw new Error('useFirebase must be used within a FirebaseProvider');

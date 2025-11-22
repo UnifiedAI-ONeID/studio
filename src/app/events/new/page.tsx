@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Upload } from 'lucide-react';
-import { Timestamp, collection, query, where, getDocs, orderBy, onSnapshot } from 'firebase/firestore';
+import { Timestamp, collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -24,13 +24,13 @@ import {
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
-import { firestore } from '@/lib/firebase/index';
+import { useAuth, useMemoFirebase } from '@/hooks/use-firebase-hooks';
+import { firestore } from '@/lib/firebase';
 import { createEvent, uploadImage } from '@/lib/firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { Venue } from '@/lib/types';
-import { useMemoFirebase } from '@/hooks/use-firebase-hooks';
+
 
 const categories = ['Music', 'Food & Drink', 'Talks', 'Sports', 'Arts', 'Networking', 'Other'];
 

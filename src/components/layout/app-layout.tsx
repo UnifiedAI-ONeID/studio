@@ -68,8 +68,12 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user && !isAuthPage && !isLandingPage && !isSeedPage) {
-    return <LandingTopNavAndMain>{children}</LandingTopNavAndMain>;
+  if (!user && !isAuthPage && !isLandingPage) {
+    if (isSeedPage) {
+        return <LandingTopNavAndMain>{children}</LandingTopNavAndMain>
+    }
+    // Redirect to landing page for any other protected route
+    return <LandingTopNavAndMain><main></main></LandingTopNavAndMain>;
   }
 
   if (user && (isAuthPage || isLandingPage)) {
@@ -86,10 +90,6 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   
   if(isLandingPage) {
       return <LandingTopNavAndMain>{children}</LandingTopNavAndMain>
-  }
-
-  if (isSeedPage && !user) {
-    return <LandingTopNavAndMain>{children}</LandingTopNavAndMain>;
   }
 
   return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
@@ -116,10 +116,6 @@ const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => {
        </div>
     );
   }
-
-  if (!user) {
-    return <LandingTopNavAndMain><main>{children}</main></LandingTopNavAndMain>;
-  }
   
   return (
     <SidebarProvider>
@@ -137,8 +133,7 @@ const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => {
                 <SidebarMenuButton
                   asChild
                   isActive={
-                    (pathname.startsWith(item.href) && item.href !== '/home') ||
-                    (pathname === item.href)
+                    (item.href !== '/' && pathname.startsWith(item.href)) || pathname === item.href
                   }
                 >
                   <Link href={item.href}>

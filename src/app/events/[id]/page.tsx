@@ -1,10 +1,10 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { doc, collection, query, where, limit, Timestamp, orderBy } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/index';
-import { useAuth, useDoc, useCollection } from '@/hooks/use-firebase-hooks';
+import { firestore } from '@/lib/firebase';
+import { useAuth, useDoc, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import type { Event, EventInteractionType } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -16,19 +16,21 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { addEventInteraction, removeEventInteraction, getUserEventInteraction } from '@/lib/firebase/firestore';
+import { addEventInteraction, removeEventInteraction } from '@/lib/firebase/firestore';
 
 function RelatedEvents({ category, currentEventId }: { category: string; currentEventId: string }) {
-    const eventsQuery = useMemo(() => query(
+    const eventsQuery = useMemoFirebase(() => query(
       collection(firestore, 'events'),
       where('status', '==', 'published'),
       where('approvalStatus', '==', 'approved'),
       where('category', '==', category),
-      where('id', '!=', currentEventId),
-      limit(3)
-    ), [category, currentEventId]);
+      orderBy('startTime', 'asc'),
+      limit(4) // Fetch 4 to find 3 that are not the current one
+    ), [category]);
     
     const { data: events, loading } = useCollection<Event>(eventsQuery);
+    
+    const filteredEvents = useMemo(() => events?.filter(event => event.id !== currentEventId).slice(0, 3), [events, currentEventId]);
 
     if (loading) {
         return (
@@ -43,13 +45,13 @@ function RelatedEvents({ category, currentEventId }: { category: string; current
         )
     }
         
-    if (!events || events.length === 0) return null;
+    if (!filteredEvents || filteredEvents.length === 0) return null;
 
     return (
         <div className="mt-12">
             <h2 className="text-2xl font-bold font-headline mb-4">More events you might like</h2>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {events.map(event => (
+                {filteredEvents.map(event => (
                     <Link href={`/events/${event.id}`} key={event.id}>
                         <Card className="overflow-hidden h-full flex flex-col transition-shadow hover:shadow-lg">
                              <div className="relative h-32 w-full">
@@ -80,10 +82,10 @@ export default function EventDetailPage() {
   const [interaction, setInteraction] = useState<EventInteractionType | null>(null);
   const [interactionLoading, setInteractionLoading] = useState(true);
 
-  const eventRef = useMemo(() => eventId ? doc(firestore, 'events', eventId) : null, [eventId]);
+  const eventRef = useMemoFirebase(() => eventId ? doc(firestore, 'events', eventId) : null, [eventId]);
   const { data: event, loading: eventLoading, error } = useDoc<Event>(eventRef);
 
-  const interactionQuery = useMemo(() => 
+  const interactionQuery = useMemoFirebase(() => 
       user && eventId 
       ? query(collection(firestore, 'eventInteractions'), where('userId', '==', user.uid), where('eventId', '==', eventId))
       : null
@@ -92,7 +94,7 @@ export default function EventDetailPage() {
   const { data: interactions, loading: interactionQueryLoading } = useCollection(interactionQuery);
 
   // Update local interaction state when the query result changes
-  useState(() => {
+  useEffect(() => {
     if (!interactionQueryLoading) {
       if (interactions && interactions.length > 0) {
         setInteraction(interactions[0].type as EventInteractionType);
@@ -121,10 +123,7 @@ export default function EventDetailPage() {
         await removeEventInteraction(user.uid, eventId, type);
         toast({ title: `No longer ${type}` });
       } else {
-        if (oldInteraction) {
-          await removeEventInteraction(user.uid, eventId, oldInteraction);
-        }
-        await addEventInteraction(user.uid, eventId, type);
+        await addEventInteraction(user.uid, eventId, type, oldInteraction);
         toast({ title: `You are ${type}!` });
       }
     } catch (e) {
@@ -272,7 +271,7 @@ export default function EventDetailPage() {
                           <User className="h-6 w-6 text-muted-foreground"/>
                       </div>
                       <div>
-                          <p className="text-muted-foreground text-sm">Hosted by</p>
+                          <p className="text-muted-foreground text-sm">Hosted by</p>                          
                           <p className="font-semibold text-foreground">{event.hostName || 'Community Organizer'}</p>
                       </div>
                   </div>
@@ -288,7 +287,7 @@ export default function EventDetailPage() {
             </CardContent>
           </Card>
           
-          <RelatedEvents category={event.category} currentEventId={eventId} />
+          {event.category && <RelatedEvents category={event.category} currentEventId={eventId} />}
 
         </div>
       </div>

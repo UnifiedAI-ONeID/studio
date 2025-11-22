@@ -1,9 +1,8 @@
 'use client';
 
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import { collection, query, where, orderBy, Timestamp, limit } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/index';
-import { useCollection } from '@/hooks/use-firebase-hooks';
+import { firestore } from '@/lib/firebase';
 import type { Event } from '@/lib/types';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -89,7 +88,7 @@ function EventSection({ title, events, loading }: { title: string; events: Event
 
 function FollowedVenuesEvents() {
     const { user } = useAuth();
-    const [followedVenueIds, setFollowedVenueIds] = useState<string[]>([]);
+    const [followedVenueIds, setFollowedVenueIds] = useState<string[] | null>(null);
     const [loadingIds, setLoadingIds] = useState(true);
 
     useEffect(() => {
@@ -103,8 +102,8 @@ function FollowedVenuesEvents() {
         }
     }, [user]);
 
-    const eventsQuery = useMemo(() => 
-        (user && followedVenueIds.length > 0)
+    const eventsQuery = useMemoFirebase(() => 
+        (user && followedVenueIds && followedVenueIds.length > 0)
         ? query(
             collection(firestore, 'events'),
             where('status', '==', 'published'),
@@ -119,7 +118,7 @@ function FollowedVenuesEvents() {
 
     const { data: events, loading: eventsLoading } = useCollection<Event>(eventsQuery);
     
-    if (!user || (!loadingIds && followedVenueIds.length === 0)) {
+    if (!user || loadingIds || (followedVenueIds && followedVenueIds.length === 0)) {
         return null;
     }
 

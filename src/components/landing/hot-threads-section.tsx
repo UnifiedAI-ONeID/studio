@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/index';
+import { firestore } from '@/lib/firebase';
 import type { Thread } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
@@ -21,9 +21,9 @@ function ThreadRow({ thread }: { thread: Thread }) {
         </div>
         <p className="mt-1 text-sm text-slate-500 line-clamp-2">{thread.body}</p>
         <div className="mt-2 flex items-center gap-4 text-xs text-slate-500">
-            <span>By {thread.authorInfo.displayName}</span>
+            <span>By {thread.authorInfo?.displayName}</span>
             <span className="flex items-center gap-1.5"><MessageSquare className="h-3 w-3" /> {thread.replyCount} replies</span>
-            <span className="flex items-center gap-1.5"><Clock className="h-3 w-3" /> {formatDistanceToNow(thread.lastActivityAt.toDate(), { addSuffix: true })}</span>
+            <span className="flex items-center gap-1.5"><Clock className="h-3 w-3" /> {thread.lastActivityAt && formatDistanceToNow(thread.lastActivityAt.toDate(), { addSuffix: true })}</span>
         </div>
       </Link>
     </div>

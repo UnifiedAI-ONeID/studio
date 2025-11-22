@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
-import { useDoc, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
+import { useAuth, useDoc, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import { doc, collection, query, orderBy, Timestamp } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/index';
+import { firestore } from '@/lib/firebase';
 import { createComment, reportContent, addReaction, removeReaction, addCommentReaction, removeCommentReaction, getUserReactionsForThread } from '@/lib/firebase/firestore';
 import type { Thread, Comment, Event, Venue } from '@/lib/types';
 
@@ -96,15 +95,15 @@ function CommentItem({ comment, userHasReacted, onReaction }: { comment: Comment
     return (
         <div className="flex gap-4 py-4 border-b">
             <Avatar className="h-10 w-10">
-                <AvatarImage src={comment.authorInfo.photoURL || undefined} />
-                <AvatarFallback>{comment.authorInfo.displayName?.charAt(0)}</AvatarFallback>
+                <AvatarImage src={comment.authorInfo?.photoURL || undefined} />
+                <AvatarFallback>{comment.authorInfo?.displayName?.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
                 <div className="flex justify-between items-center">
                     <div>
-                        <span className="font-semibold">{comment.authorInfo.displayName}</span>
+                        <span className="font-semibold">{comment.authorInfo?.displayName}</span>
                         <span className="text-xs text-muted-foreground ml-2">
-                            {format((comment.createdAt as Timestamp).toDate(), "MMM d, yyyy")}
+                            {comment.createdAt && format((comment.createdAt as Timestamp).toDate(), "MMM d, yyyy")}
                         </span>
                     </div>
                     {user && user.uid !== comment.createdBy && (
@@ -143,7 +142,7 @@ export default function ThreadDetailPage() {
     , [threadId]);
     const { data: comments, loading: commentsLoading } = useCollection<Comment>(commentsQuery);
     
-    useState(() => {
+    useEffect(() => {
         if(user && threadId) {
             getUserReactionsForThread(user.uid, threadId).then(setUserReactions);
         }
@@ -251,12 +250,12 @@ export default function ThreadDetailPage() {
                 <h1 className="font-headline text-3xl font-bold">{thread.title}</h1>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
                     <Avatar className="h-6 w-6">
-                        <AvatarImage src={thread.authorInfo.photoURL || undefined} />
-                        <AvatarFallback>{thread.authorInfo.displayName?.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={thread.authorInfo?.photoURL || undefined} />
+                        <AvatarFallback>{thread.authorInfo?.displayName?.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <span>{thread.authorInfo.displayName}</span>
+                    <span>{thread.authorInfo?.displayName}</span>
                     <span>·</span>
-                    <span>{format((thread.createdAt as Timestamp).toDate(), "MMM d, yyyy")}</span>
+                    <span>{thread.createdAt && format((thread.createdAt as Timestamp).toDate(), "MMM d, yyyy")}</span>
                 </div>
             </div>
 

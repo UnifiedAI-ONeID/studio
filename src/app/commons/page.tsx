@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { collection, query, orderBy, where } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/index';
+import { firestore } from '@/lib/firebase';
 import { useCollection, useAuth, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import type { Thread } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -115,10 +115,10 @@ export default function CommonsPage() {
                    <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                        <Avatar className="h-6 w-6">
-                        <AvatarImage src={thread.authorInfo.photoURL || undefined} alt={thread.authorInfo.displayName} />
-                        <AvatarFallback>{thread.authorInfo.displayName?.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={thread.authorInfo?.photoURL || undefined} alt={thread.authorInfo?.displayName} />
+                        <AvatarFallback>{thread.authorInfo?.displayName?.charAt(0)}</AvatarFallback>
                       </Avatar>
-                      <span>{thread.authorInfo.displayName}</span>
+                      <span>{thread.authorInfo?.displayName}</span>
                     </div>
                     <div className="flex items-center gap-4">
                       <span className="flex items-center gap-1"><Heart className="h-4 w-4" /> {thread.likeCount || 0}</span>

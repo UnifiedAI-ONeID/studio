@@ -1,11 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, onSnapshot, DocumentReference } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, firestore } from '@/lib/firebase';
 import type { AppUser } from '@/lib/types';
-import { getUserProfile } from '@/lib/firebase/firestore';
-
+import { createUserProfile } from '@/lib/firebase/firestore';
 
 export const useUser = () => {
   const [user, setUser] = useState<AppUser | null>(null);
@@ -13,35 +12,42 @@ export const useUser = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (fbUser) => {
       setFirebaseUser(fbUser);
-      if (fbUser) {
-        const userProfile = await getUserProfile(fbUser.uid);
-        if (userProfile) {
-          setUser(userProfile);
-        } else {
-           const { uid, email, displayName, photoURL } = fbUser;
-            const profileData = {
-              uid,
-              id: uid,
-              email,
-              displayName: displayName || email?.split('@')[0],
-              photoURL,
-              role: 'user',
-              interests: [],
-              skills: [],
-              locationPreferences: [],
-            } as AppUser;
-          setUser(profileData);
-        }
-      } else {
+      if (!fbUser) {
         setUser(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, []);
+
+  useEffect(() => {
+    if (!firebaseUser) return;
+
+    const userRef = doc(firestore, 'users', firebaseUser.uid);
+    const unsubscribeSnapshot = onSnapshot(userRef, async (doc) => {
+      if (doc.exists()) {
+        setUser({ id: doc.id, ...doc.data() } as AppUser);
+      } else {
+        // This might happen for a brand new user, create their profile
+        try {
+            await createUserProfile(firebaseUser);
+            // The snapshot listener will pick up the new profile
+        } catch(e) {
+            console.error("Failed to create user profile on-the-fly", e);
+            setUser(null); // Or handle this case appropriately
+        }
+      }
+      setLoading(false);
+    }, (error) => {
+        console.error("Error listening to user profile:", error);
+        setLoading(false);
+    });
+
+    return () => unsubscribeSnapshot();
+  }, [firebaseUser]);
 
   return { user, firebaseUser, loading };
 };

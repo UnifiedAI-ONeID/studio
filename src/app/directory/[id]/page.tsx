@@ -2,7 +2,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { doc, collection, query, where, Timestamp, orderBy, limit } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/index';
+import { firestore } from '@/lib/firebase';
 import { useAuth, useDoc, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import type { Venue, Event } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -114,7 +114,7 @@ export default function VenueDetailPage() {
     } catch(e) {
         toast({ variant: 'destructive', title: 'Something went wrong.' });
     } finally {
-       setFollowLoading(false);
+       // State will be updated by the useCollection hook, no need to set here
     }
   };
 
