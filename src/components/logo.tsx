@@ -11,18 +11,25 @@ const AvidityLogo = ({ className }: { className?: string }) => {
       aria-label="Avidity Logo"
     >
       <path
-        d="M50 15L85 85H15L50 15Z"
+        d="M50 10C35 10 15 30 15 50C15 70 50 90 50 90C50 90 85 70 85 50C85 30 65 10 50 10Z"
         stroke="currentColor"
         strokeWidth="10"
         strokeLinejoin="round"
         strokeLinecap="round"
       />
-      <circle cx="50" cy="50" r="30" stroke="currentColor" strokeWidth="8" />
       <path
-        d="M50 20V50"
+        d="M35 55L50 25L65 55"
         stroke="currentColor"
-        strokeWidth="8"
+        strokeWidth="10"
         strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M42 45H58"
+        stroke="currentColor"
+        strokeWidth="10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
