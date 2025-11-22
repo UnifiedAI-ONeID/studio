@@ -144,7 +144,6 @@ function FollowedVenuesEvents() {
 
 export default function HomePage() {
   const { user } = useAuth();
-  const city = 'San Francisco'; // Hardcoded for now
 
   const [todayEvents, setTodayEvents] = useState<Event[]>();
   const [todayLoading, setTodayLoading] = useState(true);
@@ -223,7 +222,7 @@ export default function HomePage() {
         </>
       )}
       <FollowedVenuesEvents />
-      <EventSection title={`Today in ${city}`} events={todayEvents} loading={todayLoading} />
+      <EventSection title="Happening Today" events={todayEvents} loading={todayLoading} />
       <EventSection title="This Weekend" events={weekendEvents} loading={weekendLoading} />
     </div>
   );

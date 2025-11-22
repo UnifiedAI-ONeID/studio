@@ -53,11 +53,11 @@ export default function RecommendedEvents() {
       try {
         const input: PersonalizedEventRecommendationsInput = {
           userProfile: {
-            interests: user.interests || ['live music', 'tech'],
-            age: 30, // Mock age
-            location: user.locationPreferences?.[0] || 'San Francisco',
+            interests: user.interests || [],
+            age: 30, // Mock age, can be replaced with real data if available
+            location: user.locationPreferences?.[0],
           },
-          userLocation: 'San Francisco, CA', // Replace with dynamic location
+          userLocation: user.locationPreferences?.[0] || 'San Francisco, CA', // Use user's preferred location or a default
           currentTime: new Date().toISOString(),
         };
 

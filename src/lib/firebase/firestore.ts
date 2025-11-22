@@ -432,22 +432,22 @@ export const seedDatabase = async () => {
   const venueCollection = collection(firestore, 'venues');
   const eventCollection = collection(firestore, 'events');
   const threadCollection = collection(firestore, 'threads');
-
-  // Clear existing seeded data if necessary (optional)
-  // This is a simple way to avoid duplicates. For production, you'd want a more robust migration strategy.
-  const oldVenues = await getDocs(query(venueCollection, where('createdBy', '==', 'system')));
-  oldVenues.forEach(doc => batch.delete(doc.ref));
-  const oldEvents = await getDocs(query(eventCollection, where('createdBy', '==', 'system')));
-  oldEvents.forEach(doc => batch.delete(doc.ref));
-  const oldThreads = await getDocs(query(threadCollection, where('createdBy', '==', 'system-user-1')));
-  oldThreads.forEach(doc => batch.delete(doc.ref));
+  
+  // Check if data has already been seeded to prevent duplicates
+  const q = query(venueCollection, where('createdBy', '==', 'system'), limit(1));
+  const snapshot = await getDocs(q);
+  if (!snapshot.empty) {
+      const message = "Database has already been seeded. Aborting.";
+      console.log(message);
+      return { success: true, message: message };
+  }
 
 
   // Seed Venues and keep track of their new IDs
   const venueIdMap = new Map<string, string>();
   for (const venue of placeholderVenues) {
     const { id: oldId, ...venueData } = venue;
-    const docRef = doc(venueCollection);
+    const docRef = doc(venueCollection); // Auto-generate ID
     batch.set(docRef, {
         ...venueData,
         createdAt: now,
@@ -461,7 +461,7 @@ export const seedDatabase = async () => {
     const { venueId: oldVenueId, ...eventData } = event;
     const newVenueId = oldVenueId ? venueIdMap.get(oldVenueId) : undefined;
     
-    const docRef = doc(eventCollection);
+    const docRef = doc(eventCollection); // Auto-generate ID
     batch.set(docRef, {
         ...eventData,
         venueId: newVenueId,
@@ -475,7 +475,7 @@ export const seedDatabase = async () => {
   // Seed Threads
   placeholderThreads.forEach(thread => {
       const { id, ...threadData } = thread;
-      const docRef = doc(threadCollection);
+      const docRef = doc(threadCollection); // Auto-generate ID
       batch.set(docRef, {
           ...threadData,
           createdAt: now,
@@ -486,12 +486,12 @@ export const seedDatabase = async () => {
 
   try {
     await batch.commit();
-    console.log('Database seeded successfully!');
-    return { success: true, message: 'Database seeded successfully!' };
+    const message = 'Database seeded successfully!';
+    console.log(message);
+    return { success: true, message: message };
   } catch (error) {
-    console.error('Error seeding database:', error);
-    return { success: false, message: `Error seeding database: ${error}` };
+    const message = `Error seeding database: ${error}`;
+    console.error(message);
+    return { success: false, message: message };
   }
 };
-
-    

@@ -76,7 +76,7 @@ export const placeholderVenues: (Omit<Venue, 'id' | 'createdAt' | 'updatedAt' > 
   },
 ];
 
-export const placeholderEvents: (Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'startTime' | 'endTime'> & { id: string, startTime: string, endTime?: string })[] = [
+export const placeholderEvents: (Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'startTime' | 'endTime' | 'stats'> & { id: string, startTime: string, endTime?: string, stats: Event['stats'] })[] = [
   {
     id: 'indie-fest-2024',
     title: 'IndieFest 2024 at The Fillmore',

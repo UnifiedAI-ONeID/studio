@@ -51,7 +51,7 @@ export default function RecommendedDirectory() {
             skills: user.skills || [],
             locationPreferences: user.locationPreferences || [],
           },
-          userLocation: 'San Francisco, CA', // Replace with dynamic location if available
+          userLocation: user.locationPreferences?.[0] || 'San Francisco, CA', // Use user's preferred location or a default
           currentTime: new Date().toISOString(),
           numberOfRecommendations: 3,
         };
