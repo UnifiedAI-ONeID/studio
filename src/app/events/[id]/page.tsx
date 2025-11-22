@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useDocument, useCollection } from 'react-firebase-hooks/firestore';
 import { doc, collection, query, where, limit, Timestamp, orderBy } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase';
+import { firestore } from '@/lib/firebase/index';
 import type { Event, EventInteractionType } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -292,3 +292,5 @@ export default function EventDetailPage() {
     </div>
   );
 }
+
+    

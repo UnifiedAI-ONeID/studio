@@ -2,7 +2,7 @@
 
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase';
+import { firestore } from '@/lib/firebase/index';
 import type { Thread } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
@@ -77,3 +77,5 @@ export default function HotThreadsSection() {
     </section>
   );
 }
+
+    

@@ -3,7 +3,7 @@ import { useParams, useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { useDocument, useCollection } from 'react-firebase-hooks/firestore';
 import { doc, collection, query, where, Timestamp, orderBy, limit } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase';
+import { firestore } from '@/lib/firebase/index';
 import type { Venue, Event } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -217,3 +217,5 @@ export default function VenueDetailPage() {
     </div>
   );
 }
+
+    

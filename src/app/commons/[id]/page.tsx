@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useDocument, useCollection } from 'react-firebase-hooks/firestore';
 import { doc, collection, query, orderBy, Timestamp } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase';
+import { firestore } from '@/lib/firebase/index';
 import { createComment, reportContent, addReaction, removeReaction, addCommentReaction, removeCommentReaction, getUserReactionsForThread } from '@/lib/firebase/firestore';
 import type { Thread, Comment, Event, Venue } from '@/lib/types';
 
@@ -326,3 +326,5 @@ export default function ThreadDetailPage() {
         </div>
     );
 }
+
+    

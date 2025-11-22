@@ -18,7 +18,7 @@ import {
   limit,
   orderBy,
 } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase';
+import { firestore } from '@/lib/firebase/index';
 import type { Event, Venue, Thread } from '@/lib/types';
 import Link from 'next/link';
 import { Skeleton } from '../ui/skeleton';
@@ -179,3 +179,5 @@ export default function GlobalSearch({
     </Dialog>
   );
 }
+
+    

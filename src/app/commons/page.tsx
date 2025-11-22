@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { collection, query, orderBy, where } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase';
+import { firestore } from '@/lib/firebase/index';
 import type { Thread } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -139,3 +139,5 @@ export default function CommonsPage() {
     </div>
   );
 }
+
+    

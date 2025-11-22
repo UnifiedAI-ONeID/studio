@@ -2,7 +2,7 @@
 
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { collection, query, where, orderBy, limit } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase';
+import { firestore } from '@/lib/firebase/index';
 import type { Venue } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
@@ -57,3 +57,5 @@ export default function PopularPlacesSection() {
     </section>
   );
 }
+
+    

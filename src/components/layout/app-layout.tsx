@@ -54,11 +54,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (!loading) {
       if (user && (isAuthPage || isLandingPage)) {
         router.replace('/home');
-      } else if (!user && !isAuthPage && !isLandingPage && !prompted) {
+      } else if (!user && !isAuthPage && !isLandingPage) {
         router.replace('/');
       }
     }
-  }, [user, loading, router, isAuthPage, isLandingPage, prompted]);
+  }, [user, loading, router, isAuthPage, isLandingPage]);
 
   if (isLandingPage && !user) {
     return (
@@ -144,3 +144,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
+
+    

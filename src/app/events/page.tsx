@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase';
+import { firestore } from '@/lib/firebase/index';
 import type { Event } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -190,3 +190,5 @@ export default function EventsPage() {
     </div>
   );
 }
+
+    

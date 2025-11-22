@@ -3,7 +3,7 @@
 import { useAuth } from '@/hooks/use-auth';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { collection, query, where, orderBy, Timestamp, limit } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase';
+import { firestore } from '@/lib/firebase/index';
 import type { Event } from '@/lib/types';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -188,3 +188,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    

@@ -36,7 +36,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { firestore } from '@/lib/firebase';
+import { firestore } from '@/lib/firebase/index';
 import { createEvent, uploadImage } from '@/lib/firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -364,3 +364,5 @@ export default function NewEventPage() {
     </div>
   );
 }
+
+    
