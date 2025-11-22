@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -10,15 +11,18 @@ import Image from 'next/image';
 import { format } from 'date-fns';
 
 function FeaturedEventCard({ event, large = false }: { event: Event; large?: boolean }) {
+    if (!event.startTime) return null;
   return (
     <Link href={`/events/${event.id}`} className={`group relative block overflow-hidden rounded-3xl ${large ? 'col-span-2' : ''}`}>
       <div className={`aspect-square w-full ${large ? 'md:aspect-[2/1]' : ''}`}>
-        <Image
-          src={event.coverImageUrl}
-          alt={event.title}
-          fill
-          className="object-cover transition-transform duration-300 group-hover:scale-105"
-        />
+        {event.coverImageUrl && (
+            <Image
+            src={event.coverImageUrl}
+            alt={event.title}
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+        )}
       </div>
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
       <div className="absolute bottom-0 left-0 p-4 md:p-6 text-white">

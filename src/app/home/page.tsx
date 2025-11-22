@@ -1,18 +1,17 @@
+
 'use client';
 
 import { useAuth, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import { collection, query, where, orderBy, Timestamp, limit } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase';
-import type { Event } from '@/lib/types';
+import type { Event, Follow } from '@/lib/types';
 import Link from 'next/link';
 import Image from 'next/image';
-import { format, startOfToday, endOfToday, startOfWeek } from 'date-fns';
+import { format, startOfToday, endOfToday, startOfWeek, endOfWeek } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { getFollowedVenueIds } from '@/lib/firebase/firestore';
-import { useEffect, useState, useMemo } from 'react';
 import RecommendedEvents from '@/components/ai/recommended-events';
 import RecommendedDirectory from '@/components/ai/recommended-directory';
 import PlaceHolderImages from '@/lib/placeholder-images';
@@ -20,8 +19,8 @@ import PlaceHolderImages from '@/lib/placeholder-images';
 function getPriceDisplay(event: Event) {
   if (event.priceType === 'free') return 'Free';
   if (event.priceType === 'donation') return 'Donation';
-  if (event.priceMin) {
-    return `$${event.priceMin}${event.priceMax && event.priceMax > event.priceMin ? ` - $${event.priceMax}`: ''}`;
+  if (event.minPrice) {
+    return `$${event.minPrice}${event.maxPrice && event.maxPrice > event.minPrice ? ` - $${event.maxPrice}`: ''}`;
   }
   return 'Paid';
 }
@@ -32,13 +31,15 @@ function EventCard({ event }: { event: Event }) {
     <Link href={`/events/${event.id}`} key={event.id}>
       <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-lg hover:-translate-y-1">
         <div className="relative h-40 w-full">
-          <Image
-            src={event.coverImageUrl || placeholder.imageUrl}
-            alt={event.title}
-            fill
-            className="object-cover"
-            data-ai-hint={placeholder.imageHint}
-          />
+          {event.coverImageUrl && (
+            <Image
+                src={event.coverImageUrl}
+                alt={event.title}
+                fill
+                className="object-cover"
+                data-ai-hint={placeholder.imageHint}
+            />
+          )}
           <Badge variant="secondary" className="absolute top-2 right-2">{getPriceDisplay(event)}</Badge>
         </div>
         <CardHeader>
@@ -49,7 +50,7 @@ function EventCard({ event }: { event: Event }) {
           <p className="font-semibold">{format((event.startTime as Timestamp).toDate(), "E, MMM d '·' h:mm a")}</p>
           <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
             <MapPin className="h-4 w-4" />
-            <span>{event.neighborhood || 'TBA'}</span>
+            <span>{event.location?.neighborhood || event.city}</span>
           </div>
         </CardContent>
       </Card>
@@ -73,7 +74,7 @@ function EventSection({ title, events, loading }: { title: string; events: Event
   }
 
   if (!events || events.length === 0) {
-    return null; // Don't show the section if there are no events
+    return null; 
   }
 
   return (
@@ -88,19 +89,16 @@ function EventSection({ title, events, loading }: { title: string; events: Event
 
 function FollowedVenuesEvents() {
     const { user } = useAuth();
-    const [followedVenueIds, setFollowedVenueIds] = useState<string[] | null>(null);
-    const [loadingIds, setLoadingIds] = useState(true);
+    
+    const followsQuery = useMemoFirebase(() =>
+        user ? query(collection(firestore, 'follows'), where('followerUserId', '==', user.id), where('targetType', '==', 'venue')) : null
+    , [user]);
+    const { data: follows, loading: followsLoading } = useCollection<Follow>(followsQuery);
 
-    useEffect(() => {
-        if (user) {
-            getFollowedVenueIds(user.uid).then(ids => {
-                setFollowedVenueIds(ids);
-                setLoadingIds(false);
-            });
-        } else {
-            setLoadingIds(false);
-        }
-    }, [user]);
+    const followedVenueIds = useMemoFirebase(() => {
+        if (!follows) return null;
+        return follows.map(f => f.targetId);
+    }, [follows]);
 
     const eventsQuery = useMemoFirebase(() => 
         (user && followedVenueIds && followedVenueIds.length > 0)
@@ -108,7 +106,7 @@ function FollowedVenuesEvents() {
             collection(firestore, 'events'),
             where('status', '==', 'published'),
             where('visibility', '==', 'public'),
-            where('venueId', 'in', followedVenueIds),
+            where('location.venueId', 'in', followedVenueIds),
             where('startTime', '>=', Timestamp.now()),
             orderBy('startTime', 'asc'),
             limit(4)
@@ -118,12 +116,12 @@ function FollowedVenuesEvents() {
 
     const { data: events, loading: eventsLoading } = useCollection<Event>(eventsQuery);
     
-    if (!user || loadingIds || (followedVenueIds && followedVenueIds.length === 0)) {
+    if (!user || ( !followsLoading && (!followedVenueIds || followedVenueIds.length === 0) )) {
         return null;
     }
 
     return (
-        <EventSection title="From Places You Follow" events={events} loading={loadingIds || eventsLoading} />
+        <EventSection title="From Places You Follow" events={events} loading={followsLoading || eventsLoading} />
     )
 }
 
@@ -131,8 +129,7 @@ function FollowedVenuesEvents() {
 export default function HomePage() {
   const { user } = useAuth();
 
-  // Query for Today's Events
-  const todayQuery = useMemo(() => {
+  const todayQuery = useMemoFirebase(() => {
       const todayStart = Timestamp.fromDate(startOfToday());
       const todayEnd = Timestamp.fromDate(endOfToday());
       return query(
@@ -146,25 +143,18 @@ export default function HomePage() {
   }, []);
   const { data: todayEvents, loading: todayLoading } = useCollection<Event>(todayQuery);
 
-
-  // Query for This Weekend's Events
-  const weekendQuery = useMemo(() => {
+  const weekendQuery = useMemoFirebase(() => {
       const now = new Date();
-      const startOfThisWeek = startOfWeek(now, { weekStartsOn: 1 }); // Monday
-      const friday = new Date(startOfThisWeek);
-      friday.setDate(startOfThisWeek.getDate() + 4);
-      friday.setHours(0, 0, 0, 0);
+      const weekendStart = startOfWeek(now, { weekStartsOn: 1 });
+      weekendStart.setDate(weekendStart.getDate() + 4); // Friday
+      const weekendEnd = endOfWeek(now, { weekStartsOn: 1 });
 
-      const sunday = new Date(startOfThisWeek);
-      sunday.setDate(startOfThisWeek.getDate() + 6);
-      sunday.setHours(23, 59, 59, 999);
-      
       return query(
         collection(firestore, 'events'),
         where('status', '==', 'published'),
         where('visibility', '==', 'public'),
-        where('startTime', '>=', Timestamp.fromDate(friday)),
-        where('startTime', '<=', Timestamp.fromDate(sunday)),
+        where('startTime', '>=', Timestamp.fromDate(weekendStart)),
+        where('startTime', '<=', Timestamp.fromDate(weekendEnd)),
         orderBy('startTime', 'asc')
       );
   }, []);

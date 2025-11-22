@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -19,9 +20,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { createVenue, uploadImage } from '@/lib/firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 
-const venueTypes = ['cafe', 'bar', 'gallery', 'ngo', 'venue', 'other'];
+const venueCategories = ["Live music", "Bar", "Restaurant", "Cafe", "Art Gallery", "Theater", "Club", "Park", "Other"];
+
 
 export default function NewVenuePage() {
   const router = useRouter();
@@ -30,13 +31,12 @@ export default function NewVenuePage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const [name, setName] = useState('');
-  const [type, setType] = useState('');
+  const [categories, setCategories] = useState<string[]>([]);
   const [description, setDescription] = useState('');
   const [address, setAddress] = useState('');
   const [neighborhood, setNeighborhood] = useState('');
   const [priceLevel, setPriceLevel] = useState(2);
   const [coverImage, setCoverImage] = useState<File | null>(null);
-  const [isFeatured, setIsFeatured] = useState(false);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
   
   const [errors, setErrors] = useState<{[key:string]: string}>({});
@@ -67,26 +67,21 @@ export default function NewVenuePage() {
       let coverImageUrl = '';
       if (coverImage) {
         const imageFile = coverImage as File;
-        const imagePath = `venues/${user.uid}/${Date.now()}_${imageFile.name}`;
+        const imagePath = `venueCovers/${user.id}/${Date.now()}_${imageFile.name}`;
         coverImageUrl = await uploadImage(imagePath, imageFile);
       }
 
       const venueData = {
         name,
-        type,
+        categories,
         description,
         address,
         neighborhood,
         priceLevel,
         coverImageUrl,
-        isFeaturedOnLanding: isFeatured,
-        // Mocked/default values
-        location: { latitude: 0, longitude: 0 }, 
-        openingHours: 'Not specified',
-        tags: [],
       };
 
-      const venueId = await createVenue(venueData, user.uid);
+      const venueId = await createVenue(venueData, user.id);
 
       toast({
         title: 'Place Submitted!',
@@ -129,18 +124,18 @@ export default function NewVenuePage() {
             </div>
 
             <div className='space-y-2'>
-              <Label>Type</Label>
-              <Select onValueChange={setType} defaultValue={type}>
+              <Label>Categories</Label>
+               <Select onValueChange={(val) => setCategories(val ? [val] : [])}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a type" />
+                  <SelectValue placeholder="Select a primary category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {venueTypes.map((cat) => (
+                  {venueCategories.map((cat) => (
                     <SelectItem key={cat} value={cat} className="capitalize">{cat}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {errors.type && <p className="text-sm font-medium text-destructive">{errors.type}</p>}
+              {errors.categories && <p className="text-sm font-medium text-destructive">{errors.categories}</p>}
             </div>
             
             <div className='space-y-2'>
@@ -206,26 +201,7 @@ export default function NewVenuePage() {
                 </SelectContent>
               </Select>
             </div>
-
-             <div className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-              <Checkbox
-                checked={isFeatured}
-                onCheckedChange={(checked) => setIsFeatured(Boolean(checked))}
-                id="isFeatured"
-              />
-              <div className="space-y-1 leading-none">
-                <label
-                  htmlFor="isFeatured"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Feature on Landing Page
-                </label>
-                <p className="text-sm text-muted-foreground">
-                  Check this to make this venue eligible to appear on the public landing page. (Admin only)
-                </p>
-              </div>
-            </div>
-
+            
             <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
               {isLoading ? 'Submitting...' : 'Submit Place for Review'}
             </Button>

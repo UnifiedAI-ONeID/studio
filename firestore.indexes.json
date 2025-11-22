@@ -6,17 +6,8 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "approvalStatus", "order": "ASCENDING" },
-        { "fieldPath": "startTime", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "events",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "isFeaturedOnLanding", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "visibility", "order": "ASCENDING" },
+        { "fieldPath": "isFeaturedOnLanding", "order": "ASCENDING" },
         { "fieldPath": "priorityScore", "order": "DESCENDING" },
         { "fieldPath": "startTime", "order": "ASCENDING" }
       ]
@@ -27,6 +18,7 @@
       "fields": [
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "visibility", "order": "ASCENDING" },
+        { "fieldPath": "city", "order": "ASCENDING" },
         { "fieldPath": "startTime", "order": "ASCENDING" }
       ]
     },
@@ -34,29 +26,9 @@
       "collectionGroup": "events",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "venueId", "order": "ASCENDING" },
-        { "fieldPath": "startTime", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "approvalStatus", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "events",
-      "queryScope": "COLLECTION",
-      "fields": [
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "visibility", "order": "ASCENDING" },
-        { "fieldPath": "startTime", "order": "ASCENDING" },
-        { "fieldPath": "category", "order": "ASCENDING" }
-      ]
-    },
-     {
-      "collectionGroup": "events",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "visibility", "order": "ASCENDING" },
-        { "fieldPath": "venueId", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "location.venueId", "order": "ASCENDING" },
         { "fieldPath": "startTime", "order": "ASCENDING" }
       ]
     },
@@ -64,24 +36,40 @@
       "collectionGroup": "venues",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "verified", "order": "ASCENDING" },
+        { "fieldPath": "isFeaturedOnLanding", "order": "ASCENDING" },
         { "fieldPath": "name", "order": "ASCENDING" }
       ]
     },
     {
-      "collectionGroup": "threads",
+      "collectionGroup": "commonsThreads",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "topic", "order": "ASCENDING" },
-        { "fieldPath": "lastActivityAt", "order": "DESCENDING" }
+        { "fieldPath": "stats.replyCount", "order": "DESCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
     {
-      "collectionGroup": "threads",
+      "collectionGroup": "commonsThreads",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "replyCount", "order": "DESCENDING" },
+        { "fieldPath": "topic", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "commonsThreads",
+      "queryScope": "COLLECTION",
+      "fields": [
+          { "fieldPath": "authorId", "order": "ASCENDING" },
+          { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "commonsReplies",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "threadId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
       ]
     },
     {
@@ -97,7 +85,6 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "eventId", "order": "ASCENDING" },
         { "fieldPath": "type", "order": "ASCENDING" }
       ]
     },
@@ -105,16 +92,16 @@
       "collectionGroup": "follows",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "followerUserId", "order": "ASCENDING" },
         { "fieldPath": "targetType", "order": "ASCENDING" }
       ]
     },
     {
-      "collectionGroup": "reactions",
-      "queryScope": "COLLECTION_GROUP",
+      "collectionGroup": "notifications",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "targetId", "order": "ASCENDING" }
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     }
   ]

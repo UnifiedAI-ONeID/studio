@@ -19,7 +19,7 @@ import {
 } from 'firebase/firestore';
 import { firestore } from './index';
 import type { User } from 'firebase/auth';
-import type { AppUser, Event, Venue, Thread, Comment, FollowTargetType, ReactionType, EventInteractionType } from '@/lib/types';
+import type { AppUser, Event, Venue, CommonsThread, CommonsReply, FollowTargetType, EventInteractionType } from '@/lib/types';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { placeholderEvents, placeholderVenues, placeholderThreads } from './placeholder-data';
 import { errorEmitter } from './error-emitter';
@@ -46,15 +46,12 @@ export const createUserProfile = async (user: User) => {
   if (!userDoc.exists()) {
     const { uid, email, displayName, photoURL } = user;
     const profileData = {
-      uid,
-      id: uid,
-      email,
-      displayName: displayName || email?.split('@')[0],
-      photoURL,
-      role: 'user' as const,
+      displayName: displayName || email?.split('@')[0] || 'Anonymous',
+      photoURL: photoURL || `https://i.pravatar.cc/150?u=${uid}`,
+      email: email,
+      bio: '',
+      homeCity: 'San Francisco',
       interests: [],
-      skills: [],
-      locationPreferences: [],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -92,7 +89,7 @@ export const uploadImage = async (
   return await getDownloadURL(snapshot.ref);
 };
 
-type CreateEventData = Partial<Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'approvalStatus' | 'createdBy' | 'stats'>>;
+type CreateEventData = Partial<Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'hostId' | 'stats' | 'city'>>;
 
 export const createEvent = async (
   eventData: CreateEventData,
@@ -108,32 +105,20 @@ export const createEvent = async (
         throw new ValidationError('Validation failed', errors);
     }
 
-  let venueName: string | undefined;
-  let neighborhood: string | undefined;
-  if (eventData.venueId) {
-      const venueDoc = await getDoc(doc(firestore, 'venues', eventData.venueId));
-      if (venueDoc.exists()) {
-          const venueData = venueDoc.data() as Venue;
-          venueName = venueData.name;
-          neighborhood = venueData.neighborhood;
-      }
-  }
-
-  const userProfile = await getUserProfile(userId);
   const newEventData = {
     ...eventData,
-    createdBy: userId,
-    hostName: userProfile?.displayName || 'Community Member',
-    approvalStatus: 'pending' as const,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-    venueName: venueName,
-    neighborhood: neighborhood,
+    hostId: userId,
+    hostType: 'user' as const,
+    city: 'San Francisco', // Defaulting city
+    status: 'pending_review' as const,
+    visibility: 'public' as const,
     stats: {
         interestedCount: 0,
-        goingCount: 0,
-        savedCount: 0,
-    }
+        rsvpCount: 0,
+        viewCount: 0,
+    },
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   };
 
   const eventCollection = collection(firestore, 'events');
@@ -150,7 +135,7 @@ export const createEvent = async (
   return docRef.id;
 };
 
-type CreateVenueData = Partial<Omit<Venue, 'id' | 'createdAt' | 'updatedAt' | 'verified' | 'createdBy'>>;
+type CreateVenueData = Partial<Omit<Venue, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'createdBy' | 'stats' | 'city'>>;
 
 export const createVenue = async (
   venueData: CreateVenueData,
@@ -158,11 +143,9 @@ export const createVenue = async (
 ): Promise<string> => {
     const errors: {[key: string]: string} = {};
     if (!venueData.name || venueData.name.length < 3) errors.name = 'Name must be at least 3 characters.';
-    if (!venueData.type) errors.type = 'Please select a type.';
-    if (!venueData.description || venueData.description.length < 10) errors.description = 'Description must be at least 10 characters.';
+    if (!venueData.categories || venueData.categories.length === 0) errors.type = 'Please select at least one category.';
     if (!venueData.address || venueData.address.length < 5) errors.address = 'Please enter a valid address.';
-    if (!venueData.neighborhood || venueData.neighborhood.length < 3) errors.neighborhood = 'Please enter a neighborhood.';
-    if (!venueData.coverImageUrl) errors.coverImageUrl = 'Cover image is required.';
+    
     if (Object.keys(errors).length > 0) {
         throw new ValidationError('Validation failed', errors);
     }
@@ -171,7 +154,13 @@ export const createVenue = async (
   const newVenueData = {
     ...venueData,
     createdBy: userId,
-    verified: false,
+    city: 'San Francisco',
+    status: 'pending_review' as const,
+    stats: {
+        ratingAverage: 0,
+        ratingCount: 0,
+        eventCount: 0,
+    },
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
@@ -190,7 +179,7 @@ export const createVenue = async (
 };
 
 
-type CreateThreadData = Partial<Omit<Thread, 'id' | 'createdAt' | 'updatedAt' | 'lastActivityAt' | 'replyCount' | 'authorInfo' | 'likeCount'>>;
+type CreateThreadData = Partial<Omit<CommonsThread, 'id' | 'createdAt' | 'updatedAt' | 'lastActivityAt' | 'stats' | 'authorId' | 'authorInfo'>>;
 
 export const createThread = async (threadData: CreateThreadData, user: AppUser): Promise<string> => {
     const errors: {[key: string]: string} = {};
@@ -201,16 +190,20 @@ export const createThread = async (threadData: CreateThreadData, user: AppUser):
         throw new ValidationError('Validation failed', errors);
     }
 
-    const threadCollection = collection(firestore, 'threads');
+    const threadCollection = collection(firestore, 'commonsThreads');
     const now = Timestamp.now();
     const newThreadData = {
         ...threadData,
+        authorId: user.id,
         authorInfo: {
             displayName: user.displayName,
             photoURL: user.photoURL
         },
-        replyCount: 0,
-        likeCount: 0,
+        stats: {
+            replyCount: 0,
+            viewCount: 0,
+            likeCount: 0,
+        },
         createdAt: now,
         updatedAt: now,
         lastActivityAt: now,
@@ -229,45 +222,47 @@ export const createThread = async (threadData: CreateThreadData, user: AppUser):
     return docRef.id;
 };
 
-type CreateCommentData = Omit<Comment, 'id' | 'createdAt' | 'updatedAt' | 'authorInfo' | 'likeCount'>;
-type AuthorInfo = { displayName: string | null, photoURL: string | null };
+type CreateReplyData = Omit<CommonsReply, 'id' | 'createdAt' | 'updatedAt' | 'authorId' | 'authorInfo'>;
 
-export const createComment = async (commentData: CreateCommentData, authorInfo: AuthorInfo): Promise<string> => {
+export const createReply = async (replyData: CreateReplyData, user: AppUser): Promise<string> => {
     const batch = writeBatch(firestore);
     const now = Timestamp.now();
     
-    const commentCollection = collection(firestore, 'threads', commentData.threadId, 'comments');
-    const newCommentRef = doc(commentCollection);
+    const replyCollection = collection(firestore, 'commonsReplies');
+    const newReplyRef = doc(replyCollection);
 
-    const newCommentData = {
-        ...commentData,
-        authorInfo,
-        likeCount: 0,
+    const newReplyData = {
+        ...replyData,
+        authorId: user.id,
+        authorInfo: {
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+        },
         createdAt: now,
         updatedAt: now,
     };
-    batch.set(newCommentRef, newCommentData);
+    batch.set(newReplyRef, newReplyData);
 
-    const threadRef = doc(firestore, 'threads', commentData.threadId);
+    const threadRef = doc(firestore, 'commonsThreads', replyData.threadId);
     batch.update(threadRef, {
-        replyCount: increment(1),
+        'stats.replyCount': increment(1),
         lastActivityAt: now,
     });
 
     await batch.commit().catch(async (serverError) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: newCommentRef.path,
+            path: newReplyRef.path,
             operation: 'create',
-            requestResourceData: newCommentData,
+            requestResourceData: newReplyData,
         }));
         throw serverError;
     });
 
-    return newCommentRef.id;
+    return newReplyRef.id;
 };
 
 
-export const reportContent = async (type: 'thread' | 'comment', targetId: string, reason: string, userId: string) => {
+export const reportContent = async (type: 'thread' | 'reply', targetId: string, reason: string, userId: string) => {
     const reportCollection = collection(firestore, 'reports');
     const reportData = {
         type,
@@ -289,18 +284,19 @@ export const reportContent = async (type: 'thread' | 'comment', targetId: string
 };
 
 export const followTarget = async (userId: string, targetId: string, targetType: FollowTargetType) => {
-    const followCollection = collection(firestore, `users/${userId}/follows`);
+    const followId = `${userId}_${targetType}_${targetId}`;
+    const followRef = doc(firestore, 'follows', followId);
     const followData = {
-        userId,
+        followerUserId: userId,
         targetId,
         targetType,
         createdAt: serverTimestamp(),
     };
     
-    await addDoc(followCollection, followData)
+    await setDoc(followRef, followData)
       .catch(async (serverError) => {
           errorEmitter.emit('permission-error', new FirestorePermissionError({
-              path: followCollection.path,
+              path: followRef.path,
               operation: 'create',
               requestResourceData: followData,
           }));
@@ -309,197 +305,55 @@ export const followTarget = async (userId: string, targetId: string, targetType:
 };
 
 export const unfollowTarget = async (userId: string, targetId: string, targetType: FollowTargetType) => {
-    const followCollection = collection(firestore, `users/${userId}/follows`);
-    const q = query(followCollection, where('targetId', '==', targetId), where('targetType', '==', targetType));
-    const snapshot = await getDocs(q);
-    if (!snapshot.empty) {
-        const docToDelete = snapshot.docs[0];
-        await deleteDoc(docToDelete.ref)
-          .catch(async (serverError) => {
-              errorEmitter.emit('permission-error', new FirestorePermissionError({
-                  path: docToDelete.ref.path,
-                  operation: 'delete',
-              }));
-              throw serverError;
-          });
-    }
-};
-
-export const getFollowedVenueIds = async (userId: string): Promise<string[]> => {
-    const followCollection = collection(firestore, `users/${userId}/follows`);
-    const q = query(followCollection, where('targetType', '==', 'venue'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => doc.data().targetId);
-};
-
-
-// Reactions
-const getReactionCollection = (targetType: 'thread' | 'comment', threadId: string, commentId?: string) => {
-    if (targetType === 'thread') {
-        return collection(firestore, 'threads', threadId, 'reactions');
-    }
-    if (targetType === 'comment' && commentId) {
-        return collection(firestore, 'threads', threadId, 'comments', commentId, 'reactions');
-    }
-    throw new Error('Invalid reaction target');
-};
-
-
-export const addReaction = async (
-    userId: string,
-    threadId: string,
-    targetId: string,
-    targetType: 'thread' | 'comment',
-    reactionType: ReactionType = 'like'
-) => {
-    const batch = writeBatch(firestore);
-    
-    const reactionCollection = getReactionCollection(targetType, threadId, targetType === 'comment' ? targetId : undefined);
-    const reactionDocRef = doc(reactionCollection, userId); 
-    const reactionData = {
-        userId,
-        targetId,
-        targetType,
-        type: reactionType,
-        createdAt: serverTimestamp(),
-    };
-    batch.set(reactionDocRef, reactionData);
-
-    const targetRef = doc(firestore, targetType === 'thread' ? 'threads' : `threads/${threadId}/comments`, targetId);
-    batch.update(targetRef, { likeCount: increment(1) });
-
-    await batch.commit().catch(async (serverError) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: reactionDocRef.path,
-            operation: 'create',
-            requestResourceData: reactionData,
-        }));
-        throw serverError;
-    });
-};
-
-export const removeReaction = async (
-    userId: string,
-    threadId: string,
-    targetId: string,
-    targetType: 'thread' | 'comment'
-) => {
-    const batch = writeBatch(firestore);
-
-    const reactionCollection = getReactionCollection(targetType, threadId, targetType === 'comment' ? targetId : undefined);
-    const reactionDocRef = doc(reactionCollection, userId);
-    batch.delete(reactionDocRef);
-
-    const targetRef = doc(firestore, targetType === 'thread' ? 'threads' : `threads/${threadId}/comments`, targetId);
-    batch.update(targetRef, { likeCount: increment(-1) });
-   
-    await batch.commit().catch(async (serverError) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: reactionDocRef.path,
-            operation: 'delete',
-        }));
-        throw serverError;
-    });
-};
-
-export const getUserReactionsForThread = async (userId: string, threadId: string): Promise<Set<string>> => {
-    const reactions = new Set<string>();
-    
-    const threadReactionRef = doc(firestore, 'threads', threadId, 'reactions', userId);
-    const threadReactionSnap = await getDoc(threadReactionRef);
-    if (threadReactionSnap.exists()) {
-        reactions.add(threadId);
-    }
-    
-    const commentsCollection = collection(firestore, 'threads', threadId, 'comments');
-    const commentsSnap = await getDocs(commentsCollection);
-    
-    for (const commentDoc of commentsSnap.docs) {
-        const commentReactionRef = doc(firestore, 'threads', threadId, 'comments', commentDoc.id, 'reactions', userId);
-        const commentReactionSnap = await getDoc(commentReactionRef);
-        if (commentReactionSnap.exists()) {
-            reactions.add(commentDoc.id);
-        }
-    }
-
-    return reactions;
-};
-
-// Event Interactions
-
-export const addEventInteraction = async (userId: string, eventId: string, type: EventInteractionType, previousType: EventInteractionType | null) => {
-    const batch = writeBatch(firestore);
-    const interactionCollection = collection(firestore, 'eventInteractions');
-    const eventRef = doc(firestore, 'events', eventId);
-
-    // If there was a previous interaction, remove it first
-    if (previousType) {
-        const q = query(
-            interactionCollection,
-            where('userId', '==', userId),
-            where('eventId', '==', eventId),
-            where('type', '==', previousType)
-        );
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-            const interactionDoc = querySnapshot.docs[0];
-            batch.delete(interactionDoc.ref);
-            const oldStatField = `stats.${previousType}Count`;
-            batch.update(eventRef, { [oldStatField]: increment(-1) });
-        }
-    }
-
-    const interactionRef = doc(interactionCollection);
-    const interactionData = {
-        userId,
-        eventId,
-        type,
-        createdAt: serverTimestamp(),
-    };
-    batch.set(interactionRef, interactionData);
-
-    const statField = `stats.${type}Count`;
-    batch.update(eventRef, { [statField]: increment(1) });
-    
-    await batch.commit().catch(async (serverError) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: interactionRef.path,
-            operation: 'create',
-            requestResourceData: interactionData,
-        }));
-        throw serverError;
-    });
-    return interactionRef.id;
-};
-
-export const removeEventInteraction = async (userId: string, eventId: string, type: EventInteractionType) => {
-    const batch = writeBatch(firestore);
-    const interactionCollection = collection(firestore, 'eventInteractions');
-
-    const q = query(
-        interactionCollection,
-        where('userId', '==', userId),
-        where('eventId', '==', eventId),
-        where('type', '==', type)
-    );
-
-    const querySnapshot = await getDocs(q);
-    if (!querySnapshot.empty) {
-        const interactionDoc = querySnapshot.docs[0];
-        batch.delete(interactionDoc.ref);
-
-        const eventRef = doc(firestore, 'events', eventId);
-        const statField = `stats.${type}Count`;
-        batch.update(eventRef, { [statField]: increment(-1) });
-        
-        await batch.commit().catch(async (serverError) => {
+    const followId = `${userId}_${targetType}_${targetId}`;
+    const followRef = doc(firestore, 'follows', followId);
+    await deleteDoc(followRef)
+        .catch(async (serverError) => {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: interactionDoc.ref.path,
+                path: followRef.path,
                 operation: 'delete',
             }));
             throw serverError;
         });
+};
+
+
+// Event Interactions
+export const setEventInteraction = async (userId: string, eventId: string, type: EventInteractionType) => {
+    const interactionId = `${userId}_${eventId}`;
+    const interactionRef = doc(firestore, 'eventInteractions', interactionId);
+    const interactionDoc = await getDoc(interactionRef);
+
+    const batch = writeBatch(firestore);
+    const eventRef = doc(firestore, 'events', eventId);
+
+    // If interaction exists and is the same type, we are removing it (toggling off)
+    if (interactionDoc.exists() && interactionDoc.data().type === type) {
+        batch.delete(interactionRef);
+        batch.update(eventRef, { [`stats.${type}Count`]: increment(-1) });
+    } else {
+        // If it exists but is a different type, or doesn't exist at all
+        if (interactionDoc.exists()) {
+            const oldType = interactionDoc.data().type as EventInteractionType;
+            batch.update(eventRef, { [`stats.${oldType}Count`]: increment(-1) });
+        }
+        const interactionData = {
+            userId,
+            eventId,
+            type,
+            createdAt: serverTimestamp()
+        };
+        batch.set(interactionRef, interactionData);
+        batch.update(eventRef, { [`stats.${type}Count`]: increment(1) });
     }
+    
+    await batch.commit().catch(async (serverError) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: interactionRef.path,
+            operation: 'write', // can be create or update
+        }));
+        throw serverError;
+    });
 };
 
 // --- DATABASE SEEDING ---
@@ -509,9 +363,8 @@ export const seedDatabase = async () => {
 
   const venueCollection = collection(firestore, 'venues');
   const eventCollection = collection(firestore, 'events');
-  const threadCollection = collection(firestore, 'threads');
+  const threadCollection = collection(firestore, 'commonsThreads');
   
-  // Check if data has already been seeded to prevent duplicates
   const q = query(venueCollection, where('createdBy', '==', 'system'), limit(1));
   const snapshot = await getDocs(q);
   if (!snapshot.empty) {
@@ -520,12 +373,10 @@ export const seedDatabase = async () => {
       return { success: true, message: message };
   }
 
-
-  // Seed Venues and keep track of their new IDs
   const venueIdMap = new Map<string, string>();
   for (const venue of placeholderVenues) {
     const { id: oldId, ...venueData } = venue;
-    const docRef = doc(venueCollection); // Auto-generate ID
+    const docRef = doc(venueCollection); 
     batch.set(docRef, {
         ...venueData,
         createdAt: now,
@@ -534,15 +385,14 @@ export const seedDatabase = async () => {
     venueIdMap.set(oldId, docRef.id);
   }
 
-  // Seed Events, updating venueId with the new IDs
   placeholderEvents.forEach(event => {
     const { venueId: oldVenueId, ...eventData } = event;
     const newVenueId = oldVenueId ? venueIdMap.get(oldVenueId) : undefined;
     
-    const docRef = doc(eventCollection); // Auto-generate ID
+    const docRef = doc(eventCollection); 
     batch.set(docRef, {
         ...eventData,
-        venueId: newVenueId,
+        location: { ...eventData.location, venueId: newVenueId },
         startTime: Timestamp.fromDate(new Date(event.startTime as unknown as string)),
         endTime: event.endTime ? Timestamp.fromDate(new Date(event.endTime as unknown as string)) : undefined,
         createdAt: now,
@@ -550,10 +400,9 @@ export const seedDatabase = async () => {
     });
   });
   
-  // Seed Threads
   placeholderThreads.forEach(thread => {
       const { id, ...threadData } = thread;
-      const docRef = doc(threadCollection); // Auto-generate ID
+      const docRef = doc(threadCollection);
       batch.set(docRef, {
           ...threadData,
           createdAt: now,
@@ -573,5 +422,3 @@ export const seedDatabase = async () => {
     return { success: false, message: message };
   }
 };
-
-    

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -19,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
-const topics = ["general", "neighborhoods", "buy-sell", "housing", "clubs"];
+const topics = ["general", "neighborhoods", "buy-sell", "housing", "clubs", "events"];
 
 export default function NewThreadPage() {
   const router = useRouter();
@@ -52,10 +53,10 @@ export default function NewThreadPage() {
         title,
         body,
         topic,
-        createdBy: user.uid,
         relatedEventId: relatedEventId || undefined,
         relatedVenueId: relatedVenueId || undefined,
         tags: [],
+        city: user.homeCity || 'San Francisco',
       };
       
       const threadId = await createThread(threadData, user);

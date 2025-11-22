@@ -1,22 +1,23 @@
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard,
+  Home,
   Calendar,
-  List,
-  Users2,
-  UserCircle,
+  Building,
+  MessageSquare,
+  User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { href: '/home', icon: LayoutDashboard, label: 'Home' },
+  { href: '/home', icon: Home, label: 'Home' },
   { href: '/events', icon: Calendar, label: 'Events' },
-  { href: '/directory', icon: List, label: 'Directory' },
-  { href: '/commons', icon: Users2, label: 'Commons' },
-  { href: '/profile', icon: UserCircle, label: 'Profile' },
+  { href: '/directory', icon: Building, label: 'Directory' },
+  { href: '/commons', icon: MessageSquare, label: 'Commons' },
+  { href: '/profile', icon: User, label: 'Profile' },
 ];
 
 export default function BottomNav() {
@@ -32,7 +33,7 @@ export default function BottomNav() {
             className={cn(
               'flex flex-col items-center gap-1 p-2 text-muted-foreground',
               {
-                'text-primary': (item.href !== '/' && pathname.startsWith(item.href)) || pathname === item.href
+                'text-primary': pathname.startsWith(item.href)
               }
             )}
           >

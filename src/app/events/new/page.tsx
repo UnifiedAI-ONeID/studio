@@ -1,10 +1,11 @@
+
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Upload } from 'lucide-react';
-import { Timestamp, collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { Timestamp } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -24,12 +25,13 @@ import {
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useMemoFirebase } from '@/hooks/use-firebase-hooks';
-import { firestore } from '@/lib/firebase';
+import { useAuth, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import { createEvent, uploadImage } from '@/lib/firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { Venue } from '@/lib/types';
+import { collection, query, where, orderBy } from 'firebase/firestore';
+import { firestore } from '@/lib/firebase';
 
 
 const categories = ['Music', 'Food & Drink', 'Talks', 'Sports', 'Arts', 'Networking', 'Other'];
@@ -40,28 +42,20 @@ export default function NewEventPage() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   
-  const [venues, setVenues] = useState<Venue[]>([]);
-  const venuesQuery = useMemoFirebase(() => query(collection(firestore, 'venues'), where('verified', '==', true), orderBy('name')), []);
+  const venuesQuery = useMemoFirebase(() => query(collection(firestore, 'venues'), where('status', '==', 'approved'), orderBy('name')), []);
+  const { data: venues } = useCollection<Venue>(venuesQuery);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [startTime, setStartTime] = useState<Date | undefined>();
   const [priceType, setPriceType] = useState<'free' | 'paid' | 'donation'>('free');
-  const [priceMin, setPriceMin] = useState<number | undefined>();
+  const [minPrice, setMinPrice] = useState<number | undefined>();
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [venueId, setVenueId] = useState<string | undefined>();
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
 
   const [errors, setErrors] = useState<{[key:string]: string}>({});
-
-  useEffect(() => {
-    const unsubscribe = onSnapshot(venuesQuery, (snapshot) => {
-      setVenues(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Venue)));
-    });
-    return () => unsubscribe();
-  }, [venuesQuery]);
-
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -90,9 +84,16 @@ export default function NewEventPage() {
       let coverImageUrl = '';
       if (coverImage) {
         const imageFile = coverImage as File;
-        const imagePath = `events/${user.uid}/${Date.now()}_${imageFile.name}`;
+        const imagePath = `eventCovers/${user.id}/${Date.now()}_${imageFile.name}`;
         coverImageUrl = await uploadImage(imagePath, imageFile);
+      } else {
+          // A cover image is required, handle error
+          setErrors({ coverImageUrl: "Cover image is required." });
+          setIsLoading(false);
+          return;
       }
+
+      const selectedVenue = venues?.find(v => v.id === venueId);
 
       const eventData = {
         title,
@@ -100,18 +101,18 @@ export default function NewEventPage() {
         category,
         startTime: startTime ? Timestamp.fromDate(startTime) : undefined,
         priceType,
-        priceMin,
+        minPrice,
         coverImageUrl,
-        venueId,
+        location: {
+            venueId: venueId,
+            neighborhood: selectedVenue?.neighborhood,
+            address: selectedVenue?.address
+        },
         tags: [],
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        hostId: user.uid,
-        hostName: user.displayName,
-        status: 'published' as const,
-        visibility: 'public' as const,
       };
 
-      const eventId = await createEvent(eventData, user.uid);
+      const eventId = await createEvent(eventData, user.id);
 
       toast({
         title: 'Event Submitted!',
@@ -282,13 +283,13 @@ export default function NewEventPage() {
             </div>
             {priceType === 'paid' && (
               <div className='space-y-2'>
-                <Label htmlFor='priceMin'>Price Amount ($)</Label>
-                <Input id='priceMin' type="number" placeholder="25.00" value={priceMin} onChange={e => setPriceMin(Number(e.target.value))} step="0.01" min="0" />
+                <Label htmlFor='minPrice'>Price Amount ($)</Label>
+                <Input id='minPrice' type="number" placeholder="25.00" value={minPrice} onChange={e => setMinPrice(Number(e.target.value))} step="0.01" min="0" />
               </div>
             )}
 
             <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Submitting...' : 'Submit Event for Approval'}
+              {isLoading ? 'Submitting...' : 'Submit Event for Review'}
             </Button>
           </form>
         </CardContent>

@@ -1,8 +1,8 @@
+
 'use client';
 
 import React from 'react';
-import { usePathname } from 'next/navigation';
-
+import { usePathname, useRouter } from 'next/navigation';
 import { FirebaseClientProvider } from '@/firebase/provider';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -25,11 +25,11 @@ import {
   SidebarInset
 } from '@/components/ui/sidebar';
 import {
-  LayoutDashboard,
+  Home,
   Calendar,
-  List,
-  Users2,
-  UserCircle,
+  Building,
+  MessageSquare,
+  User,
   Settings,
   Database,
 } from 'lucide-react';
@@ -38,24 +38,35 @@ import { Skeleton } from '../ui/skeleton';
 
 
 const topNavItems = [
-  { href: '/home', icon: LayoutDashboard, label: 'Home' },
+  { href: '/home', icon: Home, label: 'Home' },
   { href: '/events', icon: Calendar, label: 'Events' },
-  { href: '/directory', icon: List, label: 'Directory' },
-  { href: '/commons', icon: Users2, label: 'Commons' },
+  { href: '/directory', icon: Building, label: 'Directory' },
+  { href: '/commons', icon: MessageSquare, label: 'Commons' },
 ];
 
 const bottomNavItems = [
-  { href: '/profile', icon: UserCircle, label: 'Profile' },
+  { href: '/profile', icon: User, label: 'Profile' },
   { href: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
 
   const isAuthPage = pathname === '/login' || pathname === '/signup';
   const isLandingPage = pathname === '/';
   const isSeedPage = pathname === '/seed';
+
+  React.useEffect(() => {
+      if (!loading && !user && !isAuthPage && !isLandingPage && !isSeedPage) {
+        router.push('/');
+      }
+      if (!loading && user && (isAuthPage || isLandingPage)) {
+          router.push('/home');
+      }
+  }, [user, loading, pathname, isAuthPage, isLandingPage, isSeedPage, router]);
+
 
   if (loading) {
     return (
@@ -68,16 +79,8 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user && !isAuthPage && !isLandingPage) {
-    if (isSeedPage) {
-        return <LandingTopNavAndMain>{children}</LandingTopNavAndMain>
-    }
-    // Redirect to landing page for any other protected route
-    return <LandingTopNavAndMain><main></main></LandingTopNavAndMain>;
-  }
-
-  if (user && (isAuthPage || isLandingPage)) {
-    return <AuthenticatedLayout>{children}</AuthenticatedLayout>
+  if (!user && (isLandingPage || isSeedPage)) {
+     return <LandingTopNavAndMain>{children}</LandingTopNavAndMain>
   }
   
   if (isAuthPage) {
@@ -88,11 +91,18 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
   
-  if(isLandingPage) {
-      return <LandingTopNavAndMain>{children}</LandingTopNavAndMain>
+  if(user) {
+    return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
   }
 
-  return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
+  // Fallback for non-authed users on non-public pages, should be redirected by useEffect
+  return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <AvidityLogo className="h-12 w-12 animate-pulse text-primary" />
+        </div>
+      </div>
+  );
 }
 
 const LandingTopNavAndMain = ({ children }: { children: React.ReactNode }) => {
@@ -107,15 +117,6 @@ const LandingTopNavAndMain = ({ children }: { children: React.ReactNode }) => {
 
 const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-       <div className="flex h-screen w-full items-center justify-center">
-         <Skeleton className="h-full w-full"/>
-       </div>
-    );
-  }
   
   return (
     <SidebarProvider>
@@ -132,9 +133,7 @@ const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => {
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                   asChild
-                  isActive={
-                    (item.href !== '/' && pathname.startsWith(item.href)) || pathname === item.href
-                  }
+                  isActive={pathname.startsWith(item.href)}
                 >
                   <Link href={item.href}>
                     <item.icon />

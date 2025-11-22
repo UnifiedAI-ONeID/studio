@@ -1,10 +1,11 @@
+
 'use client';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { collection, query, orderBy, where } from 'firebase/firestore';
+import { collection, query, orderBy, where, limit } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase';
 import { useCollection, useAuth, useMemoFirebase } from '@/hooks/use-firebase-hooks';
-import type { Thread } from '@/lib/types';
+import type { CommonsThread } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,7 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { Input } from '@/components/ui/input';
 
-const topics = ["all", "general", "neighborhoods", "buy-sell", "housing", "clubs"];
+const topics = ["all", "general", "neighborhoods", "buy-sell", "housing", "clubs", "events"];
 
 function ThreadCardSkeleton() {
   return (
@@ -42,24 +43,26 @@ export default function CommonsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   
   const threadsQuery = useMemoFirebase(() => {
-    const baseQuery = collection(firestore, 'threads');
-    if (activeTopic === 'all') {
-      return query(baseQuery, orderBy('lastActivityAt', 'desc'));
-    } else {
-      return query(baseQuery, where('topic', '==', activeTopic), orderBy('lastActivityAt', 'desc'));
+    const baseQuery = collection(firestore, 'commonsThreads');
+    let constraints = [orderBy('lastActivityAt', 'desc'), limit(20)];
+    
+    if (activeTopic !== 'all') {
+      // @ts-ignore
+      constraints.unshift(where('topic', '==', activeTopic));
     }
+    // @ts-ignore
+    return query(baseQuery, ...constraints);
   }, [activeTopic]);
 
-  const { data: threads, loading, error } = useCollection<Thread>(threadsQuery);
+  const { data: threads, loading, error } = useCollection<CommonsThread>(threadsQuery);
 
-  const filteredThreads = useMemo(() => {
+  const filteredThreads = useMemoFirebase(() => {
     if (!threads) return [];
-    return threads.filter(thread => {
-        if (searchTerm && !thread.title.toLowerCase().includes(searchTerm.toLowerCase()) && !thread.body.toLowerCase().includes(searchTerm.toLowerCase())) {
-          return false;
-        }
-        return true;
-      });
+    if (!searchTerm) return threads;
+    return threads.filter(thread => 
+        thread.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        thread.body.toLowerCase().includes(searchTerm.toLowerCase())
+      );
   }, [threads, searchTerm]);
 
   return (
@@ -121,8 +124,8 @@ export default function CommonsPage() {
                       <span>{thread.authorInfo?.displayName}</span>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="flex items-center gap-1"><Heart className="h-4 w-4" /> {thread.likeCount || 0}</span>
-                      <span className="flex items-center gap-1"><MessageSquare className="h-4 w-4" /> {thread.replyCount}</span>
+                      <span className="flex items-center gap-1"><Heart className="h-4 w-4" /> {thread.stats.likeCount || 0}</span>
+                      <span className="flex items-center gap-1"><MessageSquare className="h-4 w-4" /> {thread.stats.replyCount}</span>
                       <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {thread.lastActivityAt && formatDistanceToNow(thread.lastActivityAt.toDate(), { addSuffix: true })}</span>
                     </div>
                   </div>

@@ -1,150 +1,182 @@
-import type { User as FirebaseUser } from 'firebase/auth';
 import type { Timestamp } from 'firebase/firestore';
 
-export interface AppUser extends DocumentWithId {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-  photoURL: string | null;
-  role: 'admin' | 'user';
-  interests?: string[];
-  skills?: string[];
-  locationPreferences?: string[];
-}
 export interface DocumentWithId {
   id: string;
 }
 
+export interface AppUser extends DocumentWithId {
+  displayName: string;
+  photoURL?: string;
+  email?: string;
+  bio?: string;
+  homeCity?: string;
+  interests?: string[];
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export type PriceType = 'free' | 'paid' | 'donation';
+export type EventStatus = 'draft' | 'pending_review' | 'published' | 'archived';
+export type EventVisibility = 'public' | 'unlisted';
+
 export interface Event extends DocumentWithId {
   title: string;
+  subtitle?: string;
   description: string;
   category: string;
-  tags: string[];
+  tags?: string[];
   startTime: Timestamp;
   endTime?: Timestamp;
   timezone: string;
-  venueId?: string;
+  city: string;
+  location: {
+    venueId?: string;
+    address?: string;
+    neighborhood?: string;
+    lat?: number;
+    lng?: number;
+  };
+  priceType: PriceType;
+  minPrice?: number;
+  maxPrice?: number;
+  coverImageUrl?: string;
+  ticketUrl?: string;
   hostId: string;
-  coverImageUrl: string;
-  priceType: 'free' | 'paid' | 'donation';
-  priceMin?: number;
-  priceMax?: number;
-  status: 'draft' | 'published' | 'cancelled';
-  visibility: 'public' | 'private';
-  approvalStatus: 'pending' | 'approved' | 'rejected';
-  createdBy: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  hostType?: 'user' | 'organization';
+  status: EventStatus;
+  visibility: EventVisibility;
   isFeaturedOnLanding?: boolean;
+  homepageSection?: 'hero' | 'this_weekend' | 'editors_pick';
   priorityScore?: number;
-  // For UI display
-  neighborhood?: string;
-  hostName?: string;
-  venueName?: string;
   stats: {
     interestedCount: number;
-    goingCount: number;
-    savedCount: number;
+    rsvpCount: number;
+    viewCount?: number;
   };
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 export interface Venue extends DocumentWithId {
   name: string;
-  type: string;
-  description:string;
+  slug?: string;
+  description?: string;
+  categories: string[];
+  homepageTagline?: string;
   address: string;
-  neighborhood: string;
-  location: { latitude: number; longitude: number };
-  openingHours: string;
-  priceLevel: number;
-  tags: string[];
-  coverImageUrl: string;
+  city: string;
+  neighborhood?: string;
+  lat?: number;
+  lng?: number;
+  website?: string;
+  phone?: string;
+  openingHours?: { day: string; open: string; close: string }[];
+  priceLevel?: 1 | 2 | 3 | 4;
+  coverImageUrl?: string;
+  isFeaturedOnLanding?: boolean;
+  stats: {
+    ratingAverage?: number;
+    ratingCount?: number;
+    eventCount?: number;
+  };
   createdBy: string;
+  status?: 'pending_review' | 'approved';
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  verified: boolean;
-  isFeaturedOnLanding?: boolean;
 }
 
-export interface DirectoryPlaceholder {
-  id: string;
+export interface Organization extends DocumentWithId {
   name: string;
-  description: string;
-  category: string;
-  location: string;
-  contact?: string;
-  imageUrl?: string;
-  imageHint?: string;
+  description?: string;
+  city?: string;
+  website?: string;
+  social?: { platform: string; url: string }[];
+  coverImageUrl?: string;
+  ownerUserId: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
-export interface Thread extends DocumentWithId {
-    title: string;
-    body: string;
-    topic: string;
-    tags: string[];
-    relatedEventId?: string;
-    relatedVenueId?: string;
-    createdBy: string;
-    authorInfo: {
-        displayName: string;
-        photoURL: string | null;
-    };
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-    lastActivityAt: Timestamp;
+export interface CommonsThread extends DocumentWithId {
+  title: string;
+  body: string;
+  topic: string;
+  city?: string;
+  tags?: string[];
+  authorId: string;
+  authorInfo?: { // Denormalized author data for performance
+      displayName: string;
+      photoURL?: string;
+  };
+  relatedEventId?: string;
+  relatedVenueId?: string;
+  stats: {
     replyCount: number;
-    likeCount?: number;
+    viewCount: number;
+    likeCount: number;
+  };
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  lastActivityAt: Timestamp;
 }
 
-export interface Comment extends DocumentWithId {
-    threadId: string;
-    parentId: string | null;
-    body: string;
-    createdBy: string;
-    authorInfo: {
-        displayName: string;
-        photoURL: string | null;
-    };
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
-    likeCount?: number;
+export interface CommonsReply extends DocumentWithId {
+  threadId: string;
+  authorId: string;
+  body: string;
+  parentReplyId?: string;
+  authorInfo?: { // Denormalized author data for performance
+      displayName: string;
+      photoURL?: string;
+  };
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
-export interface Report {
-    id: string;
-    type: 'thread' | 'comment';
-    targetId: string;
-    reason: string;
-    createdBy: string;
-    createdAt: Timestamp;
-}
-
-export type FollowTargetType = 'venue' | 'topic' | 'organization' | 'user';
-
-export interface Follow extends DocumentWithId {
-    userId: string;
-    targetId: string;
-    targetType: FollowTargetType;
-    createdAt: Timestamp;
-}
-
-export type ReactionType = 'like';
-
-export interface Reaction extends DocumentWithId {
-    userId: string;
-    targetId: string;
-    targetType: 'thread' | 'comment';
-    type: ReactionType;
-    createdAt: Timestamp;
-}
-
-export type EventInteractionType = 'interested' | 'going' | 'saved';
+export type EventInteractionType = 'saved' | 'interested' | 'going';
 
 export interface EventInteraction extends DocumentWithId {
-    userId: string;
-    eventId: string;
-    type: EventInteractionType;
-    createdAt: Timestamp;
+  eventId: string;
+  userId: string;
+  type: EventInteractionType;
+  createdAt: Timestamp;
 }
 
-    
+export type FollowTargetType = 'user' | 'organization' | 'venue' | 'topic';
+
+export interface Follow extends DocumentWithId {
+  followerUserId: string;
+  targetType: FollowTargetType;
+  targetId: string;
+  createdAt: Timestamp;
+}
+
+export type NotificationType = 'thread_reply' | 'mention' | 'event_update';
+
+export interface Notification extends DocumentWithId {
+  userId: string;
+  type: NotificationType;
+  refId?: string;
+  title: string;
+  body: string;
+  createdAt: Timestamp;
+  read: boolean;
+}
+
+export interface LandingConfig {
+  defaultCity: string;
+  featuredEventIds?: string[];
+  featuredVenueIds?: string[];
+  highlightedTopics?: string[];
+}
+
+export interface NewsletterSubscriber {
+  id: string;
+  email: string;
+  city?: string;
+  createdAt: Timestamp;
+}
+
+export interface AppRoles {
+  admins: string[];
+}

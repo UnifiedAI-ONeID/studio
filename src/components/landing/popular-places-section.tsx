@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -27,7 +28,7 @@ export default function PopularPlacesSection() {
   const venuesQuery = useMemo(() => query(
     collection(firestore, 'venues'),
     where('isFeaturedOnLanding', '==', true),
-    where('verified', '==', true),
+    orderBy('name', 'asc'),
     limit(6)
   ), []);
 

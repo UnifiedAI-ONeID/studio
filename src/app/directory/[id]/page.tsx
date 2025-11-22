@@ -1,10 +1,11 @@
+
 'use client';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { doc, collection, query, where, Timestamp, orderBy, limit } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase';
 import { useAuth, useDoc, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
-import type { Venue, Event } from '@/lib/types';
+import type { Venue, Event, Follow } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,10 +20,9 @@ import { useState, useEffect } from 'react';
 function UpcomingEvents({ venueId }: { venueId: string }) {
     const eventsQuery = useMemoFirebase(() => query(
       collection(firestore, 'events'),
-      where('venueId', '==', venueId),
+      where('location.venueId', '==', venueId),
       where('startTime', '>=', Timestamp.now()),
       where('status', '==', 'published'),
-      where('approvalStatus', '==', 'approved'),
       orderBy('startTime', 'asc'),
       limit(5)
     ), [venueId]);
@@ -78,22 +78,12 @@ export default function VenueDetailPage() {
   const venueRef = useMemoFirebase(() => venueId ? doc(firestore, 'venues', venueId) : null, [venueId]);
   const { data: venue, loading, error } = useDoc<Venue>(venueRef);
 
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followLoading, setFollowLoading] = useState(true);
+  const followId = useMemo(() => user ? `${user.id}_venue_${venueId}` : null, [user, venueId]);
+  const followRef = useMemoFirebase(() => followId ? doc(firestore, 'follows', followId) : null, [followId]);
+  const { data: followDoc, loading: followLoading } = useDoc<Follow>(followRef);
 
-  const userFollowQuery = useMemoFirebase(() => 
-    user ? query(collection(firestore, `users/${user.uid}/follows`), where('targetId', '==', venueId), where('targetType', '==', 'venue')) : null
-  , [user, venueId]);
-  
-  const {data: followDocs, loading: followDocsLoading} = useCollection(userFollowQuery);
-  
-  useEffect(() => {
-    if (!followDocsLoading) {
-      setIsFollowing(!!followDocs && followDocs.length > 0);
-      setFollowLoading(false);
-    }
-  }, [followDocs, followDocsLoading]);
-  
+  const isFollowing = !!followDoc;
+
   const handleFollow = async () => {
     if (!user) {
       setPrompted(true);
@@ -102,19 +92,16 @@ export default function VenueDetailPage() {
       return;
     }
 
-    setFollowLoading(true);
     try {
         if(isFollowing) {
-            await unfollowTarget(user.uid, venueId, 'venue');
-            toast({ title: 'Unfollowed!' });
+            await unfollowTarget(user.id, venueId, 'venue');
+            toast({ title: `Unfollowed ${venue?.name}` });
         } else {
-            await followTarget(user.uid, venueId, 'venue');
-            toast({ title: 'Followed!' });
+            await followTarget(user.id, venueId, 'venue');
+            toast({ title: `Followed ${venue?.name}!` });
         }
     } catch(e) {
         toast({ variant: 'destructive', title: 'Something went wrong.' });
-    } finally {
-       // State will be updated by the useCollection hook, no need to set here
     }
   };
 
@@ -153,7 +140,7 @@ export default function VenueDetailPage() {
     <div className="bg-background">
       <div className="container mx-auto max-w-4xl pb-12">
         <div className="relative h-64 w-full md:h-80 rounded-b-lg overflow-hidden -mt-8 -mx-4">
-          <Image src={venue.coverImageUrl} alt={venue.name} fill className="object-cover" />
+          {venue.coverImageUrl && <Image src={venue.coverImageUrl} alt={venue.name} fill className="object-cover" />}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
         </div>
 
@@ -161,7 +148,9 @@ export default function VenueDetailPage() {
           <Card className="bg-card/90 backdrop-blur-sm">
             <CardHeader>
               <div className="flex justify-between items-start">
-                <Badge className="capitalize">{venue.type}</Badge>
+                <div className="flex gap-2">
+                    {venue.categories.map(c => <Badge key={c} className="capitalize">{c}</Badge>)}
+                </div>
                 {user && (
                     <Button variant={isFollowing ? 'default' : 'outline'} onClick={handleFollow} disabled={followLoading}>
                         <Plus className={`mr-2 h-4 w-4 ${isFollowing ? 'rotate-45' : ''} transition-transform`} />
@@ -183,12 +172,14 @@ export default function VenueDetailPage() {
                           </Button>
                       </div>
                   </div>
-                  <div className="flex items-start gap-4">
-                      <Clock className="h-5 w-5 text-primary mt-1 flex-shrink-0"/>
-                      <div>
-                          <p className="font-semibold text-foreground">{venue.openingHours}</p>
-                      </div>
-                  </div>
+                  {venue.openingHours && (
+                    <div className="flex items-start gap-4">
+                        <Clock className="h-5 w-5 text-primary mt-1 flex-shrink-0"/>
+                        <div>
+                            <p className="font-semibold text-foreground">Hours not specified</p>
+                        </div>
+                    </div>
+                  )}
               </div>
               
               <div className="prose prose-sm dark:prose-invert max-w-none pt-2">

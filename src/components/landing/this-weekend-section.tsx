@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -47,6 +48,7 @@ export default function ThisWeekendSection() {
       collection(firestore, 'events'),
       where('status', '==', 'published'),
       where('visibility', '==', 'public'),
+      where('city', '==', 'San Francisco'),
       where('startTime', '>=', Timestamp.fromDate(friday)),
       where('startTime', '<=', Timestamp.fromDate(sunday)),
       orderBy('startTime', 'asc'),

@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase';
-import type { Thread } from '@/lib/types';
+import type { CommonsThread } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { Button } from '../ui/button';
@@ -11,7 +12,7 @@ import { ArrowRight, MessageSquare, Clock } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 
-function ThreadRow({ thread }: { thread: Thread }) {
+function ThreadRow({ thread }: { thread: CommonsThread }) {
   return (
     <div className="rounded-xl bg-white p-4 ring-1 ring-slate-100 transition hover:bg-slate-50/70 hover:ring-slate-200">
       <Link href={`/commons/${thread.id}`} className="block">
@@ -21,8 +22,8 @@ function ThreadRow({ thread }: { thread: Thread }) {
         </div>
         <p className="mt-1 text-sm text-slate-500 line-clamp-2">{thread.body}</p>
         <div className="mt-2 flex items-center gap-4 text-xs text-slate-500">
-            <span>By {thread.authorInfo?.displayName}</span>
-            <span className="flex items-center gap-1.5"><MessageSquare className="h-3 w-3" /> {thread.replyCount} replies</span>
+            <span>By {thread.authorInfo?.displayName || 'User'}</span>
+            <span className="flex items-center gap-1.5"><MessageSquare className="h-3 w-3" /> {thread.stats.replyCount} replies</span>
             <span className="flex items-center gap-1.5"><Clock className="h-3 w-3" /> {thread.lastActivityAt && formatDistanceToNow(thread.lastActivityAt.toDate(), { addSuffix: true })}</span>
         </div>
       </Link>
@@ -41,19 +42,19 @@ function SectionSkeleton() {
 }
 
 export default function HotThreadsSection() {
-  const [threads, setThreads] = useState<Thread[]>([]);
+  const [threads, setThreads] = useState<CommonsThread[]>([]);
   const [loading, setLoading] = useState(true);
 
   const threadsQuery = useMemo(() => query(
-    collection(firestore, 'threads'),
-    orderBy('replyCount', 'desc'),
+    collection(firestore, 'commonsThreads'),
+    orderBy('stats.replyCount', 'desc'),
     orderBy('createdAt', 'desc'),
-    limit(3)
+    limit(5)
   ), []);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(threadsQuery, (snapshot) => {
-      setThreads(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Thread)));
+      setThreads(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommonsThread)));
       setLoading(false);
     }, (error) => {
         console.error("Error fetching hot threads:", error);

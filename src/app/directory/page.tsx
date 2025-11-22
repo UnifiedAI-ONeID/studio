@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
@@ -13,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Plus } from 'lucide-react';
 import PlaceHolderImages from '@/lib/placeholder-images';
 
-const venueTypes = ['cafe', 'bar', 'gallery', 'venue', 'ngo', 'other'];
+const venueCategories = ["Live music", "Bar", "Restaurant", "Cafe", "Art Gallery", "Theater", "Club", "Park", "Other"];
 
 function VenueCardSkeleton() {
   return (
@@ -42,44 +43,35 @@ function PriceLevel({ level }: { level: number }) {
 
 export default function DirectoryPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTypes, setActiveTypes] = useState<string[]>([]);
-  
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const placeholder = PlaceHolderImages.find(p => p.id.includes('directory')) || PlaceHolderImages[0];
 
 
-  const venuesQuery = useMemoFirebase(() => query(
-    collection(firestore, 'venues'),
-    where('verified', '==', true),
-    orderBy('name', 'asc')
-  ), []);
+  const venuesQuery = useMemoFirebase(() => {
+    let constraints = [
+        where('status', '==', 'approved'),
+        orderBy('name', 'asc')
+    ];
+    if (activeCategory) {
+        // @ts-ignore
+        constraints.unshift(where('categories', 'array-contains', activeCategory));
+    }
+    // @ts-ignore
+    return query(collection(firestore, 'venues'), ...constraints);
+  }, [activeCategory]);
 
   const { data: venues, loading, error } = useCollection<Venue>(venuesQuery);
 
 
-  const toggleType = (type: string) => {
-    setActiveTypes((prev) =>
-      prev.includes(type)
-        ? prev.filter((t) => t !== type)
-        : [...prev, type]
-    );
-  };
-  
   const filteredVenues = useMemo(() => {
     if (!venues) return [];
+    if (!searchTerm) return venues;
+
     return venues.filter((venue) => {
-        // Type filtering
-        if (activeTypes.length > 0 && !activeTypes.includes(venue.type)) {
-          return false;
-        }
-        
-        // Search term filtering
-        if (searchTerm && !venue.name.toLowerCase().includes(searchTerm.toLowerCase()) && !venue.description.toLowerCase().includes(searchTerm.toLowerCase())) {
-          return false;
-        }
-        
-        return true;
+        return venue.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+               (venue.description && venue.description.toLowerCase().includes(searchTerm.toLowerCase()));
       });
-  }, [venues, activeTypes, searchTerm]);
+  }, [venues, searchTerm]);
 
   return (
     <div className="container mx-auto">
@@ -98,12 +90,20 @@ export default function DirectoryPage() {
           <Input placeholder="Search venues, cafes, NGOs..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
          <div className="flex flex-wrap gap-2">
-            {venueTypes.map((type) => (
+            <Button
+                variant={!activeCategory ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveCategory(null)}
+                className="border"
+            >
+                All
+            </Button>
+            {venueCategories.map((type) => (
                 <Button
                 key={type}
-                variant={activeTypes.includes(type) ? 'secondary' : 'ghost'}
+                variant={activeCategory === type ? 'secondary' : 'ghost'}
                 size="sm"
-                onClick={() => toggleType(type)}
+                onClick={() => setActiveCategory(type)}
                 className="border capitalize"
                 >
                 {type}
@@ -126,23 +126,27 @@ export default function DirectoryPage() {
             <Link href={`/directory/${venue.id}`} key={venue.id}>
               <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-lg hover:-translate-y-1">
                 <div className="relative h-32 w-full">
-                  <Image
-                    src={venue.coverImageUrl || placeholder.imageUrl}
-                    alt={venue.name}
-                    fill
-                    className="object-cover"
-                    data-ai-hint={placeholder.imageHint}
-                  />
+                  {venue.coverImageUrl && (
+                    <Image
+                        src={venue.coverImageUrl}
+                        alt={venue.name}
+                        fill
+                        className="object-cover"
+                        data-ai-hint={placeholder.imageHint}
+                    />
+                  )}
                 </div>
                 <CardHeader>
-                  <p className="text-sm font-medium text-primary capitalize">{venue.type}</p>
+                  <p className="text-sm font-medium text-primary capitalize">{venue.categories.join(', ')}</p>
                   <CardTitle className="font-headline text-lg line-clamp-2">{venue.name}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex-grow flex flex-col justify-between">
                   <p className="text-sm text-muted-foreground">{venue.neighborhood}</p>
-                  <div className="mt-2">
-                    <PriceLevel level={venue.priceLevel} />
-                  </div>
+                  {venue.priceLevel && (
+                    <div className="mt-2">
+                        <PriceLevel level={venue.priceLevel} />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </Link>

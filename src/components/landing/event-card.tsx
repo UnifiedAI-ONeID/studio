@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -8,13 +9,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Bookmark } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { setEventInteraction } from '@/lib/firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 function getPriceDisplay(event: Event) {
   if (event.priceType === 'free') return 'Free';
   if (event.priceType === 'donation') return 'Donation';
-  if (event.priceMin) {
-    return `$${event.priceMin}${event.priceMax && event.priceMax > event.priceMin ? ` - $${event.priceMax}` : ''}`;
+  if (event.minPrice) {
+    return `$${event.minPrice}${event.maxPrice && event.maxPrice > event.minPrice ? ` - $${event.maxPrice}` : ''}`;
   }
   return 'Paid';
 }
@@ -22,30 +25,39 @@ function getPriceDisplay(event: Event) {
 export default function EventCard({ event }: { event: Event }) {
   const { user, setPrompted } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
+  const { toast } = useToast();
 
-  const handleSave = () => {
+  const handleSave = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent navigating to event page
     if (!user) {
       setPrompted(true);
       const continueUrl = `/events/${event.id}`;
       router.push(`/login?continueUrl=${encodeURIComponent(continueUrl)}`);
     } else {
-      // Logic to save the event for the logged-in user
-      console.log('Saving event', event.id);
+      try {
+        await setEventInteraction(user.id, event.id, 'saved');
+        toast({ title: "Event saved!" });
+      } catch (error) {
+        toast({ variant: 'destructive', title: "Could not save event." });
+      }
     }
   };
   
+  if (!event.startTime) return null;
+
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:shadow-md">
       <div className="relative">
         <Link href={`/events/${event.id}`}>
           <div className="aspect-[16/9] w-full">
-            <Image
-              src={event.coverImageUrl}
-              alt={event.title}
-              fill
-              className="object-cover"
-            />
+            {event.coverImageUrl && (
+              <Image
+                src={event.coverImageUrl}
+                alt={event.title}
+                fill
+                className="object-cover"
+              />
+            )}
           </div>
         </Link>
         <Badge variant="secondary" className="absolute top-3 left-3">
@@ -60,7 +72,7 @@ export default function EventCard({ event }: { event: Event }) {
               {event.title}
             </h3>
           </Link>
-          <p className="mt-1 text-sm text-slate-500">{event.neighborhood}</p>
+          <p className="mt-1 text-sm text-slate-500">{event.location?.neighborhood || event.city}</p>
         </div>
         <div className="mt-4 flex items-end justify-between">
           <div>
