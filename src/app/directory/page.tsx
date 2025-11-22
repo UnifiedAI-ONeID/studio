@@ -1,9 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/index';
 import type { Venue } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -43,17 +42,34 @@ function PriceLevel({ level }: { level: number }) {
 export default function DirectoryPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTypes, setActiveTypes] = useState<string[]>([]);
+  const [venues, setVenues] = useState<Venue[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   
   const placeholder = PlaceHolderImages.find(p => p.id.includes('directory')) || PlaceHolderImages[0];
 
 
-  const venuesQuery = query(
+  const venuesQuery = useMemo(() => query(
     collection(firestore, 'venues'),
     where('verified', '==', true),
     orderBy('name', 'asc')
-  );
+  ), []);
 
-  const [venuesSnapshot, loading, error] = useCollection(venuesQuery);
+  useEffect(() => {
+    setLoading(true);
+    const unsubscribe = onSnapshot(venuesQuery, 
+      (snapshot) => {
+        setVenues(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Venue)));
+        setLoading(false);
+      },
+      (err) => {
+        setError(err);
+        setLoading(false);
+      }
+    );
+    return () => unsubscribe();
+  }, [venuesQuery]);
+
 
   const toggleType = (type: string) => {
     setActiveTypes((prev) =>
@@ -63,9 +79,7 @@ export default function DirectoryPage() {
     );
   };
   
-  const filteredVenues = venuesSnapshot?.docs
-    .map((doc) => ({ id: doc.id, ...doc.data() } as Venue))
-    .filter((venue) => {
+  const filteredVenues = venues.filter((venue) => {
       // Type filtering
       if (activeTypes.length > 0 && !activeTypes.includes(venue.type)) {
         return false;

@@ -1,8 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, orderBy, where } from 'firebase/firestore';
+import { collection, query, orderBy, where, onSnapshot } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/index';
 import type { Thread } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -42,17 +41,34 @@ export default function CommonsPage() {
   const { user } = useAuth();
   const [activeTopic, setActiveTopic] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [threads, setThreads] = useState<Thread[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  const threadsQuery = activeTopic === 'all' 
-    ? query(collection(firestore, 'threads'), orderBy('lastActivityAt', 'desc'))
-    : query(collection(firestore, 'threads'), where('topic', '==', activeTopic), orderBy('lastActivityAt', 'desc'));
+  const threadsQuery = useMemo(() => {
+    if (activeTopic === 'all') {
+      return query(collection(firestore, 'threads'), orderBy('lastActivityAt', 'desc'));
+    } else {
+      return query(collection(firestore, 'threads'), where('topic', '==', activeTopic), orderBy('lastActivityAt', 'desc'));
+    }
+  }, [activeTopic]);
 
-  const [threadsSnapshot, loading, error] = useCollection(threadsQuery);
+  useEffect(() => {
+    setLoading(true);
+    const unsubscribe = onSnapshot(threadsQuery, 
+      (snapshot) => {
+        setThreads(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Thread)));
+        setLoading(false);
+      },
+      (err) => {
+        setError(err);
+        setLoading(false);
+      }
+    );
+    return () => unsubscribe();
+  }, [threadsQuery]);
 
-  const filteredThreads = threadsSnapshot?.docs
-    .map(doc => ({ id: doc.id, ...doc.data() } as Thread))
-    .filter(thread => {
-      // Search term filtering
+  const filteredThreads = threads.filter(thread => {
       if (searchTerm && !thread.title.toLowerCase().includes(searchTerm.toLowerCase()) && !thread.body.toLowerCase().includes(searchTerm.toLowerCase())) {
         return false;
       }
@@ -139,5 +155,3 @@ export default function CommonsPage() {
     </div>
   );
 }
-
-    

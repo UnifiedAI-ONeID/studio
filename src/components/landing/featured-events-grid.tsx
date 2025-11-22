@@ -1,7 +1,7 @@
 'use client';
 
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { useState, useEffect, useMemo } from 'react';
+import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/index';
 import type { Event } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -41,7 +41,10 @@ function GridSkeleton() {
 }
 
 export default function FeaturedEventsGrid() {
-  const eventsQuery = query(
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const eventsQuery = useMemo(() => query(
     collection(firestore, 'events'),
     where('isFeaturedOnLanding', '==', true),
     where('status', '==', 'published'),
@@ -49,10 +52,16 @@ export default function FeaturedEventsGrid() {
     orderBy('priorityScore', 'desc'),
     orderBy('startTime', 'asc'),
     limit(3)
-  );
+  ), []);
 
-  const [eventsSnapshot, loading] = useCollection(eventsQuery);
-  const events = eventsSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
+  useEffect(() => {
+    const unsubscribe = onSnapshot(eventsQuery, (snapshot) => {
+      setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event)));
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [eventsQuery]);
+
 
   if (loading) return <GridSkeleton />;
   if (!events || events.length < 3) return null;
@@ -65,5 +74,3 @@ export default function FeaturedEventsGrid() {
     </div>
   );
 }
-
-    

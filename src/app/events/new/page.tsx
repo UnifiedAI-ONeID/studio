@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Upload } from 'lucide-react';
-import { Timestamp, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { Timestamp, collection, query, where, getDocs, orderBy, onSnapshot } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -41,7 +41,6 @@ import { createEvent, uploadImage } from '@/lib/firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Venue } from '@/lib/types';
-import { useCollection } from 'react-firebase-hooks/firestore';
 
 const categories = ['Music', 'Food & Drink', 'Talks', 'Sports', 'Arts', 'Networking', 'Other'];
 
@@ -62,10 +61,17 @@ export default function NewEventPage() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+  
+  const [venues, setVenues] = useState<Venue[]>([]);
+  const venuesQuery = useMemo(() => query(collection(firestore, 'venues'), where('verified', '==', true), orderBy('name')), []);
 
-  const venuesQuery = query(collection(firestore, 'venues'), where('verified', '==', true), orderBy('name'));
-  const [venuesSnapshot] = useCollection(venuesQuery);
-  const venues = venuesSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as Venue));
+  useEffect(() => {
+    const unsubscribe = onSnapshot(venuesQuery, (snapshot) => {
+      setVenues(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Venue)));
+    });
+    return () => unsubscribe();
+  }, [venuesQuery]);
+
 
   const form = useForm<z.infer<typeof eventFormSchema>>({
     resolver: zodResolver(eventFormSchema),
@@ -364,5 +370,3 @@ export default function NewEventPage() {
     </div>
   );
 }
-
-    

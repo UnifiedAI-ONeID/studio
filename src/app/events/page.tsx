@@ -1,9 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, query, where, orderBy, Timestamp, onSnapshot } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/index';
 import type { Event } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -47,18 +46,35 @@ export default function EventsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   const [activeDateFilter, setActiveDateFilter] = useState('All');
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   
   const placeholder = PlaceHolderImages.find(p => p.id.includes('event')) || PlaceHolderImages[0];
 
-
-  const eventsQuery = query(
+  const eventsQuery = useMemo(() => query(
     collection(firestore, 'events'),
     where('status', '==', 'published'),
     where('approvalStatus', '==', 'approved'),
     orderBy('startTime', 'asc')
-  );
+  ), []);
 
-  const [eventsSnapshot, loading, error] = useCollection(eventsQuery);
+  useEffect(() => {
+    setLoading(true);
+    const unsubscribe = onSnapshot(eventsQuery, 
+      (snapshot) => {
+        setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event)));
+        setLoading(false);
+      },
+      (err) => {
+        setError(err);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [eventsQuery]);
+
 
   const toggleCategory = (category: string) => {
     setActiveCategories((prev) =>
@@ -68,9 +84,7 @@ export default function EventsPage() {
     );
   };
   
-  const filteredEvents = eventsSnapshot?.docs
-    .map((doc) => ({ id: doc.id, ...doc.data() } as Event))
-    .filter((event) => {
+  const filteredEvents = events.filter((event) => {
       if (!event.startTime) return false;
       const eventDate = (event.startTime as Timestamp).toDate();
       const now = new Date();

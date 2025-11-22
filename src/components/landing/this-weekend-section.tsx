@@ -1,7 +1,7 @@
 'use client';
 
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { useState, useEffect, useMemo } from 'react';
+import { collection, query, where, orderBy, limit, Timestamp, onSnapshot } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/index';
 import type { Event } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { Button } from '../ui/button';
 import { ArrowRight } from 'lucide-react';
 import EventCard from './event-card';
-import { startOfWeek, endOfWeek } from 'date-fns';
+import { startOfWeek } from 'date-fns';
 
 function SectionSkeleton() {
   return (
@@ -29,28 +29,39 @@ function SectionSkeleton() {
 }
 
 export default function ThisWeekendSection() {
-  const now = new Date();
-  const startOfThisWeek = startOfWeek(now, { weekStartsOn: 1 }); // Monday
-  const friday = new Date(startOfThisWeek);
-  friday.setDate(startOfThisWeek.getDate() + 4);
-  friday.setHours(0, 0, 0, 0);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const sunday = new Date(startOfThisWeek);
-  sunday.setDate(startOfThisWeek.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
-  
-  const eventsQuery = query(
-    collection(firestore, 'events'),
-    where('status', '==', 'published'),
-    where('visibility', '==', 'public'),
-    where('startTime', '>=', Timestamp.fromDate(friday)),
-    where('startTime', '<=', Timestamp.fromDate(sunday)),
-    orderBy('startTime', 'asc'),
-    limit(3)
-  );
+  const eventsQuery = useMemo(() => {
+    const now = new Date();
+    const startOfThisWeek = startOfWeek(now, { weekStartsOn: 1 }); // Monday
+    const friday = new Date(startOfThisWeek);
+    friday.setDate(startOfThisWeek.getDate() + 4);
+    friday.setHours(0, 0, 0, 0);
 
-  const [eventsSnapshot, loading] = useCollection(eventsQuery);
-  const events = eventsSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
+    const sunday = new Date(startOfThisWeek);
+    sunday.setDate(startOfThisWeek.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+    
+    return query(
+      collection(firestore, 'events'),
+      where('status', '==', 'published'),
+      where('visibility', '==', 'public'),
+      where('startTime', '>=', Timestamp.fromDate(friday)),
+      where('startTime', '<=', Timestamp.fromDate(sunday)),
+      orderBy('startTime', 'asc'),
+      limit(3)
+    );
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(eventsQuery, (snapshot) => {
+      setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event)));
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [eventsQuery]);
+
 
   return (
     <section id="events" className="bg-white">
@@ -78,5 +89,3 @@ export default function ThisWeekendSection() {
     </section>
   );
 }
-
-    

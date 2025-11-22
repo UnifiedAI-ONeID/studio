@@ -1,7 +1,7 @@
 'use client';
 
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { useState, useEffect, useMemo } from 'react';
+import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/index';
 import type { Venue } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,15 +21,24 @@ function SectionSkeleton() {
 }
 
 export default function PopularPlacesSection() {
-  const venuesQuery = query(
+  const [venues, setVenues] = useState<Venue[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const venuesQuery = useMemo(() => query(
     collection(firestore, 'venues'),
     where('isFeaturedOnLanding', '==', true),
     where('verified', '==', true),
     limit(6)
-  );
+  ), []);
 
-  const [venuesSnapshot, loading] = useCollection(venuesQuery);
-  const venues = venuesSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as Venue));
+  useEffect(() => {
+    const unsubscribe = onSnapshot(venuesQuery, (snapshot) => {
+      setVenues(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Venue)));
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [venuesQuery]);
+
 
   return (
     <section id="places" className="bg-slate-50/60">
@@ -57,5 +66,3 @@ export default function PopularPlacesSection() {
     </section>
   );
 }
-
-    

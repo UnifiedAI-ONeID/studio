@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo } from 'react';
+import { useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { useDocument, useCollection } from 'react-firebase-hooks/firestore';
-import { doc, collection, query, orderBy, Timestamp } from 'firebase/firestore';
+import { doc, collection, query, orderBy, Timestamp, onSnapshot } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/index';
 import { createComment, reportContent, addReaction, removeReaction, addCommentReaction, removeCommentReaction, getUserReactionsForThread } from '@/lib/firebase/firestore';
 import type { Thread, Comment, Event, Venue } from '@/lib/types';
@@ -23,13 +22,24 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 function RelatedItem({ type, id }: { type: 'event' | 'venue', id: string }) {
-    const itemRef = doc(firestore, `${type}s`, id);
-    const [itemSnapshot, loading] = useDocument(itemRef);
+    const [item, setItem] = useState<Event | Venue | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    if (loading || !itemSnapshot?.exists()) return null;
+    useEffect(() => {
+        const itemRef = doc(firestore, `${type}s`, id);
+        const unsubscribe = onSnapshot(itemRef, (doc) => {
+            if (doc.exists()) {
+                setItem({ id: doc.id, ...doc.data() } as Event | Venue);
+            }
+            setLoading(false);
+        });
+        return () => unsubscribe();
+    }, [id, type]);
+
+    if (loading || !item) return null;
 
     if (type === 'event') {
-        const event = { id: itemSnapshot.id, ...itemSnapshot.data() } as Event;
+        const event = item as Event;
         return (
             <Card className="mb-6">
                 <CardHeader>
@@ -49,7 +59,7 @@ function RelatedItem({ type, id }: { type: 'event' | 'venue', id: string }) {
     }
     
     if (type === 'venue') {
-        const venue = { id: itemSnapshot.id, ...itemSnapshot.data() } as Venue;
+        const venue = item as Venue;
         return (
             <Card className="mb-6">
                 <CardHeader>
@@ -133,23 +143,44 @@ export default function ThreadDetailPage() {
     const [commentText, setCommentText] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     
-    // State to track user's reactions
     const [userReactions, setUserReactions] = useState<Set<string>>(new Set());
+    const [thread, setThread] = useState<Thread | null>(null);
+    const [threadLoading, setThreadLoading] = useState(true);
+    const [comments, setComments] = useState<Comment[]>([]);
+    const [commentsLoading, setCommentsLoading] = useState(true);
 
-    const threadRef = doc(firestore, 'threads', threadId);
-    const [threadSnapshot, threadLoading] = useDocument(threadRef);
-    const thread = threadSnapshot?.data() as Thread;
+    const commentsQuery = useMemo(() => 
+        threadId ? query(collection(firestore, 'threads', threadId, 'comments'), orderBy('createdAt', 'asc')) : null
+    , [threadId]);
 
-    const commentsQuery = query(collection(firestore, 'threads', threadId, 'comments'), orderBy('createdAt', 'asc'));
-    const [commentsSnapshot, commentsLoading] = useCollection(commentsQuery);
-    const comments = commentsSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment));
+    useEffect(() => {
+        if (threadId) {
+            const threadRef = doc(firestore, 'threads', threadId);
+            const unsubscribe = onSnapshot(threadRef, (doc) => {
+                if (doc.exists()) {
+                    setThread({ id: doc.id, ...doc.data() } as Thread);
+                }
+                setThreadLoading(false);
+            });
+            return () => unsubscribe();
+        }
+    }, [threadId]);
+
+    useEffect(() => {
+        if (commentsQuery) {
+            const unsubscribe = onSnapshot(commentsQuery, (snapshot) => {
+                setComments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment)));
+                setCommentsLoading(false);
+            });
+            return () => unsubscribe();
+        }
+    }, [commentsQuery]);
     
     useEffect(() => {
-        if(user) {
+        if(user && threadId) {
             getUserReactionsForThread(user.uid, threadId).then(setUserReactions);
         }
     }, [user, threadId]);
-
 
     const handlePostComment = async () => {
         if (!user || !commentText.trim()) return;
@@ -326,5 +357,3 @@ export default function ThreadDetailPage() {
         </div>
     );
 }
-
-    

@@ -1,7 +1,7 @@
 'use client';
 
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { useState, useEffect, useMemo } from 'react';
+import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/index';
 import type { Thread } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -41,15 +41,23 @@ function SectionSkeleton() {
 }
 
 export default function HotThreadsSection() {
-  const threadsQuery = query(
+  const [threads, setThreads] = useState<Thread[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const threadsQuery = useMemo(() => query(
     collection(firestore, 'threads'),
     orderBy('replyCount', 'desc'),
     orderBy('createdAt', 'desc'),
     limit(3)
-  );
+  ), []);
 
-  const [threadsSnapshot, loading] = useCollection(threadsQuery);
-  const threads = threadsSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as Thread));
+  useEffect(() => {
+    const unsubscribe = onSnapshot(threadsQuery, (snapshot) => {
+      setThreads(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Thread)));
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [threadsQuery]);
 
   return (
     <section id="community" className="bg-white">
@@ -77,5 +85,3 @@ export default function HotThreadsSection() {
     </section>
   );
 }
-
-    

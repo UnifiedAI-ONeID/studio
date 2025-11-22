@@ -1,8 +1,7 @@
 'use client';
 
 import { useAuth } from '@/hooks/use-auth';
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, where, orderBy, Timestamp, limit } from 'firebase/firestore';
+import { collection, query, where, orderBy, Timestamp, limit, onSnapshot } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/index';
 import type { Event } from '@/lib/types';
 import Link from 'next/link';
@@ -13,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getFollowedVenueIds } from '@/lib/firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import RecommendedEvents from '@/components/ai/recommended-events';
 import RecommendedDirectory from '@/components/ai/recommended-directory';
 import PlaceHolderImages from '@/lib/placeholder-images';
@@ -91,6 +90,8 @@ function FollowedVenuesEvents() {
     const { user } = useAuth();
     const [followedVenueIds, setFollowedVenueIds] = useState<string[]>([]);
     const [loadingIds, setLoadingIds] = useState(true);
+    const [events, setEvents] = useState<Event[]>([]);
+    const [eventsLoading, setEventsLoading] = useState(true);
 
     useEffect(() => {
         if (user) {
@@ -103,7 +104,8 @@ function FollowedVenuesEvents() {
         }
     }, [user]);
 
-    const eventsQuery = (user && followedVenueIds.length > 0)
+    const eventsQuery = useMemo(() => 
+        (user && followedVenueIds.length > 0)
         ? query(
             collection(firestore, 'events'),
             where('status', '==', 'published'),
@@ -113,12 +115,24 @@ function FollowedVenuesEvents() {
             orderBy('startTime', 'asc'),
             limit(4)
           )
-        : null;
+        : null
+    , [user, followedVenueIds]);
 
-    const [eventsSnapshot, eventsLoading] = useCollection(eventsQuery);
-    const events = eventsSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
+    useEffect(() => {
+        if (eventsQuery) {
+            setEventsLoading(true);
+            const unsubscribe = onSnapshot(eventsQuery, (snapshot) => {
+                setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event)));
+                setEventsLoading(false);
+            });
+            return () => unsubscribe();
+        } else {
+            setEvents([]);
+            setEventsLoading(false);
+        }
+    }, [eventsQuery]);
     
-    if (!user || followedVenueIds.length === 0) {
+    if (!user || (!loadingIds && followedVenueIds.length === 0)) {
         return null;
     }
 
@@ -132,41 +146,64 @@ export default function HomePage() {
   const { user } = useAuth();
   const city = 'San Francisco'; // Hardcoded for now
 
+  const [todayEvents, setTodayEvents] = useState<Event[]>();
+  const [todayLoading, setTodayLoading] = useState(true);
+  const [weekendEvents, setWeekendEvents] = useState<Event[]>();
+  const [weekendLoading, setWeekendLoading] = useState(true);
+
+
   // Query for Today's Events
-  const todayStart = Timestamp.fromDate(startOfToday());
-  const todayEnd = Timestamp.fromDate(endOfToday());
-  const todayQuery = query(
-    collection(firestore, 'events'),
-    where('status', '==', 'published'),
-    where('visibility', '==', 'public'),
-    where('startTime', '>=', todayStart),
-    where('startTime', '<=', todayEnd),
-    orderBy('startTime', 'asc')
-  );
-  const [todaySnapshot, todayLoading] = useCollection(todayQuery);
-  const todayEvents = todaySnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
+  const todayQuery = useMemo(() => {
+      const todayStart = Timestamp.fromDate(startOfToday());
+      const todayEnd = Timestamp.fromDate(endOfToday());
+      return query(
+        collection(firestore, 'events'),
+        where('status', '==', 'published'),
+        where('visibility', '==', 'public'),
+        where('startTime', '>=', todayStart),
+        where('startTime', '<=', todayEnd),
+        orderBy('startTime', 'asc')
+      );
+  }, []);
+
+  useEffect(() => {
+      const unsubscribe = onSnapshot(todayQuery, (snapshot) => {
+          setTodayEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event)));
+          setTodayLoading(false);
+      });
+      return () => unsubscribe();
+  }, [todayQuery]);
+
 
   // Query for This Weekend's Events
-  const now = new Date();
-  const startOfThisWeek = startOfWeek(now, { weekStartsOn: 1 }); // Monday
-  const friday = new Date(startOfThisWeek);
-  friday.setDate(startOfThisWeek.getDate() + 4);
-  friday.setHours(0, 0, 0, 0);
+  const weekendQuery = useMemo(() => {
+      const now = new Date();
+      const startOfThisWeek = startOfWeek(now, { weekStartsOn: 1 }); // Monday
+      const friday = new Date(startOfThisWeek);
+      friday.setDate(startOfThisWeek.getDate() + 4);
+      friday.setHours(0, 0, 0, 0);
 
-  const sunday = new Date(startOfThisWeek);
-  sunday.setDate(startOfThisWeek.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
-  
-  const weekendQuery = query(
-    collection(firestore, 'events'),
-    where('status', '==', 'published'),
-    where('visibility', '==', 'public'),
-    where('startTime', '>=', Timestamp.fromDate(friday)),
-    where('startTime', '<=', Timestamp.fromDate(sunday)),
-    orderBy('startTime', 'asc')
-  );
-  const [weekendSnapshot, weekendLoading] = useCollection(weekendQuery);
-  const weekendEvents = weekendSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
+      const sunday = new Date(startOfThisWeek);
+      sunday.setDate(startOfThisWeek.getDate() + 6);
+      sunday.setHours(23, 59, 59, 999);
+      
+      return query(
+        collection(firestore, 'events'),
+        where('status', '==', 'published'),
+        where('visibility', '==', 'public'),
+        where('startTime', '>=', Timestamp.fromDate(friday)),
+        where('startTime', '<=', Timestamp.fromDate(sunday)),
+        orderBy('startTime', 'asc')
+      );
+  }, []);
+
+    useEffect(() => {
+      const unsubscribe = onSnapshot(weekendQuery, (snapshot) => {
+          setWeekendEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event)));
+          setWeekendLoading(false);
+      });
+      return () => unsubscribe();
+  }, [weekendQuery]);
 
   return (
     <div className="space-y-12">

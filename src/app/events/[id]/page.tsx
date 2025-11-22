@@ -1,9 +1,8 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useDocument, useCollection } from 'react-firebase-hooks/firestore';
-import { doc, collection, query, where, limit, Timestamp, orderBy } from 'firebase/firestore';
+import { doc, collection, query, where, limit, Timestamp, orderBy, onSnapshot } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/index';
 import type { Event, EventInteractionType } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,21 +19,29 @@ import { useToast } from '@/hooks/use-toast';
 import { addEventInteraction, removeEventInteraction, getUserEventInteraction } from '@/lib/firebase/firestore';
 
 function RelatedEvents({ category, currentEventId }: { category: string; currentEventId: string }) {
-    const eventsQuery = query(
+    const [events, setEvents] = useState<Event[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const eventsQuery = useMemo(() => query(
       collection(firestore, 'events'),
       where('status', '==', 'published'),
       where('approvalStatus', '==', 'approved'),
       where('category', '==', category),
       limit(4)
-    );
+    ), [category]);
     
-    const [eventsSnapshot, loading] = useCollection(eventsQuery);
+    useEffect(() => {
+        const unsubscribe = onSnapshot(eventsQuery, (snapshot) => {
+            const relatedEvents = snapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() } as Event))
+                .filter(event => event.id !== currentEventId)
+                .slice(0, 3);
+            setEvents(relatedEvents);
+            setLoading(false);
+        });
+        return () => unsubscribe();
+    }, [eventsQuery, currentEventId]);
 
-    const relatedEvents = eventsSnapshot?.docs
-        .map(doc => ({ id: doc.id, ...doc.data() } as Event))
-        .filter(event => event.id !== currentEventId)
-        .slice(0, 3);
-        
     if (loading) {
         return (
             <div className="mt-12">
@@ -48,13 +55,13 @@ function RelatedEvents({ category, currentEventId }: { category: string; current
         )
     }
         
-    if (!relatedEvents || relatedEvents.length === 0) return null;
+    if (!events || events.length === 0) return null;
 
     return (
         <div className="mt-12">
             <h2 className="text-2xl font-bold font-headline mb-4">More events you might like</h2>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {relatedEvents.map(event => (
+                {events.map(event => (
                     <Link href={`/events/${event.id}`} key={event.id}>
                         <Card className="overflow-hidden h-full flex flex-col transition-shadow hover:shadow-lg">
                              <div className="relative h-32 w-full">
@@ -82,11 +89,31 @@ export default function EventDetailPage() {
   const { user, setPrompted } = useAuth();
   const { toast } = useToast();
 
+  const [event, setEvent] = useState<Event | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
   const [interaction, setInteraction] = useState<EventInteractionType | null>(null);
   const [interactionLoading, setInteractionLoading] = useState(true);
 
-  const eventRef = doc(firestore, 'events', eventId);
-  const [eventSnapshot, loading, error] = useDocument(eventRef);
+  useEffect(() => {
+    if (eventId) {
+      const eventRef = doc(firestore, 'events', eventId);
+      const unsubscribe = onSnapshot(eventRef, 
+        (doc) => {
+          if (doc.exists()) {
+            setEvent({ id: doc.id, ...doc.data() } as Event);
+          }
+          setLoading(false);
+        },
+        (err) => {
+          setError(err);
+          setLoading(false);
+        }
+      );
+      return () => unsubscribe();
+    }
+  }, [eventId]);
 
   useEffect(() => {
     if (user && eventId) {
@@ -117,8 +144,6 @@ export default function EventDetailPage() {
       } else {
         // Switching interaction or setting a new one
         if (interaction) {
-          // In a real app, you might want to confirm if they want to switch (e.g. from 'going' to 'interested')
-          // For now, we just remove the old one and add the new one.
           await removeEventInteraction(user.uid, eventId, interaction);
         }
         await addEventInteraction(user.uid, eventId, type);
@@ -129,7 +154,6 @@ export default function EventDetailPage() {
       console.error(e);
       toast({ variant: 'destructive', title: 'Something went wrong' });
     } finally {
-        // The useDocument hook will update the UI with new stats, so we can just set loading to false.
         setInteractionLoading(false);
     }
   };
@@ -161,11 +185,9 @@ export default function EventDetailPage() {
     );
   }
 
-  if (error || !eventSnapshot?.exists()) {
+  if (error || !event) {
     return <div className="text-center py-10">Error loading event or event not found.</div>;
   }
-
-  const event = { id: eventSnapshot.id, ...eventSnapshot.data() } as Event;
 
   const handleShare = () => {
     if (navigator.share) {
@@ -292,5 +314,3 @@ export default function EventDetailPage() {
     </div>
   );
 }
-
-    

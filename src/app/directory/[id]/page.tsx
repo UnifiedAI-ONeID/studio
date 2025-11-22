@@ -1,8 +1,7 @@
 'use client';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
-import { useDocument, useCollection } from 'react-firebase-hooks/firestore';
-import { doc, collection, query, where, Timestamp, orderBy, limit } from 'firebase/firestore';
+import { doc, collection, query, where, Timestamp, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/index';
 import type { Venue, Event } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,10 +14,14 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { followTarget, unfollowTarget } from '@/lib/firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
 function UpcomingEvents({ venueId }: { venueId: string }) {
-    const eventsQuery = query(
+    const [events, setEvents] = useState<Event[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+
+    const eventsQuery = useMemo(() => query(
       collection(firestore, 'events'),
       where('venueId', '==', venueId),
       where('startTime', '>=', Timestamp.now()),
@@ -26,9 +29,21 @@ function UpcomingEvents({ venueId }: { venueId: string }) {
       where('approvalStatus', '==', 'approved'),
       orderBy('startTime', 'asc'),
       limit(5)
-    );
+    ), [venueId]);
     
-    const [eventsSnapshot, loading, error] = useCollection(eventsQuery);
+    useEffect(() => {
+      const unsubscribe = onSnapshot(eventsQuery, 
+        (snapshot) => {
+          setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event)));
+          setLoading(false);
+        },
+        (err) => {
+          setError(err);
+          setLoading(false);
+        }
+      );
+      return () => unsubscribe();
+    }, [eventsQuery]);
 
     if (loading) {
         return (
@@ -42,14 +57,13 @@ function UpcomingEvents({ venueId }: { venueId: string }) {
         )
     }
         
-    if (error || !eventsSnapshot || eventsSnapshot.empty) return null;
+    if (error || !events || events.length === 0) return null;
 
     return (
         <div className="mt-8">
             <h2 className="text-2xl font-bold font-headline mb-4">Upcoming Events Here</h2>
             <div className="space-y-4">
-                {eventsSnapshot.docs.map(doc => {
-                    const event = { id: doc.id, ...doc.data() } as Event;
+                {events.map(event => {
                     return (
                         <Link href={`/events/${event.id}`} key={event.id}>
                              <Card className="flex items-center gap-4 p-4 transition-shadow hover:shadow-md">
@@ -77,23 +91,49 @@ export default function VenueDetailPage() {
   const { user, setPrompted } = useAuth();
   const router = useRouter();
 
+  const [venue, setVenue] = useState<Venue | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(true);
 
-  const venueRef = doc(firestore, 'venues', venueId);
-  const [venueSnapshot, loading, error] = useDocument(venueRef);
+  useEffect(() => {
+    if (venueId) {
+      const venueRef = doc(firestore, 'venues', venueId);
+      const unsubscribe = onSnapshot(venueRef, 
+        (doc) => {
+          if (doc.exists()) {
+            setVenue({ id: doc.id, ...doc.data() } as Venue);
+          }
+          setLoading(false);
+        },
+        (err) => {
+          setError(err);
+          setLoading(false);
+        }
+      );
+      return () => unsubscribe();
+    }
+  }, [venueId]);
 
-  const userFollowQuery = user ? query(collection(firestore, `users/${user.uid}/follows`), where('targetId', '==', venueId), where('targetType', '==', 'venue')) : null;
-  const [followSnapshot] = useCollection(userFollowQuery);
+  const userFollowQuery = useMemo(() => 
+    user ? query(collection(firestore, `users/${user.uid}/follows`), where('targetId', '==', venueId), where('targetType', '==', 'venue')) : null
+  , [user, venueId]);
 
   useEffect(() => {
-    if(followSnapshot) {
-        setIsFollowing(!followSnapshot.empty);
-        setFollowLoading(false);
+    if (userFollowQuery) {
+        setFollowLoading(true);
+        const unsubscribe = onSnapshot(userFollowQuery, (snapshot) => {
+            setIsFollowing(!snapshot.empty);
+            setFollowLoading(false);
+        });
+        return () => unsubscribe();
     } else if (!user) {
+        setIsFollowing(false);
         setFollowLoading(false);
     }
-  }, [followSnapshot, user]);
+  }, [userFollowQuery, user]);
   
   const handleFollow = async () => {
     if (!user) {
@@ -115,7 +155,8 @@ export default function VenueDetailPage() {
     } catch(e) {
         toast({ variant: 'destructive', title: 'Something went wrong.' });
     } finally {
-       // Let the useEffect handle the state update
+       // Let the useEffect handle the state update by re-triggering the snapshot listener
+       setFollowLoading(false);
     }
   };
 
@@ -139,11 +180,9 @@ export default function VenueDetailPage() {
     );
   }
 
-  if (error || !venueSnapshot?.exists()) {
+  if (error || !venue) {
     return <div className="text-center py-10">Error loading venue or venue not found.</div>;
   }
-
-  const venue = { id: venueSnapshot.id, ...venueSnapshot.data() } as Venue;
   
   const handleCopyAddress = () => {
     navigator.clipboard.writeText(venue.address);
@@ -217,5 +256,3 @@ export default function VenueDetailPage() {
     </div>
   );
 }
-
-    
