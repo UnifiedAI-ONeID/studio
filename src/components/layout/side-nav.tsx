@@ -46,7 +46,7 @@ export default function SideNav() {
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:bg-accent hover:text-accent-foreground',
                 {
-                  'bg-accent text-accent-foreground': pathname.startsWith(item.href) && item.href !== '/home' || pathname === '/home' && item.href === '/home',
+                  'bg-accent text-accent-foreground': (pathname.startsWith(item.href) && item.href !== '/home') || (pathname === '/home' && item.href === '/home'),
                 }
               )}
             >

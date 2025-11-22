@@ -1,5 +1,5 @@
 'use client';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { useDocument, useCollection } from 'react-firebase-hooks/firestore';
 import { doc, collection, query, where, Timestamp, orderBy, limit } from 'firebase/firestore';
@@ -74,9 +74,8 @@ export default function VenueDetailPage() {
   const params = useParams();
   const venueId = params.id as string;
   const { toast } = useToast();
-  const { user, firebaseUser, setPrompted } = useAuth();
+  const { user, setPrompted } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
 
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(true);
@@ -218,6 +217,3 @@ export default function VenueDetailPage() {
     </div>
   );
 }
-
-// Need to add useRouter and usePathname for the auth redirect
-import { useRouter, usePathname } from 'next/navigation';

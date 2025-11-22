@@ -30,6 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { createVenue, uploadImage } from '@/lib/firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const venueTypes = ['cafe', 'bar', 'gallery', 'ngo', 'venue', 'other'];
 
@@ -41,6 +42,7 @@ const venueFormSchema = z.object({
   neighborhood: z.string().min(3, { message: 'Please enter a neighborhood.' }),
   priceLevel: z.coerce.number().min(1).max(4),
   coverImage: z.any().refine(file => file instanceof File, 'Cover image is required.'),
+  isFeaturedOnLanding: z.boolean().default(false),
 });
 
 export default function NewVenuePage() {
@@ -58,6 +60,7 @@ export default function NewVenuePage() {
       address: '',
       neighborhood: '',
       priceLevel: 2,
+      isFeaturedOnLanding: false,
     },
   });
 
@@ -96,6 +99,7 @@ export default function NewVenuePage() {
         neighborhood: values.neighborhood,
         priceLevel: values.priceLevel,
         coverImageUrl,
+        isFeaturedOnLanding: values.isFeaturedOnLanding,
         // Mocked/default values
         location: { latitude: 0, longitude: 0 }, 
         openingHours: 'Not specified',
@@ -267,6 +271,29 @@ export default function NewVenuePage() {
                       </SelectContent>
                     </Select>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+               <FormField
+                control={form.control}
+                name="isFeaturedOnLanding"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Feature on Landing Page
+                      </FormLabel>
+                      <FormDescription>
+                        Check this to make this venue eligible to appear on the public landing page. (Admin only)
+                      </FormDescription>
+                    </div>
                   </FormItem>
                 )}
               />
