@@ -37,19 +37,16 @@ const searchCollections = async (searchTerm: string): Promise<SearchResult[]> =>
 
   const eventsQuery = query(
     collection(firestore, 'events'),
-    where('status', '==', 'published'),
-    orderBy('title')
+    where('status', '==', 'published')
   );
   
   const venuesQuery = query(
     collection(firestore, 'venues'),
-    where('verified', '==', true),
-    orderBy('name')
+    where('verified', '==', true)
   );
 
   const threadsQuery = query(
-    collection(firestore, 'threads'),
-    orderBy('title')
+    collection(firestore, 'threads')
   );
 
   const [eventSnap, venueSnap, threadSnap] = await Promise.all([
@@ -183,5 +180,3 @@ export default function GlobalSearch({
     </Dialog>
   );
 }
-
-    

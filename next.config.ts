@@ -21,16 +21,6 @@ const withPWA = withPWAInit({
       },
     },
     {
-      urlPattern: /^https?.*/,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'offlineCache',
-        expiration: {
-          maxEntries: 200,
-        },
-      },
-    },
-    {
       urlPattern: /\.(?:png|jpg|jpeg|svg|gif)$/,
       handler: 'CacheFirst',
       options: {
@@ -63,13 +53,22 @@ const withPWA = withPWAInit({
         },
       },
     },
+    {
+      urlPattern: /^https?.*/,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'offlineCache',
+        expiration: {
+          maxEntries: 200,
+        },
+      },
+    },
   ],
 });
 
 
 const nextConfig: NextConfig = {
   images: {
-    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
