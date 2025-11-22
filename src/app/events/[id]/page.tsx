@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { doc, collection, query, where, limit, Timestamp, orderBy } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase';
 import { useAuth, useDoc, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
-import type { Event, EventInteractionType } from '@/lib/types';
+import type { Event, EventInteractionType, EventInteraction } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +22,7 @@ function RelatedEvents({ category, currentEventId }: { category: string; current
     const eventsQuery = useMemoFirebase(() => query(
       collection(firestore, 'events'),
       where('status', '==', 'published'),
-      where('approvalStatus', '==', 'approved'),
+      where('visibility', '==', 'public'),
       where('category', '==', category),
       orderBy('startTime', 'asc'),
       limit(4) // Fetch 4 to find 3 that are not the current one
@@ -55,7 +55,7 @@ function RelatedEvents({ category, currentEventId }: { category: string; current
                     <Link href={`/events/${event.id}`} key={event.id}>
                         <Card className="overflow-hidden h-full flex flex-col transition-shadow hover:shadow-lg">
                              <div className="relative h-32 w-full">
-                                <Image src={event.coverImageUrl} alt={event.title} fill className="object-cover"/>
+                                {event.coverImageUrl && <Image src={event.coverImageUrl} alt={event.title} fill className="object-cover"/>}
                             </div>
                             <CardHeader>
                                 <CardTitle className="font-headline text-lg line-clamp-2">{event.title}</CardTitle>
@@ -79,31 +79,13 @@ export default function EventDetailPage() {
   const { toast } = useToast();
 
   const [isExpanded, setIsExpanded] = useState(false);
-  const [interaction, setInteraction] = useState<EventInteractionType | null>(null);
-  const [interactionLoading, setInteractionLoading] = useState(true);
 
   const eventRef = useMemoFirebase(() => eventId ? doc(firestore, 'events', eventId) : null, [eventId]);
   const { data: event, loading: eventLoading, error } = useDoc<Event>(eventRef);
-
-  const interactionQuery = useMemoFirebase(() => 
-      user && eventId 
-      ? query(collection(firestore, 'eventInteractions'), where('userId', '==', user.uid), where('eventId', '==', eventId))
-      : null
-  , [user, eventId]);
-
-  const { data: interactions, loading: interactionQueryLoading } = useCollection(interactionQuery);
-
-  // Update local interaction state when the query result changes
-  useEffect(() => {
-    if (!interactionQueryLoading) {
-      if (interactions && interactions.length > 0) {
-        setInteraction(interactions[0].type as EventInteractionType);
-      } else {
-        setInteraction(null);
-      }
-      setInteractionLoading(false);
-    }
-  }, [interactions, interactionQueryLoading]);
+  
+  const interactionId = useMemo(() => user ? `${user.id}_${eventId}` : null, [user, eventId]);
+  const interactionRef = useMemoFirebase(() => interactionId ? doc(firestore, 'eventInteractions', interactionId) : null, [interactionId]);
+  const { data: interaction, loading: interactionLoading } = useDoc<EventInteraction>(interactionRef);
 
   const handleInteraction = async (type: EventInteractionType) => {
     if (!user) {
@@ -112,29 +94,19 @@ export default function EventDetailPage() {
       return;
     }
     
-    setInteractionLoading(true);
-    const oldInteraction = interaction;
-    
-    // Optimistically update UI
-    setInteraction(oldInteraction === type ? null : type);
+    const currentInteractionType = interaction?.type;
 
     try {
-      if (oldInteraction === type) {
-        await removeEventInteraction(user.uid, eventId, type);
+      if (currentInteractionType === type) {
+        await removeEventInteraction(user.id, eventId, type);
         toast({ title: `No longer ${type}` });
       } else {
-        await addEventInteraction(user.uid, eventId, type, oldInteraction);
+        await addEventInteraction(user.id, eventId, type, currentInteractionType);
         toast({ title: `You are ${type}!` });
       }
     } catch (e) {
       console.error(e);
-      // Revert optimistic update on error
-      setInteraction(oldInteraction);
       toast({ variant: 'destructive', title: 'Something went wrong' });
-    } finally {
-        // The onSnapshot listener will eventually sync the state,
-        // but we can set loading to false sooner.
-        setInteractionLoading(false);
     }
   };
 
@@ -188,7 +160,7 @@ export default function EventDetailPage() {
     <div className="bg-background">
       <div className="container mx-auto max-w-4xl pb-12">
         <div className="relative h-64 w-full md:h-96 rounded-b-lg overflow-hidden -mt-8 -mx-4">
-          <Image src={event.coverImageUrl} alt={event.title} fill className="object-cover" />
+          {event.coverImageUrl && <Image src={event.coverImageUrl} alt={event.title} fill className="object-cover" />}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
         </div>
 
@@ -214,19 +186,19 @@ export default function EventDetailPage() {
                           <p>{format((event.startTime as Timestamp).toDate(), "h:mm a")} {event.endTime && ` - ${format((event.endTime as Timestamp).toDate(), "h:mm a")}`} ({event.timezone})</p>
                       </div>
                   </div>
-                  {event.venueId ? (
-                    <Link href={`/directory/${event.venueId}`} className="flex items-start gap-4 hover:bg-muted/50 p-2 -m-2 rounded-md">
+                  {event.location.venueId ? (
+                    <Link href={`/directory/${event.location.venueId}`} className="flex items-start gap-4 hover:bg-muted/50 p-2 -m-2 rounded-md">
                         <Building className="h-6 w-6 text-primary mt-1 flex-shrink-0"/>
                         <div>
-                            <p className="font-semibold text-foreground">{event.venueName}</p>
-                            <p>{event.neighborhood}</p>
+                            <p className="font-semibold text-foreground">{event.location.neighborhood}</p>
+                            <p>{event.location.address}</p>
                         </div>
                     </Link>
                   ) : (
                     <div className="flex items-start gap-4">
                       <MapPin className="h-6 w-6 text-primary mt-1 flex-shrink-0"/>
                       <div>
-                          <p className="font-semibold text-foreground">{event.neighborhood || 'Location To Be Announced'}</p>
+                          <p className="font-semibold text-foreground">{event.location.neighborhood || 'Location To Be Announced'}</p>
                           <p>Venue details coming soon.</p>
                       </div>
                     </div>
@@ -234,14 +206,14 @@ export default function EventDetailPage() {
               </div>
 
               <div className="flex items-center gap-2">
-                <Button size="lg" variant={interaction === 'going' ? 'default' : 'outline'} className="flex-1" onClick={() => handleInteraction('going')} disabled={interactionLoading}>
-                  <CheckCircle className="mr-2"/> {interaction === 'going' ? 'You are going' : 'I\'m Going'} ({event.stats?.goingCount || 0})
+                <Button size="lg" variant={interaction?.type === 'going' ? 'default' : 'outline'} className="flex-1" onClick={() => handleInteraction('going')} disabled={interactionLoading}>
+                  <CheckCircle className="mr-2"/> {interaction?.type === 'going' ? 'You are going' : 'I\'m Going'} ({event.stats?.goingCount || 0})
                 </Button>
-                <Button size="lg" variant={interaction === 'interested' ? 'default' : 'outline'} className="flex-1" onClick={() => handleInteraction('interested')} disabled={interactionLoading}>
-                  <Heart className="mr-2"/> {interaction === 'interested' ? 'You\'re Interested' : 'Interested'} ({event.stats?.interestedCount || 0})
+                <Button size="lg" variant={interaction?.type === 'interested' ? 'default' : 'outline'} className="flex-1" onClick={() => handleInteraction('interested')} disabled={interactionLoading}>
+                  <Heart className="mr-2"/> {interaction?.type === 'interested' ? 'You\'re Interested' : 'Interested'} ({event.stats?.interestedCount || 0})
                 </Button>
-                <Button size="lg" variant={interaction === 'saved' ? 'default' : 'outline'} onClick={() => handleInteraction('saved')} disabled={interactionLoading}>
-                  <Star className="mr-2"/> {interaction === 'saved' ? 'Saved' : 'Save'}
+                <Button size="lg" variant={interaction?.type === 'saved' ? 'default' : 'outline'} onClick={() => handleInteraction('saved')} disabled={interactionLoading}>
+                  <Star className="mr-2"/> {interaction?.type === 'saved' ? 'Saved' : 'Save'}
                 </Button>
                 <Button size="lg" variant="outline" onClick={handleShare}><Share2/></Button>
               </div>
@@ -272,7 +244,7 @@ export default function EventDetailPage() {
                       </div>
                       <div>
                           <p className="text-muted-foreground text-sm">Hosted by</p>                          
-                          <p className="font-semibold text-foreground">{event.hostName || 'Community Organizer'}</p>
+                          <p className="font-semibold text-foreground">{'Community Organizer'}</p>
                       </div>
                   </div>
                   {user && (

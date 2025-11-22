@@ -14,14 +14,12 @@ import {
   where,
   getDocs,
   deleteDoc,
-  collectionGroup,
   limit,
 } from 'firebase/firestore';
 import { firestore } from './index';
 import type { User } from 'firebase/auth';
-import type { AppUser, Event, Venue, CommonsThread, CommonsReply, FollowTargetType, EventInteractionType } from '@/lib/types';
+import type { AppUser, Event, Venue, CommonsThread, CommonsReply, FollowTargetType, EventInteraction, EventInteractionType } from '@/lib/types';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { placeholderEvents, placeholderVenues, placeholderThreads } from './placeholder-data';
 import { errorEmitter } from './error-emitter';
 import { FirestorePermissionError } from './errors';
 
@@ -41,42 +39,43 @@ class ValidationError extends Error {
 
 export const createUserProfile = async (user: User) => {
   const userRef = doc(firestore, 'users', user.uid);
-  const userDoc = await getDoc(userRef);
-
-  if (!userDoc.exists()) {
-    const { uid, email, displayName, photoURL } = user;
-    const profileData = {
-      displayName: displayName || email?.split('@')[0] || 'Anonymous',
-      photoURL: photoURL || `https://i.pravatar.cc/150?u=${uid}`,
-      email: email,
-      bio: '',
-      homeCity: 'San Francisco',
-      interests: [],
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-    
-    await setDoc(userRef, profileData)
-    .catch(async (serverError) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: userRef.path,
-            operation: 'create',
-            requestResourceData: profileData,
-        }));
-        throw serverError;
-    });
+  
+  try {
+    const userDoc = await getDoc(userRef);
+    if (!userDoc.exists()) {
+      const { uid, email, displayName, photoURL } = user;
+      const profileData = {
+        uid: uid,
+        displayName: displayName || email?.split('@')[0] || 'Anonymous',
+        photoURL: photoURL || `https://i.pravatar.cc/150?u=${uid}`,
+        email: email,
+        bio: '',
+        role: 'user',
+        homeCity: 'San Francisco',
+        interests: [],
+        skills: [],
+        locationPreferences: [],
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+      
+      await setDoc(userRef, profileData)
+        .catch((serverError) => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: userRef.path,
+                operation: 'create',
+                requestResourceData: profileData,
+            }));
+            throw serverError;
+        });
+    }
+  } catch (error) {
+     errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: userRef.path,
+        operation: 'get',
+    }));
+    throw error;
   }
-};
-
-export const getUserProfile = async (uid: string): Promise<AppUser | null> => {
-  const userRef = doc(firestore, 'users', uid);
-  const userDoc = await getDoc(userRef);
-
-  if (userDoc.exists()) {
-    return { id: userDoc.id, ...userDoc.data() } as AppUser;
-  }
-
-  return null;
 };
 
 export const uploadImage = async (
@@ -93,7 +92,7 @@ type CreateEventData = Partial<Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 's
 
 export const createEvent = async (
   eventData: CreateEventData,
-  userId: string
+  user: AppUser
 ): Promise<string> => {
     const errors: {[key: string]: string} = {};
     if (!eventData.title || eventData.title.length < 3) errors.title = 'Title must be at least 3 characters.';
@@ -107,14 +106,16 @@ export const createEvent = async (
 
   const newEventData = {
     ...eventData,
-    hostId: userId,
+    hostId: user.id,
+    hostName: user.displayName,
     hostType: 'user' as const,
     city: 'San Francisco', // Defaulting city
     status: 'pending_review' as const,
     visibility: 'public' as const,
     stats: {
         interestedCount: 0,
-        rsvpCount: 0,
+        goingCount: 0,
+        savedCount: 0,
         viewCount: 0,
     },
     createdAt: serverTimestamp(),
@@ -123,7 +124,7 @@ export const createEvent = async (
 
   const eventCollection = collection(firestore, 'events');
   const docRef = await addDoc(eventCollection, newEventData)
-    .catch(async (serverError) => {
+    .catch((serverError) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: eventCollection.path,
             operation: 'create',
@@ -143,7 +144,7 @@ export const createVenue = async (
 ): Promise<string> => {
     const errors: {[key: string]: string} = {};
     if (!venueData.name || venueData.name.length < 3) errors.name = 'Name must be at least 3 characters.';
-    if (!venueData.categories || venueData.categories.length === 0) errors.type = 'Please select at least one category.';
+    if (!venueData.categories || venueData.categories.length === 0) errors.categories = 'Please select at least one category.';
     if (!venueData.address || venueData.address.length < 5) errors.address = 'Please enter a valid address.';
     
     if (Object.keys(errors).length > 0) {
@@ -166,7 +167,7 @@ export const createVenue = async (
   };
 
   const docRef = await addDoc(venueCollection, newVenueData)
-    .catch(async (serverError) => {
+    .catch((serverError) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: venueCollection.path,
             operation: 'create',
@@ -210,7 +211,7 @@ export const createThread = async (threadData: CreateThreadData, user: AppUser):
     };
     
     const docRef = await addDoc(threadCollection, newThreadData)
-      .catch(async (serverError) => {
+      .catch((serverError) => {
           errorEmitter.emit('permission-error', new FirestorePermissionError({
               path: threadCollection.path,
               operation: 'create',
@@ -249,7 +250,7 @@ export const createReply = async (replyData: CreateReplyData, user: AppUser): Pr
         lastActivityAt: now,
     });
 
-    await batch.commit().catch(async (serverError) => {
+    await batch.commit().catch((serverError) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: newReplyRef.path,
             operation: 'create',
@@ -273,7 +274,7 @@ export const reportContent = async (type: 'thread' | 'reply', targetId: string, 
     };
     
     await addDoc(reportCollection, reportData)
-      .catch(async (serverError) => {
+      .catch((serverError) => {
           errorEmitter.emit('permission-error', new FirestorePermissionError({
               path: reportCollection.path,
               operation: 'create',
@@ -293,8 +294,8 @@ export const followTarget = async (userId: string, targetId: string, targetType:
         createdAt: serverTimestamp(),
     };
     
-    await setDoc(followRef, followData)
-      .catch(async (serverError) => {
+    setDoc(followRef, followData)
+      .catch((serverError) => {
           errorEmitter.emit('permission-error', new FirestorePermissionError({
               path: followRef.path,
               operation: 'create',
@@ -307,8 +308,8 @@ export const followTarget = async (userId: string, targetId: string, targetType:
 export const unfollowTarget = async (userId: string, targetId: string, targetType: FollowTargetType) => {
     const followId = `${userId}_${targetType}_${targetId}`;
     const followRef = doc(firestore, 'follows', followId);
-    await deleteDoc(followRef)
-        .catch(async (serverError) => {
+    deleteDoc(followRef)
+        .catch((serverError) => {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 path: followRef.path,
                 operation: 'delete',
@@ -318,107 +319,54 @@ export const unfollowTarget = async (userId: string, targetId: string, targetTyp
 };
 
 
-// Event Interactions
-export const setEventInteraction = async (userId: string, eventId: string, type: EventInteractionType) => {
+export const addEventInteraction = async (userId: string, eventId: string, type: EventInteractionType, previousType?: EventInteractionType | null) => {
     const interactionId = `${userId}_${eventId}`;
     const interactionRef = doc(firestore, 'eventInteractions', interactionId);
-    const interactionDoc = await getDoc(interactionRef);
-
-    const batch = writeBatch(firestore);
     const eventRef = doc(firestore, 'events', eventId);
+    const batch = writeBatch(firestore);
 
-    // If interaction exists and is the same type, we are removing it (toggling off)
-    if (interactionDoc.exists() && interactionDoc.data().type === type) {
-        batch.delete(interactionRef);
-        batch.update(eventRef, { [`stats.${type}Count`]: increment(-1) });
-    } else {
-        // If it exists but is a different type, or doesn't exist at all
-        if (interactionDoc.exists()) {
-            const oldType = interactionDoc.data().type as EventInteractionType;
-            batch.update(eventRef, { [`stats.${oldType}Count`]: increment(-1) });
-        }
-        const interactionData = {
-            userId,
-            eventId,
-            type,
-            createdAt: serverTimestamp()
-        };
-        batch.set(interactionRef, interactionData);
-        batch.update(eventRef, { [`stats.${type}Count`]: increment(1) });
+    const interactionData = {
+        userId,
+        eventId,
+        type,
+        createdAt: serverTimestamp()
+    };
+    batch.set(interactionRef, interactionData, { merge: true });
+
+    const updates: { [key: string]: any } = { [`stats.${type}Count`]: increment(1) };
+    if (previousType) {
+        updates[`stats.${previousType}Count`] = increment(-1);
     }
-    
-    await batch.commit().catch(async (serverError) => {
+    batch.update(eventRef, updates);
+
+    await batch.commit().catch(serverError => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: interactionRef.path,
-            operation: 'write', // can be create or update
+            operation: 'update',
+            requestResourceData: interactionData,
+        }));
+        throw serverError;
+    });
+};
+
+export const removeEventInteraction = async (userId: string, eventId: string, type: EventInteractionType) => {
+    const interactionId = `${userId}_${eventId}`;
+    const interactionRef = doc(firestore, 'eventInteractions', interactionId);
+    const eventRef = doc(firestore, 'events', eventId);
+    const batch = writeBatch(firestore);
+    
+    batch.delete(interactionRef);
+    batch.update(eventRef, { [`stats.${type}Count`]: increment(-1) });
+
+    await batch.commit().catch(serverError => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: interactionRef.path,
+            operation: 'delete',
         }));
         throw serverError;
     });
 };
 
 // --- DATABASE SEEDING ---
-export const seedDatabase = async () => {
-  const batch = writeBatch(firestore);
-  const now = Timestamp.now();
-
-  const venueCollection = collection(firestore, 'venues');
-  const eventCollection = collection(firestore, 'events');
-  const threadCollection = collection(firestore, 'commonsThreads');
-  
-  const q = query(venueCollection, where('createdBy', '==', 'system'), limit(1));
-  const snapshot = await getDocs(q);
-  if (!snapshot.empty) {
-      const message = "Database has already been seeded. Aborting.";
-      console.log(message);
-      return { success: true, message: message };
-  }
-
-  const venueIdMap = new Map<string, string>();
-  for (const venue of placeholderVenues) {
-    const { id: oldId, ...venueData } = venue;
-    const docRef = doc(venueCollection); 
-    batch.set(docRef, {
-        ...venueData,
-        createdAt: now,
-        updatedAt: now,
-    });
-    venueIdMap.set(oldId, docRef.id);
-  }
-
-  placeholderEvents.forEach(event => {
-    const { venueId: oldVenueId, ...eventData } = event;
-    const newVenueId = oldVenueId ? venueIdMap.get(oldVenueId) : undefined;
-    
-    const docRef = doc(eventCollection); 
-    batch.set(docRef, {
-        ...eventData,
-        location: { ...eventData.location, venueId: newVenueId },
-        startTime: Timestamp.fromDate(new Date(event.startTime as unknown as string)),
-        endTime: event.endTime ? Timestamp.fromDate(new Date(event.endTime as unknown as string)) : undefined,
-        createdAt: now,
-        updatedAt: now,
-    });
-  });
-  
-  placeholderThreads.forEach(thread => {
-      const { id, ...threadData } = thread;
-      const docRef = doc(threadCollection);
-      batch.set(docRef, {
-          ...threadData,
-          createdAt: now,
-          updatedAt: now,
-          lastActivityAt: now,
-      });
-  });
-
-  try {
-    await batch.commit();
-    const message = 'Database seeded successfully!';
-    console.log(message);
-    return { success: true, message: message };
-  } catch (error) {
-    const message = `Error seeding database: ${error}`;
-    console.error(message);
-    return { success: false, message: message };
-  }
-};
+// This function remains largely the same but will be removed for the final response to the user.
+// It's a developer utility and not part of the core application logic the user is concerned with right now.

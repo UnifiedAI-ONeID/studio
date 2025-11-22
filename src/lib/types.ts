@@ -11,6 +11,8 @@ export interface AppUser extends DocumentWithId {
   bio?: string;
   homeCity?: string;
   interests?: string[];
+  skills?: string[];
+  locationPreferences?: string[];
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -50,7 +52,8 @@ export interface Event extends DocumentWithId {
   priorityScore?: number;
   stats: {
     interestedCount: number;
-    rsvpCount: number;
+    goingCount: number;
+    savedCount: number;
     viewCount?: number;
   };
   createdAt: Timestamp;
@@ -104,9 +107,10 @@ export interface CommonsThread extends DocumentWithId {
   city?: string;
   tags?: string[];
   authorId: string;
-  authorInfo?: { // Denormalized author data for performance
-      displayName: string;
-      photoURL?: string;
+  authorInfo?: {
+    // Denormalized author data for performance
+    displayName: string;
+    photoURL?: string;
   };
   relatedEventId?: string;
   relatedVenueId?: string;
@@ -125,9 +129,10 @@ export interface CommonsReply extends DocumentWithId {
   authorId: string;
   body: string;
   parentReplyId?: string;
-  authorInfo?: { // Denormalized author data for performance
-      displayName: string;
-      photoURL?: string;
+  authorInfo?: {
+    // Denormalized author data for performance
+    displayName: string;
+    photoURL?: string;
   };
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -178,5 +183,25 @@ export interface NewsletterSubscriber {
 }
 
 export interface AppRoles {
-  admins: string[];
+  admins: { [uid: string]: boolean };
+}
+
+export type ReportType = 'thread' | 'comment';
+
+export interface Report {
+    id: string;
+    type: ReportType;
+    targetId: string;
+    reason: string;
+    createdBy: string;
+    createdAt: Timestamp;
+}
+
+export interface Reaction {
+    id: string;
+    userId: string;
+    targetId: string;
+    targetType: 'thread' | 'comment';
+    type: 'like';
+    createdAt: Timestamp;
 }

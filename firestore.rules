@@ -14,7 +14,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/appRoles/global).data.admins;
+      return isSignedIn() && get(/databases/$(database)/documents/appRoles/global).data.admins[request.auth.uid] == true;
     }
 
     function isNewDoc() {
@@ -49,8 +49,8 @@ service cloud.firestore {
       allow read: if (existingData().status == "published" && existingData().visibility == "public") || isAdmin() || isOwner(existingData().hostId);
       allow create: if isSignedIn() && isOwner(incomingData().hostId);
       allow update: if (isAdmin()) || (isSignedIn() && isOwner(existingData().hostId)
-          && !( 'status' in incomingData() ) // prevent user from changing status
-          && !( 'hostId' in incomingData() ) // prevent user from changing host
+          && !('status' in incomingData()) // prevent user from changing status
+          && !('hostId' in incomingData()) // prevent user from changing host
         );
       allow delete: if isAdmin() || isOwner(existingData().hostId);
     }
@@ -83,10 +83,9 @@ service cloud.firestore {
 
     match /eventInteractions/{interactionId} {
       allow read: if isUser(existingData().userId);
-      // The doc ID is userId_eventId, so we can check ownership on create based on the ID.
-      allow create: if isSignedIn() && request.auth.uid == incomingData().userId && interactionId == incomingData().userId + '_' + incomingData().eventId;
+      allow create: if isSignedIn() && isOwner(incomingData().userId) && interactionId == incomingData().userId + '_' + incomingData().eventId;
       allow delete: if isUser(existingData().userId);
-      allow update: if false; // Interactions should be created/deleted, not updated.
+      allow update: if isUser(existingData().userId); 
     }
 
     match /follows/{followId} {
@@ -102,7 +101,8 @@ service cloud.firestore {
 
     match /newsletterSubscribers/{subscriberId} {
         allow create: if incomingData().email.matches('.+@.+\..+'); // Simple email regex
-        allow read: if isAdmin();
+        allow read, delete: if isAdmin();
+        allow update: if false;
     }
 
     match /appRoles/global {
@@ -113,6 +113,17 @@ service cloud.firestore {
     match /landingConfig/global {
         allow read: if true;
         allow write: if isAdmin();
+    }
+
+    match /reports/{reportId} {
+      allow create: if isSignedIn() && isOwner(incomingData().createdBy);
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /threads/{threadId}/comments/{commentId}/reactions/{reactionId} {
+        allow read: if true;
+        allow create: if isSignedIn() && isOwner(incomingData().userId);
+        allow delete: if isSignedIn() && isOwner(existingData().userId);
     }
   }
 }
