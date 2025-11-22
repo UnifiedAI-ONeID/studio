@@ -7,7 +7,7 @@ import { firestore } from '@/lib/firebase';
 import type { Event } from '@/lib/types';
 import Link from 'next/link';
 import Image from 'next/image';
-import { format, startOfToday, endOfToday, startOfWeek, endOfWeek } from 'date-fns';
+import { format, startOfToday, endOfToday, startOfWeek } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin } from 'lucide-react';
@@ -107,7 +107,8 @@ function FollowedVenuesEvents() {
             where('visibility', '==', 'public'),
             where('venueId', 'in', followedVenueIds),
             where('startTime', '>=', Timestamp.now()),
-            orderBy('startTime', 'asc')
+            orderBy('startTime', 'asc'),
+            limit(4)
           )
         : null;
 

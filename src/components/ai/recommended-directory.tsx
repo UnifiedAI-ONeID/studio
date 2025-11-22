@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '../ui/button';
-import { MapPin, Tag, Star } from 'lucide-react';
+import { MapPin, Star } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Badge } from '../ui/badge';
 
@@ -61,6 +61,8 @@ export default function RecommendedDirectory() {
         }
       };
       fetchRecommendations();
+    } else {
+        setLoading(false);
     }
   }, [user]);
 
@@ -69,10 +71,14 @@ export default function RecommendedDirectory() {
   const bookstoreImage = PlaceHolderImages.find(p => p.id === 'directory-bookstore');
   const imageMap = [coffeeImage, coworkingImage, bookstoreImage];
 
+  if (!user) {
+    return null;
+  }
+
   if (loading) {
     return (
       <section>
-        <h2 className="font-headline text-2xl font-bold tracking-tight mb-4">For You: Directory</h2>
+        <h2 className="font-headline text-2xl font-bold tracking-tight mb-4">For You: Places to Check Out</h2>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <DirectoryCardSkeleton />
           <DirectoryCardSkeleton />
@@ -82,20 +88,13 @@ export default function RecommendedDirectory() {
     );
   }
 
-  if (error) {
-    return (
-      <section>
-        <h2 className="font-headline text-2xl font-bold tracking-tight mb-4">For You: Directory</h2>
-        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center text-destructive">
-          <p>{error}</p>
-        </div>
-      </section>
-    );
+  if (error || recommendations.length === 0) {
+    return null; // Don't show the component if there's an error or no recommendations
   }
 
   return (
     <section>
-      <h2 className="font-headline text-2xl font-bold tracking-tight mb-4">For You: Directory</h2>
+      <h2 className="font-headline text-2xl font-bold tracking-tight mb-4">For You: Places to Check Out</h2>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {recommendations.map((item, index) => {
           const image = imageMap[index % imageMap.length];

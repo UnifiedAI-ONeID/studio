@@ -57,6 +57,8 @@ export default function RecommendedEvents() {
         }
       };
       fetchRecommendations();
+    } else {
+        setLoading(false);
     }
   }, [user]);
 
@@ -80,15 +82,8 @@ export default function RecommendedEvents() {
     );
   }
 
-  if (error) {
-    return (
-      <section>
-        <h2 className="font-headline text-2xl font-bold tracking-tight mb-4">For You: Events</h2>
-        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center text-destructive">
-          <p>{error}</p>
-        </div>
-      </section>
-    );
+  if (error || recommendations.length === 0) {
+    return null; // Don't show the component if there's an error or no recommendations
   }
 
   return (
