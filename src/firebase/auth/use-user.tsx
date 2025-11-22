@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { auth, db as firestore } from '@/lib/firebase';
+import { auth, firestore } from '@/lib/firebase';
 import type { AppUser } from '@/lib/types';
 import { createUserProfile } from '@/lib/firebase/firestore';
 
