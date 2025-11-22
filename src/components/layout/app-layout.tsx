@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -71,14 +72,15 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
 
+  if (isAuthPage) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+        {children}
+      </div>
+    );
+  }
+  
   if (!user) {
-    if (isAuthPage) {
-      return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
-          {children}
-        </div>
-      );
-    }
     return <PublicLayout>{children}</PublicLayout>;
   }
   

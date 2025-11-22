@@ -1,3 +1,4 @@
+
 'use client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -5,8 +6,6 @@ import { Search } from 'lucide-react';
 import FeaturedEventsGrid from './featured-events-grid';
 
 export default function LandingHero() {
-  const dateFilters = ['Today', 'Tomorrow', 'This weekend'];
-  const categoryFilters = ['Music', 'Food & Drink', 'Arts'];
 
   return (
     <section className="border-b bg-slate-50/60">
@@ -26,18 +25,6 @@ export default function LandingHero() {
                 placeholder="Search events, venues, and more..."
                 className="h-11 rounded-xl border-none bg-slate-100 pl-10 focus-visible:ring-2 focus-visible:ring-primary"
               />
-            </div>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              {dateFilters.map(filter => (
-                <Button key={filter} variant="outline" size="sm" className="rounded-full border-slate-200 bg-white text-slate-700 hover:bg-slate-50">
-                  {filter}
-                </Button>
-              ))}
-               {categoryFilters.map(filter => (
-                <Button key={filter} variant="outline" size="sm" className="rounded-full border-slate-200 bg-white text-slate-700 hover:bg-slate-50">
-                  {filter}
-                </Button>
-              ))}
             </div>
           </div>
           
