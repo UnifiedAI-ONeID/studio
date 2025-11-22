@@ -71,13 +71,18 @@ function MyEvents() {
 
 function FollowedItem({ follow }: { follow: Follow }) {
     const { targetId, targetType } = follow;
-    const collectionName = targetType === 'venue' ? 'venues' : 'topics'; // Assuming 'topic' might be a collection
-    const linkPath = targetType === 'venue' ? '/directory' : '/commons/topics';
+    
+    // Determine the correct collection and link path based on the target type
+    const collectionName = targetType === 'venue' ? 'venues' : null;
+    const linkPath = targetType === 'venue' ? '/directory' : '/commons/topics'; // Adjust as needed for other types
 
-    // Note: This creates a separate query for each followed item.
-    // For a large number of follows, you might want to batch these reads.
-    const docRef = useMemoFirebase(() => doc(firestore, collectionName, targetId), [collectionName, targetId]);
-    const { data, loading } = useDoc<Venue | { name: string }>(docRef); // Use a generic shape for topics
+    // Memoize the document reference
+    const docRef = useMemoFirebase(() => 
+        collectionName ? doc(firestore, collectionName, targetId) : null
+    , [collectionName, targetId]);
+
+    // Fetch the document data
+    const { data, loading } = useDoc<Venue | { name: string }>(docRef);
 
     if (loading) {
         return <Skeleton className="h-14 w-full" />;
@@ -85,13 +90,14 @@ function FollowedItem({ follow }: { follow: Follow }) {
     
     if (!data) return null;
 
-    const name = (data as Venue).name || (data as { name: string }).name || 'Unknown';
+    const name = (data as Venue).name || 'Unknown';
+    const icon = targetType === 'venue' ? <Building className="h-5 w-5 text-muted-foreground"/> : <BookText className="h-5 w-5 text-muted-foreground"/>;
 
     return (
         <Link href={`${linkPath}/${targetId}`}>
             <Card className="hover:bg-muted/50">
                 <CardContent className="p-3 flex items-center gap-3">
-                    {targetType === 'venue' ? <Building className="h-5 w-5 text-muted-foreground"/> : <BookText className="h-5 w-5 text-muted-foreground"/>}
+                    {icon}
                     <div>
                         <p className="font-semibold">{name}</p>
                         <p className="text-xs text-muted-foreground capitalize">{targetType}</p>

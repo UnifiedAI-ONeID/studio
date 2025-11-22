@@ -157,6 +157,7 @@ export interface EventInteraction extends DocumentWithId {
 export type FollowTargetType = 'user' | 'organization' | 'venue' | 'topic';
 
 export interface Follow extends DocumentWithId {
+  id: string;
   followerUserId: string;
   targetType: FollowTargetType;
   targetId: string;

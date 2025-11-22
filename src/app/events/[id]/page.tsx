@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { doc, collection, query, where, limit, Timestamp, orderBy } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/index';
 import { useAuth, useDoc, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
-import type { Event, EventInteractionType, EventInteraction } from '@/lib/types';
+import type { Event, EventInteractionType, EventInteraction, AppUser } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { addEventInteraction, removeEventInteraction } from '@/lib/firebase/firestore';
+import PlaceHolderImages from '@/lib/placeholder-images';
 
 function RelatedEvents({ category, currentEventId }: { category: string; currentEventId: string }) {
     const eventsQuery = useMemoFirebase(() => query(
@@ -32,6 +33,7 @@ function RelatedEvents({ category, currentEventId }: { category: string; current
     const { data: events, loading } = useCollection<Event>(eventsQuery);
     
     const filteredEvents = useMemo(() => events?.filter(event => event.id !== currentEventId).slice(0, 3), [events, currentEventId]);
+    const placeholder = PlaceHolderImages.find(p => p.id.includes('event')) || PlaceHolderImages[0];
 
     if (loading) {
         return (
@@ -56,7 +58,7 @@ function RelatedEvents({ category, currentEventId }: { category: string; current
                     <Link href={`/events/${event.id}`} key={event.id}>
                         <Card className="overflow-hidden h-full flex flex-col transition-shadow hover:shadow-lg">
                              <div className="relative h-32 w-full">
-                                {event.coverImageUrl && <Image src={event.coverImageUrl} alt={event.title} fill className="object-cover"/>}
+                                <Image src={event.coverImageUrl || placeholder.imageUrl} alt={event.title} fill className="object-cover" data-ai-hint={placeholder.imageHint}/>
                             </div>
                             <CardHeader>
                                 <CardTitle className="font-headline text-lg line-clamp-2">{event.title}</CardTitle>
@@ -70,6 +72,25 @@ function RelatedEvents({ category, currentEventId }: { category: string; current
             </div>
         </div>
     )
+}
+
+function HostInfo({ hostId }: { hostId: string }) {
+    const hostRef = useMemoFirebase(() => doc(firestore, 'users', hostId), [hostId]);
+    const { data: host, loading } = useDoc<AppUser>(hostRef);
+
+    if (loading) {
+        return <Skeleton className="h-12 w-48" />;
+    }
+
+    if (!host) {
+        return (
+            <p className="font-semibold text-foreground">Community Organizer</p>
+        );
+    }
+    
+    return (
+        <p className="font-semibold text-foreground">{host.displayName}</p>
+    );
 }
 
 export default function EventDetailPage() {
@@ -87,6 +108,8 @@ export default function EventDetailPage() {
   const interactionId = useMemo(() => user ? `${user.id}_${eventId}` : null, [user, eventId]);
   const interactionRef = useMemoFirebase(() => interactionId ? doc(firestore, 'eventInteractions', interactionId) : null, [interactionId]);
   const { data: interaction, loading: interactionLoading } = useDoc<EventInteraction>(interactionRef);
+  const placeholder = PlaceHolderImages.find(p => p.id.includes('event')) || PlaceHolderImages[0];
+
 
   const handleInteraction = async (type: EventInteractionType) => {
     if (!user) {
@@ -170,7 +193,7 @@ export default function EventDetailPage() {
     <div className="bg-background">
       <div className="container mx-auto max-w-4xl pb-12">
         <div className="relative h-64 w-full md:h-96 rounded-b-lg overflow-hidden -mt-8 -mx-4">
-          {event.coverImageUrl && <Image src={event.coverImageUrl} alt={event.title} fill className="object-cover" />}
+          <Image src={event.coverImageUrl || placeholder.imageUrl} alt={event.title} fill className="object-cover" data-ai-hint={placeholder.imageHint}/>
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
         </div>
 
@@ -196,7 +219,7 @@ export default function EventDetailPage() {
                           <p>{format((event.startTime as Timestamp).toDate(), "h:mm a")} {event.endTime && ` - ${format((event.endTime as Timestamp).toDate(), "h:mm a")}`} ({event.timezone})</p>
                       </div>
                   </div>
-                  {event.location.venueId ? (
+                  {event.location?.venueId ? (
                     <Link href={`/directory/${event.location.venueId}`} className="flex items-start gap-4 hover:bg-muted/50 p-2 -m-2 rounded-md">
                         <Building className="h-6 w-6 text-primary mt-1 flex-shrink-0"/>
                         <div>
@@ -208,7 +231,7 @@ export default function EventDetailPage() {
                     <div className="flex items-start gap-4">
                       <MapPin className="h-6 w-6 text-primary mt-1 flex-shrink-0"/>
                       <div>
-                          <p className="font-semibold text-foreground">{event.location.neighborhood || 'Location To Be Announced'}</p>
+                          <p className="font-semibold text-foreground">{event.location?.neighborhood || 'Location To Be Announced'}</p>
                           <p>Venue details coming soon.</p>
                       </div>
                     </div>
@@ -254,7 +277,7 @@ export default function EventDetailPage() {
                       </div>
                       <div>
                           <p className="text-muted-foreground text-sm">Hosted by</p>                          
-                          <p className="font-semibold text-foreground">{'Community Organizer'}</p>
+                          <HostInfo hostId={event.hostId} />
                       </div>
                   </div>
                   
