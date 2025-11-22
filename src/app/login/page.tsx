@@ -1,8 +1,5 @@
 import AuthForm from '@/components/auth/auth-form';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
-import { getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
 
 export const metadata: Metadata = {
   title: 'Login',

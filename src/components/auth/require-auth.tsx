@@ -1,19 +1,20 @@
 'use client';
 
 import { useAuth } from '@/hooks/use-auth';
-import { useRouter } from 'next/navigation';
-import { usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 export function requireAuthOrPrompt(action: () => void) {
-  const { user, setPrompted } = useAuth.getState(); // Direct state access
-  const router = useRouter();
-  const pathname = usePathname();
+    const authState = useAuth();
+    const { user, setPrompted } = authState;
 
-  if (!user) {
-    setPrompted(true);
-    const continueUrl = pathname;
-    router.push(`/login?continueUrl=${encodeURIComponent(continueUrl)}`);
-  } else {
-    action();
-  }
+    if (!user) {
+        if (setPrompted) setPrompted(true);
+        // This part needs to be called within a component to use router/pathname
+        // This file as-is isn't a hook or component, so it can't use them.
+        // It's better to handle this logic within the component that calls this function.
+        console.warn("User not authenticated. Redirection logic should be handled in the calling component.");
+
+    } else {
+        action();
+    }
 }

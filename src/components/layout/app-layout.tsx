@@ -1,13 +1,17 @@
-
 'use client';
 
-import { useAuth } from '@/hooks/use-auth';
+import React, { createContext, useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { auth, getUserProfile } from '@/lib/firebase';
+import { AppUser } from '@/lib/types';
+import { AuthContext, useAuth } from '@/hooks/use-auth';
+
 import AvidityLogo from '@/components/logo';
 import Header from './header';
 import BottomNav from './bottom-nav';
 import LandingTopNav from '../landing/landing-top-nav';
+import { Toaster } from '../ui/toaster';
 import {
   Sidebar,
   SidebarProvider,
@@ -31,8 +35,7 @@ import {
   Database,
 } from 'lucide-react';
 import Link from 'next/link';
-import { AuthProvider } from '@/providers/auth-provider';
-import { Toaster } from '../ui/toaster';
+
 
 const topNavItems = [
   { href: '/home', icon: LayoutDashboard, label: 'Home' },
@@ -169,10 +172,30 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+    const [user, setUser] = useState<AppUser | null>(null);
+    const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [prompted, setPrompted] = useState(false);
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+            setFirebaseUser(fbUser);
+            if (fbUser) {
+                const userProfile = await getUserProfile(fbUser.uid);
+                setUser(userProfile);
+            } else {
+                setUser(null);
+            }
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, []);
+
   return (
-    <AuthProvider>
+    <AuthContext.Provider value={{ user, firebaseUser, loading, prompted, setPrompted }}>
       <LayoutContent>{children}</LayoutContent>
       <Toaster />
-    </AuthProvider>
+    </AuthContext.Provider>
   );
 }

@@ -1,27 +1,24 @@
 'use client';
 
-import { create } from 'zustand';
+import { createContext, useContext } from 'react';
 import type { AppUser } from '@/lib/types';
 import type { User as FirebaseUser } from 'firebase/auth';
 
-interface AuthState {
+export interface AuthState {
   user: AppUser | null;
   firebaseUser: FirebaseUser | null;
   loading: boolean;
   prompted: boolean;
-  setPrompted: (prompted: boolean) => void;
-  setUser: (user: AppUser | null) => void;
-  setFirebaseUser: (firebaseUser: FirebaseUser | null) => void;
-  setLoading: (loading: boolean) => void;
+  setPrompted?: (prompted: boolean) => void;
 }
 
-export const useAuth = create<AuthState>((set) => ({
+export const AuthContext = createContext<AuthState>({
   user: null,
   firebaseUser: null,
   loading: true,
   prompted: false,
-  setPrompted: (prompted) => set({ prompted }),
-  setUser: (user) => set({ user }),
-  setFirebaseUser: (firebaseUser) => set({ firebaseUser }),
-  setLoading: (loading) => set({ loading }),
-}));
+});
+
+export const useAuth = () => {
+    return useContext(AuthContext);
+}

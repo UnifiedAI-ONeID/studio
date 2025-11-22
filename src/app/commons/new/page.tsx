@@ -2,23 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { createThread } from '@/lib/firebase/firestore';
 
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -28,15 +17,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 const topics = ["general", "neighborhoods", "buy-sell", "housing", "clubs"];
-
-const threadFormSchema = z.object({
-  title: z.string().min(5, 'Title must be at least 5 characters.').max(100, 'Title is too long.'),
-  body: z.string().min(10, 'Body must be at least 10 characters.').max(10000, 'Body is too long.'),
-  topic: z.string({ required_error: 'Please select a topic.' }),
-});
 
 export default function NewThreadPage() {
   const router = useRouter();
@@ -47,19 +30,29 @@ export default function NewThreadPage() {
 
   const relatedEventId = searchParams.get('relatedEventId');
   const relatedVenueId = searchParams.get('relatedVenueId');
-  const defaultTitle = searchParams.get('title') || '';
-  const defaultTopic = searchParams.get('topic') || undefined;
+  
+  const [title, setTitle] = useState(searchParams.get('title') || '');
+  const [body, setBody] = useState('');
+  const [topic, setTopic] = useState(searchParams.get('topic') || '');
+  
+  const [errors, setErrors] = useState<{title?: string, body?: string, topic?: string}>({});
 
-  const form = useForm<z.infer<typeof threadFormSchema>>({
-    resolver: zodResolver(threadFormSchema),
-    defaultValues: {
-      title: defaultTitle,
-      body: '',
-      topic: defaultTopic,
-    },
-  });
+  const validate = () => {
+    const newErrors: {title?: string, body?: string, topic?: string} = {};
+    if (title.length < 5) newErrors.title = 'Title must be at least 5 characters.';
+    if (title.length > 100) newErrors.title = 'Title is too long.';
+    if (body.length < 10) newErrors.body = 'Body must be at least 10 characters.';
+    if (body.length > 10000) newErrors.body = 'Body is too long.';
+    if (!topic) newErrors.topic = 'Please select a topic.';
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
 
-  const onSubmit = async (values: z.infer<typeof threadFormSchema>) => {
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+    
     if (!user) {
       toast({ variant: 'destructive', title: 'You must be logged in to create a thread.' });
       return;
@@ -68,7 +61,9 @@ export default function NewThreadPage() {
     setIsLoading(true);
     try {
       const threadData = {
-        ...values,
+        title,
+        body,
+        topic,
         createdBy: user.uid,
         relatedEventId: relatedEventId || undefined,
         relatedVenueId: relatedVenueId || undefined,
@@ -96,72 +91,48 @@ export default function NewThreadPage() {
       <Card>
         <CardHeader>
           <CardTitle className="font-headline text-3xl">Start a New Thread</CardTitle>
-          <FormDescription>Share something with the community.</FormDescription>
+          <CardDescription>Share something with the community.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Title</FormLabel>
-                    <FormControl>
-                      <Input placeholder="What's your thread about?" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <form onSubmit={onSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor='title'>Title</Label>
+              <Input id='title' placeholder="What's your thread about?" value={title} onChange={(e) => setTitle(e.target.value)} />
+              {errors.title && <p className="text-sm font-medium text-destructive">{errors.title}</p>}
+            </div>
 
-              <FormField
-                control={form.control}
-                name="topic"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Topic</FormLabel>
-                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a topic" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {topics.map(topic => (
-                            <SelectItem key={topic} value={topic} className="capitalize">{topic}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            <div className="space-y-2">
+              <Label>Topic</Label>
+               <Select onValueChange={setTopic} defaultValue={topic}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a topic" />
+                  </SelectTrigger>
+                <SelectContent>
+                  {topics.map(t => (
+                      <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.topic && <p className="text-sm font-medium text-destructive">{errors.topic}</p>}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor='body'>Content</Label>
+              <Textarea
+                id='body'
+                placeholder="Write your main post here..."
+                className="resize-y"
+                rows={8}
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
               />
-              
-              <FormField
-                control={form.control}
-                name="body"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Content</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Write your main post here..."
-                        className="resize-y"
-                        rows={8}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {errors.body && <p className="text-sm font-medium text-destructive">{errors.body}</p>}
+            </div>
 
-              <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Posting...' : 'Post Thread'}
-              </Button>
-            </form>
-          </Form>
+            <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Posting...' : 'Post Thread'}
+            </Button>
+          </form>
         </CardContent>
       </Card>
     </div>

@@ -2,23 +2,12 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Upload } from 'lucide-react';
 import { Timestamp, collection, query, where, getDocs, orderBy, onSnapshot } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -39,31 +28,31 @@ import { useAuth } from '@/hooks/use-auth';
 import { firestore } from '@/lib/firebase/index';
 import { createEvent, uploadImage } from '@/lib/firebase/firestore';
 import { cn } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { Venue } from '@/lib/types';
 
 const categories = ['Music', 'Food & Drink', 'Talks', 'Sports', 'Arts', 'Networking', 'Other'];
-
-const eventFormSchema = z.object({
-  title: z.string().min(3, { message: 'Title must be at least 3 characters.' }),
-  description: z.string().min(10, { message: 'Description must be at least 10 characters.' }),
-  category: z.string({ required_error: 'Please select a category.' }),
-  startTime: z.date({ required_error: 'An event date and time is required.' }),
-  priceType: z.enum(['free', 'paid', 'donation']),
-  priceMin: z.coerce.number().optional(),
-  coverImage: z.any().refine(file => file instanceof File, 'Cover image is required.'),
-  venueId: z.string().optional(),
-});
 
 export default function NewEventPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
   
   const [venues, setVenues] = useState<Venue[]>([]);
   const venuesQuery = useMemo(() => query(collection(firestore, 'venues'), where('verified', '==', true), orderBy('name')), []);
+
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
+  const [startTime, setStartTime] = useState<Date | undefined>();
+  const [priceType, setPriceType] = useState<'free' | 'paid' | 'donation'>('free');
+  const [priceMin, setPriceMin] = useState<number | undefined>();
+  const [coverImage, setCoverImage] = useState<File | null>(null);
+  const [venueId, setVenueId] = useState<string | undefined>();
+  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+
+  const [errors, setErrors] = useState<{[key:string]: string}>({});
 
   useEffect(() => {
     const unsubscribe = onSnapshot(venuesQuery, (snapshot) => {
@@ -72,20 +61,23 @@ export default function NewEventPage() {
     return () => unsubscribe();
   }, [venuesQuery]);
 
+  const validate = () => {
+    const newErrors: {[key:string]: string} = {};
+    if (title.length < 3) newErrors.title = 'Title must be at least 3 characters.';
+    if (description.length < 10) newErrors.description = 'Description must be at least 10 characters.';
+    if (!category) newErrors.category = 'Please select a category.';
+    if (!startTime) newErrors.startTime = 'An event date and time is required.';
+    if (!coverImage) newErrors.coverImage = 'Cover image is required.';
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
 
-  const form = useForm<z.infer<typeof eventFormSchema>>({
-    resolver: zodResolver(eventFormSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      priceType: 'free',
-    },
-  });
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      form.setValue('coverImage', file);
+      setCoverImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setCoverImagePreview(reader.result as string);
@@ -94,7 +86,10 @@ export default function NewEventPage() {
     }
   };
 
-  const onSubmit = async (values: z.infer<typeof eventFormSchema>) => {
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+
     if (!user) {
       toast({ variant: 'destructive', title: 'You must be logged in to create an event.' });
       return;
@@ -103,21 +98,21 @@ export default function NewEventPage() {
     setIsLoading(true);
     try {
       let coverImageUrl = '';
-      if (values.coverImage) {
-        const imageFile = values.coverImage as File;
+      if (coverImage) {
+        const imageFile = coverImage as File;
         const imagePath = `events/${user.uid}/${Date.now()}_${imageFile.name}`;
         coverImageUrl = await uploadImage(imagePath, imageFile);
       }
 
       const eventData = {
-        title: values.title,
-        description: values.description,
-        category: values.category,
-        startTime: Timestamp.fromDate(values.startTime),
-        priceType: values.priceType,
-        priceMin: values.priceMin,
+        title,
+        description,
+        category,
+        startTime: Timestamp.fromDate(startTime!),
+        priceType,
+        priceMin,
         coverImageUrl,
-        venueId: values.venueId,
+        venueId,
         tags: [],
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         hostId: user.uid,
@@ -150,221 +145,154 @@ export default function NewEventPage() {
       <Card>
         <CardHeader>
           <CardTitle className="font-headline text-3xl">Create an Event</CardTitle>
-          <FormDescription>Fill out the details below to post your event.</FormDescription>
+          <CardDescription>Fill out the details below to post your event.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Event Title</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Summer Music Festival" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <form onSubmit={onSubmit} className="space-y-6">
+            <div className='space-y-2'>
+              <Label htmlFor='title'>Event Title</Label>
+              <Input id='title' placeholder="e.g., Summer Music Festival" value={title} onChange={e => setTitle(e.target.value)} />
+              {errors.title && <p className="text-sm font-medium text-destructive">{errors.title}</p>}
+            </div>
 
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {categories.map((cat) => (
-                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="coverImage"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cover Image</FormLabel>
-                    <FormControl>
-                      <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md">
-                        <div className="space-y-1 text-center">
-                          {coverImagePreview ? (
-                            <img src={coverImagePreview} alt="Cover preview" className="mx-auto h-48 w-auto rounded-md object-cover" />
-                          ) : (
-                            <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
-                          )}
-                          <div className="flex text-sm text-muted-foreground justify-center">
-                            <label
-                              htmlFor="file-upload"
-                              className="relative cursor-pointer rounded-md font-medium text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 hover:text-primary/80"
-                            >
-                              <span>Upload a file</span>
-                              <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleImageChange} accept="image/*" />
-                            </label>
-                            <p className="pl-1">or drag and drop</p>
-                          </div>
-                          <p className="text-xs text-muted-foreground">PNG, JPG up to 10MB</p>
-                        </div>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className='space-y-2'>
+              <Label>Category</Label>
+              <Select onValueChange={setCategory} defaultValue={category}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.category && <p className="text-sm font-medium text-destructive">{errors.category}</p>}
+            </div>
+            
+            <div className='space-y-2'>
+              <Label>Cover Image</Label>
+                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md">
+                  <div className="space-y-1 text-center">
+                    {coverImagePreview ? (
+                      <img src={coverImagePreview} alt="Cover preview" className="mx-auto h-48 w-auto rounded-md object-cover" />
+                    ) : (
+                      <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
+                    )}
+                    <div className="flex text-sm text-muted-foreground justify-center">
+                      <label
+                        htmlFor="file-upload"
+                        className="relative cursor-pointer rounded-md font-medium text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 hover:text-primary/80"
+                      >
+                        <span>Upload a file</span>
+                        <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleImageChange} accept="image/*" />
+                      </label>
+                      <p className="pl-1">or drag and drop</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">PNG, JPG up to 10MB</p>
+                  </div>
+                </div>
+              {errors.coverImage && <p className="text-sm font-medium text-destructive">{errors.coverImage}</p>}
+            </div>
 
-              <FormField
-                control={form.control}
-                name="startTime"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Start Date and Time</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={'outline'}
-                            className={cn(
-                              'w-full justify-start text-left font-normal',
-                              !field.value && 'text-muted-foreground'
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? (
-                              format(field.value, 'PPP p')
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
-                          initialFocus
-                        />
-                         <div className="p-3 border-t border-border">
-                            <Input
-                                type="time"
-                                defaultValue={field.value ? format(field.value, 'HH:mm') : ''}
-                                onChange={(e) => {
-                                    const time = e.target.value;
-                                    const [hours, minutes] = time.split(':').map(Number);
-                                    const newDate = field.value ? new Date(field.value) : new Date();
-                                    newDate.setHours(hours, minutes);
-                                    field.onChange(newDate);
-                                }}
-                            />
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="venueId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Venue</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a venue (optional)" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="">No specific venue</SelectItem>
-                        {venues?.map((venue) => (
-                          <SelectItem key={venue.id} value={venue.id}>{venue.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>Link your event to a place in the directory.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Tell us more about your event..."
-                        className="resize-y"
-                        rows={5}
-                        {...field}
+            <div className='flex flex-col space-y-2'>
+              <Label>Start Date and Time</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                    <Button
+                      variant={'outline'}
+                      className={cn(
+                        'w-full justify-start text-left font-normal',
+                        !startTime && 'text-muted-foreground'
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {startTime ? (
+                        format(startTime, 'PPP p')
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={startTime}
+                    onSelect={setStartTime}
+                    disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
+                    initialFocus
+                  />
+                   <div className="p-3 border-t border-border">
+                      <Input
+                          type="time"
+                          defaultValue={startTime ? format(startTime, 'HH:mm') : ''}
+                          onChange={(e) => {
+                              const time = e.target.value;
+                              const [hours, minutes] = time.split(':').map(Number);
+                              const newDate = startTime ? new Date(startTime) : new Date();
+                              newDate.setHours(hours, minutes);
+                              setStartTime(newDate);
+                          }}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  </div>
+                </PopoverContent>
+              </Popover>
+              {errors.startTime && <p className="text-sm font-medium text-destructive">{errors.startTime}</p>}
+            </div>
 
-              <FormField
-                control={form.control}
-                name="priceType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Price</FormLabel>
-                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select price type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="free">Free</SelectItem>
-                        <SelectItem value="paid">Paid</SelectItem>
-                        <SelectItem value="donation">Donation-based</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {form.watch('priceType') === 'paid' && (
-                <FormField
-                  control={form.control}
-                  name="priceMin"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Price Amount ($)</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="25.00" {...field} step="0.01" min="0" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
+            <div className='space-y-2'>
+              <Label>Venue</Label>
+              <Select onValueChange={setVenueId} defaultValue={venueId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a venue (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No specific venue</SelectItem>
+                  {venues?.map((venue) => (
+                    <SelectItem key={venue.id} value={venue.id}>{venue.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">Link your event to a place in the directory.</p>
+            </div>
 
-              <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Submitting...' : 'Submit Event for Approval'}
-              </Button>
-            </form>
-          </Form>
+            <div className='space-y-2'>
+              <Label htmlFor='description'>Description</Label>
+              <Textarea
+                id='description'
+                placeholder="Tell us more about your event..."
+                className="resize-y"
+                rows={5}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+              {errors.description && <p className="text-sm font-medium text-destructive">{errors.description}</p>}
+            </div>
+
+            <div className='space-y-2'>
+              <Label>Price</Label>
+               <Select onValueChange={(value) => setPriceType(value as any)} defaultValue={priceType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select price type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="free">Free</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="donation">Donation-based</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {priceType === 'paid' && (
+              <div className='space-y-2'>
+                <Label htmlFor='priceMin'>Price Amount ($)</Label>
+                <Input id='priceMin' type="number" placeholder="25.00" value={priceMin} onChange={e => setPriceMin(Number(e.target.value))} step="0.01" min="0" />
+              </div>
+            )}
+
+            <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Submitting...' : 'Submit Event for Approval'}
+            </Button>
+          </form>
         </CardContent>
       </Card>
     </div>

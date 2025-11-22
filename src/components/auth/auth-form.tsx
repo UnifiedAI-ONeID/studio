@@ -2,32 +2,15 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { signInWithGoogle, signUpWithEmail, signInWithEmail } from '@/lib/firebase/auth';
 import AvidityLogo from '../logo';
 import { useAuth } from '@/hooks/use-auth';
-
-const formSchema = z.object({
-  email: z.string().email({ message: 'Please enter a valid email.' }),
-  password: z
-    .string()
-    .min(6, { message: 'Password must be at least 6 characters.' }),
-});
 
 type AuthFormProps = {
   mode: 'login' | 'signup';
@@ -40,31 +23,43 @@ export default function AuthForm({ mode, continueUrl }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const { setPrompted } = useAuth();
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
-  });
+  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
   const handleSuccess = () => {
-    setPrompted(false);
+    if (setPrompted) setPrompted(false);
     router.push(continueUrl || '/home');
   }
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const validate = () => {
+      if (!email.includes('@')) {
+          setError('Please enter a valid email.');
+          return false;
+      }
+      if (password.length < 6) {
+          setError('Password must be at least 6 characters.');
+          return false;
+      }
+      setError('');
+      return true;
+  }
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+
     setIsLoading(true);
     try {
       if (mode === 'signup') {
-        await signUpWithEmail(values.email, values.password);
+        await signUpWithEmail(email, password);
         toast({
           title: 'Account Created!',
           description: "Welcome! You're now part of the community.",
         });
       } else {
-        await signInWithEmail(values.email, values.password);
+        await signInWithEmail(email, password);
       }
       handleSuccess();
     } catch (error: any) {
@@ -112,43 +107,29 @@ export default function AuthForm({ mode, continueUrl }: AuthFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="name@example.com"
-                      {...field}
-                      disabled={isLoading || isGoogleLoading}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="••••••••"
-                      {...field}
-                      disabled={isLoading || isGoogleLoading}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div className='space-y-2'>
+              <Label htmlFor='email'>Email</Label>
+              <Input
+                id='email'
+                placeholder="name@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading || isGoogleLoading}
+              />
+            </div>
+            <div className='space-y-2'>
+              <Label htmlFor='password'>Password</Label>
+              <Input
+                id='password'
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading || isGoogleLoading}
+              />
+            </div>
+            {error && <p className="text-sm font-medium text-destructive">{error}</p>}
             <Button
               type="submit"
               className="w-full"
@@ -179,7 +160,6 @@ export default function AuthForm({ mode, continueUrl }: AuthFormProps) {
               {mode === 'login' ? 'Log In' : 'Sign Up'}
             </Button>
           </form>
-        </Form>
         <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t" />
