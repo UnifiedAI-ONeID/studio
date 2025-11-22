@@ -79,5 +79,11 @@ service cloud.firestore {
         allow create: if isSignedIn() && isOwner(request.resource.data.createdBy);
         allow read, write: if isAdmin();
     }
+
+    match /eventInteractions/{interactionId} {
+      allow read: if true;
+      allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+      allow delete: if isSignedIn() && isOwner(get(path).data.userId);
+    }
   }
 }

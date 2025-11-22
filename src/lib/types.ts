@@ -39,6 +39,11 @@ export interface Event {
   neighborhood?: string;
   hostName?: string;
   venueName?: string;
+  stats?: {
+    interestedCount?: number;
+    goingCount?: number;
+    savedCount?: number;
+  };
 }
 
 export interface Venue {
@@ -133,5 +138,15 @@ export interface Reaction {
     targetId: string;
     targetType: 'thread' | 'comment';
     type: ReactionType;
+    createdAt: Timestamp;
+}
+
+export type EventInteractionType = 'interested' | 'going' | 'saved';
+
+export interface EventInteraction {
+    id: string;
+    userId: string;
+    eventId: string;
+    type: EventInteractionType;
     createdAt: Timestamp;
 }

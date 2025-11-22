@@ -1,22 +1,23 @@
 'use client';
-import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useDocument, useCollection } from 'react-firebase-hooks/firestore';
 import { doc, collection, query, where, limit, Timestamp } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase';
-import type { Event } from '@/lib/types';
+import type { Event, EventInteractionType } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, Share2, User, Building, MessageSquare } from 'lucide-react';
+import { Calendar, MapPin, Share2, User, Building, MessageSquare, CheckCircle, Star, Heart } from 'lucide-react';
 import { format } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { addEventInteraction, removeEventInteraction, getUserEventInteraction } from '@/lib/firebase/firestore';
 
 function RelatedEvents({ category, currentEventId }: { category: string; currentEventId: string }) {
     const eventsQuery = query(
@@ -75,14 +76,62 @@ function RelatedEvents({ category, currentEventId }: { category: string; current
 
 export default function EventDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const eventId = params.id as string;
   const [isExpanded, setIsExpanded] = useState(false);
-  const { user } = useAuth();
+  const { user, setPrompted } = useAuth();
   const { toast } = useToast();
+
+  const [interaction, setInteraction] = useState<EventInteractionType | null>(null);
+  const [interactionLoading, setInteractionLoading] = useState(true);
 
   const eventRef = doc(firestore, 'events', eventId);
   const [eventSnapshot, loading, error] = useDocument(eventRef);
-  
+
+  useEffect(() => {
+    if (user && eventId) {
+      setInteractionLoading(true);
+      getUserEventInteraction(user.uid, eventId).then(type => {
+        setInteraction(type);
+        setInteractionLoading(false);
+      });
+    } else {
+      setInteractionLoading(false);
+    }
+  }, [user, eventId]);
+
+  const handleInteraction = async (type: EventInteractionType) => {
+    if (!user) {
+      setPrompted(true);
+      router.push(`/login?continueUrl=/events/${eventId}`);
+      return;
+    }
+    
+    setInteractionLoading(true);
+    try {
+      if (interaction === type) {
+        // User is toggling off the current interaction
+        await removeEventInteraction(user.uid, eventId, type);
+        setInteraction(null);
+        toast({ title: `No longer ${type}` });
+      } else {
+        // Switching interaction or setting a new one
+        if (interaction) {
+          await removeEventInteraction(user.uid, eventId, interaction);
+        }
+        await addEventInteraction(user.uid, eventId, type);
+        setInteraction(type);
+        toast({ title: `You are ${type}!` });
+      }
+    } catch (e) {
+      console.error(e);
+      toast({ variant: 'destructive', title: 'Something went wrong' });
+    } finally {
+        // The useDocument hook will update the UI with new stats
+        setInteractionLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto max-w-4xl animate-pulse">
@@ -180,9 +229,17 @@ export default function EventDetailPage() {
                   )}
               </div>
 
-              <div className="flex items-center gap-4">
-                <Button size="lg" className="flex-1">Interested</Button>
-                <Button size="lg" variant="outline" onClick={handleShare}><Share2 className="mr-2"/> Share</Button>
+              <div className="flex items-center gap-2">
+                <Button size="lg" variant={interaction === 'going' ? 'default' : 'outline'} className="flex-1" onClick={() => handleInteraction('going')} disabled={interactionLoading}>
+                  <CheckCircle className="mr-2"/> {interaction === 'going' ? 'You are going' : 'I\'m Going'} ({event.stats?.goingCount || 0})
+                </Button>
+                <Button size="lg" variant={interaction === 'interested' ? 'default' : 'outline'} className="flex-1" onClick={() => handleInteraction('interested')} disabled={interactionLoading}>
+                  <Heart className="mr-2"/> {interaction === 'interested' ? 'You\'re Interested' : 'Interested'} ({event.stats?.interestedCount || 0})
+                </Button>
+                <Button size="lg" variant={interaction === 'saved' ? 'default' : 'outline'} onClick={() => handleInteraction('saved')} disabled={interactionLoading}>
+                  <Star className="mr-2"/> {interaction === 'saved' ? 'Saved' : 'Save'}
+                </Button>
+                <Button size="lg" variant="outline" onClick={handleShare}><Share2/></Button>
               </div>
               
               <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>

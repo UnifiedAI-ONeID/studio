@@ -17,7 +17,7 @@ import {
 } from 'firebase/firestore';
 import { firestore } from './index';
 import type { User } from 'firebase/auth';
-import type { AppUser, Event, Venue, Thread, Comment, FollowTargetType, Reaction, ReactionType } from '@/lib/types';
+import type { AppUser, Event, Venue, Thread, Comment, FollowTargetType, ReactionType, EventInteractionType } from '@/lib/types';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export const createUserProfile = async (user: User) => {
@@ -60,7 +60,7 @@ export const uploadImage = async (
   return await getDownloadURL(snapshot.ref);
 };
 
-type CreateEventData = Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'approvalStatus' | 'createdBy' | 'startTime'> & {
+type CreateEventData = Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'approvalStatus' | 'createdBy' | 'startTime' | 'stats'> & {
   startTime: Timestamp;
 };
 
@@ -90,6 +90,11 @@ export const createEvent = async (
     updatedAt: serverTimestamp(),
     venueName: venueName,
     neighborhood: neighborhood,
+    stats: {
+        interestedCount: 0,
+        goingCount: 0,
+        savedCount: 0,
+    }
   };
   const docRef = await addDoc(eventCollection, newEvent);
   return docRef.id;
@@ -215,18 +220,6 @@ const getReactionCollection = (targetType: 'thread' | 'comment', targetId: strin
     return collection(firestore, 'comments', targetId, 'reactions');
 };
 
-const getTargetDocRef = (targetType: 'thread' | 'comment', targetId: string) => {
-    if (targetType === 'thread') {
-        return doc(firestore, 'threads', targetId);
-    }
-    // This is tricky because comments are in a subcollection. We need the threadId.
-    // For simplicity in this function, we'll assume comment reactions don't need to update a parent doc
-    // in the same way. The like count is on the comment doc itself.
-    // A better implementation would pass the full path.
-    // However, for this operation we only need threadRef.
-    return null;
-}
-
 export const addReaction = async (
     userId: string,
     targetId: string,
@@ -235,9 +228,8 @@ export const addReaction = async (
 ) => {
     const batch = writeBatch(firestore);
     
-    // 1. Add the reaction document
     const reactionCollection = getReactionCollection(targetType, targetId);
-    const reactionDocRef = doc(reactionCollection, userId); // Use userId as doc ID to enforce one reaction per user
+    const reactionDocRef = doc(reactionCollection, userId); 
     batch.set(reactionDocRef, {
         userId,
         targetId,
@@ -246,20 +238,10 @@ export const addReaction = async (
         createdAt: serverTimestamp(),
     });
 
-    // 2. Increment the like count on the target document
     if (targetType === 'thread') {
         const targetRef = doc(firestore, 'threads', targetId);
         batch.update(targetRef, { likeCount: increment(1) });
-    } else {
-        // We can't get the thread ID from here easily. This needs to be handled differently.
-        // Let's assume we can get the comment's parent thread somehow.
-        // For now, let's just update the comment itself. We need its full path.
-        // This is a simplification and would need the threadId in a real app.
-        // Let's find the comment doc.
-        const q = query(collectionGroup(firestore, 'comments'), where('__name__', '==', `threads/${targetId.split('/comments/')[0]}/comments/${targetId.split('/comments/')[1]}`));
     }
-    // For now, let's assume we get the full path to the comment
-    // In the component, we'll need to construct this path.
 
     await batch.commit();
 };
@@ -282,7 +264,6 @@ export const addCommentReaction = async (
         createdAt: serverTimestamp(),
     });
 
-    // Update likeCount on the comment document
     const commentRef = doc(firestore, 'threads', threadId, 'comments', commentId);
     batch.update(commentRef, { likeCount: increment(1) });
 
@@ -297,12 +278,10 @@ export const removeReaction = async (
 ) => {
     const batch = writeBatch(firestore);
 
-    // 1. Delete the reaction document
     const reactionCollection = getReactionCollection(targetType, targetId);
     const reactionDocRef = doc(reactionCollection, userId);
     batch.delete(reactionDocRef);
 
-    // 2. Decrement the like count
     if (targetType === 'thread') {
         const targetRef = doc(firestore, 'threads', targetId);
         batch.update(targetRef, { likeCount: increment(-1) });
@@ -330,24 +309,78 @@ export const removeCommentReaction = async (
 export const getUserReactionsForThread = async (userId: string, threadId: string): Promise<Set<string>> => {
     const reactions = new Set<string>();
     
-    // Get thread reaction
     const threadReactionRef = doc(firestore, 'threads', threadId, 'reactions', userId);
     const threadReactionSnap = await getDoc(threadReactionRef);
     if (threadReactionSnap.exists()) {
         reactions.add(threadId);
     }
     
-    // Get comment reactions
     const commentsCollection = collection(firestore, 'threads', threadId, 'comments');
     const commentsSnap = await getDocs(commentsCollection);
     const commentIds = commentsSnap.docs.map(d => d.id);
 
     if (commentIds.length > 0) {
-        // Query the top-level reactions collection for comments
         const reactionsQuery = query(collectionGroup(firestore, 'reactions'), where('userId', '==', userId), where('targetId', 'in', commentIds));
         const reactionsSnap = await getDocs(reactionsQuery);
         reactionsSnap.forEach(doc => reactions.add(doc.data().targetId));
     }
 
     return reactions;
+};
+
+// Event Interactions
+
+export const addEventInteraction = async (userId: string, eventId: string, type: EventInteractionType) => {
+    const batch = writeBatch(firestore);
+
+    const interactionRef = doc(collection(firestore, 'eventInteractions'));
+    batch.set(interactionRef, {
+        userId,
+        eventId,
+        type,
+        createdAt: serverTimestamp(),
+    });
+
+    const eventRef = doc(firestore, 'events', eventId);
+    const statField = `stats.${type}Count`;
+    batch.update(eventRef, { [statField]: increment(1) });
+    
+    await batch.commit();
+    return interactionRef.id;
+};
+
+export const removeEventInteraction = async (userId: string, eventId: string, type: EventInteractionType) => {
+    const batch = writeBatch(firestore);
+
+    const q = query(
+        collection(firestore, 'eventInteractions'),
+        where('userId', '==', userId),
+        where('eventId', '==', eventId),
+        where('type', '==', type)
+    );
+
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+        const interactionDoc = querySnapshot.docs[0];
+        batch.delete(interactionDoc.ref);
+
+        const eventRef = doc(firestore, 'events', eventId);
+        const statField = `stats.${type}Count`;
+        batch.update(eventRef, { [statField]: increment(-1) });
+        
+        await batch.commit();
+    }
+};
+
+export const getUserEventInteraction = async (userId: string, eventId: string): Promise<EventInteractionType | null> => {
+    const q = query(
+        collection(firestore, 'eventInteractions'),
+        where('userId', '==', userId),
+        where('eventId', '==', eventId)
+    );
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+        return querySnapshot.docs[0].data().type as EventInteractionType;
+    }
+    return null;
 };
