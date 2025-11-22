@@ -19,7 +19,7 @@ function EventCard({
   rec: PersonalizedEventRecommendationsOutput['recommendations'][0];
 }) {
   return (
-    <Link href="#">
+    <Link href={`/events/${rec.eventId}`}>
       <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-lg hover:-translate-y-1">
         <div className="relative h-40 w-full bg-muted flex items-center justify-center">
           <EventPlaceholder className="w-16 h-16 text-muted-foreground/30" />
@@ -30,8 +30,7 @@ function EventCard({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="font-semibold">{rec.eventTime}</p>
-          <p className="text-sm text-muted-foreground">{rec.eventLocation}</p>
+          <p className="text-sm text-muted-foreground italic">"{rec.reason}"</p>
         </CardContent>
       </Card>
     </Link>
@@ -46,7 +45,7 @@ export default function RecommendedEvents() {
 
   useEffect(() => {
     async function fetchRecommendations() {
-      if (!user) {
+      if (!user || !user.interests || user.interests.length === 0) {
         setLoading(false);
         return;
       }
@@ -54,11 +53,9 @@ export default function RecommendedEvents() {
         const input: PersonalizedEventRecommendationsInput = {
           userProfile: {
             interests: user.interests || [],
-            age: 30, // Mock age, can be replaced with real data if available
-            location: user.locationPreferences?.[0],
+            homeCity: user.homeCity,
           },
-          userLocation: user.locationPreferences?.[0] || 'San Francisco, CA', // Use user's preferred location or a default
-          currentTime: new Date().toISOString(),
+          count: 4,
         };
 
         const result = await getPersonalizedEventRecommendations(input);
@@ -73,7 +70,7 @@ export default function RecommendedEvents() {
     fetchRecommendations();
   }, [user]);
 
-  if (!user) {
+  if (!user || (!loading && (!recommendations || recommendations.recommendations.length === 0))) {
       return null;
   }
 
@@ -89,10 +86,6 @@ export default function RecommendedEvents() {
         </div>
       </section>
     );
-  }
-
-  if (!recommendations || recommendations.recommendations.length === 0) {
-    return null;
   }
 
   return (

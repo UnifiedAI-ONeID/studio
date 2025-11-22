@@ -10,23 +10,26 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { ImagePlaceholder } from '../ui/placeholders';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 function DirectoryCard({
   item,
 }: {
-  item: PersonalizedDirectoryRecommendationsOutput[0];
+  item: PersonalizedDirectoryRecommendationsOutput['recommendations'][0];
 }) {
   return (
-    <Link href="#">
-      <div className="overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-md">
-        <div className="aspect-video w-full object-cover bg-muted flex items-center justify-center">
+    <Link href={`/directory/${item.venueId}`}>
+      <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-lg hover:-translate-y-1">
+        <div className="relative h-40 w-full bg-muted flex items-center justify-center">
             <ImagePlaceholder className="w-16 h-16 text-muted-foreground/30" />
         </div>
-        <div className="p-4">
-          <h3 className="font-semibold">{item.name}</h3>
-          <p className="text-sm text-muted-foreground">{item.category}</p>
-        </div>
-      </div>
+        <CardHeader>
+          <CardTitle className="font-headline text-lg line-clamp-2">{item.name}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground italic">"{item.reason}"</p>
+        </CardContent>
+      </Card>
     </Link>
   );
 }
@@ -39,7 +42,7 @@ export default function RecommendedDirectory() {
 
   useEffect(() => {
     async function fetchRecommendations() {
-      if (!user) {
+      if (!user || !user.interests || user.interests.length === 0) {
         setLoading(false);
         return;
       }
@@ -48,12 +51,9 @@ export default function RecommendedDirectory() {
         const input: PersonalizedDirectoryRecommendationsInput = {
           userProfile: {
             interests: user.interests || [],
-            skills: user.skills || [],
-            locationPreferences: user.locationPreferences || [],
+            homeCity: user.homeCity,
           },
-          userLocation: user.locationPreferences?.[0] || 'San Francisco, CA', // Use user's preferred location or a default
-          currentTime: new Date().toISOString(),
-          numberOfRecommendations: 3,
+          count: 3,
         };
         const result = await getPersonalizedDirectoryRecommendations(input);
         setRecommendations(result);
@@ -67,7 +67,7 @@ export default function RecommendedDirectory() {
     fetchRecommendations();
   }, [user]);
 
-  if (!user) {
+  if (!user || (!loading && (!recommendations || recommendations.recommendations.length === 0))) {
     return null;
   }
 
@@ -84,15 +84,11 @@ export default function RecommendedDirectory() {
     );
   }
 
-  if (!recommendations || recommendations.length === 0) {
-    return null;
-  }
-
   return (
     <section>
       <h2 className="font-headline text-2xl font-bold tracking-tight mb-4">For You: Directory</h2>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {recommendations.map((item, index) => (
+        {recommendations.recommendations.map((item, index) => (
           <DirectoryCard key={index} item={item} />
         ))}
       </div>

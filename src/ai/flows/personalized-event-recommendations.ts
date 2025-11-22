@@ -10,25 +10,23 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { findEvents } from '../tools/event-finder';
 
 const PersonalizedEventRecommendationsInputSchema = z.object({
   userProfile: z.object({
     interests: z.array(z.string()).describe('List of user interests'),
-    age: z.number().optional().describe('User age'),
-    location: z.string().optional().describe('User location'),
+    homeCity: z.string().optional().describe('User\'s home city'),
   }).describe('User profile information'),
-  userLocation: z.string().describe('User location derived from IP address'),
-  currentTime: z.string().describe('Current time in ISO format'),
+  count: z.number().int().min(1).max(8).default(4).describe('The number of recommendations to return'),
 });
 export type PersonalizedEventRecommendationsInput = z.infer<typeof PersonalizedEventRecommendationsInputSchema>;
 
 const PersonalizedEventRecommendationsOutputSchema = z.object({
   recommendations: z.array(z.object({
+    eventId: z.string().describe('The ID of the recommended event.'),
     eventName: z.string().describe('Name of the event'),
     eventDescription: z.string().describe('Description of the event'),
-    eventTime: z.string().describe('Time of the event'),
-    eventLocation: z.string().describe('Location of the event'),
-    relevanceScore: z.number().describe('A score indicating how relevant the event is to the user'),
+    reason: z.string().describe('A short, compelling reason why this event is recommended for the user.'),
   })).describe('A list of personalized event recommendations'),
 });
 export type PersonalizedEventRecommendationsOutput = z.infer<typeof PersonalizedEventRecommendationsOutputSchema>;
@@ -43,24 +41,23 @@ const eventRecommendationPrompt = ai.definePrompt({
   name: 'eventRecommendationPrompt',
   input: {schema: PersonalizedEventRecommendationsInputSchema},
   output: {schema: PersonalizedEventRecommendationsOutputSchema},
-  prompt: `You are an AI assistant designed to provide personalized event recommendations to users.
-
-  Based on the user's profile information, location, and the current time, suggest events that are relevant and timely.
-
+  tools: [findEvents],
+  prompt: `You are an expert at recommending relevant and interesting events to users.
+  
+  Your goal is to find events that align with the user's interests and location.
+  
   User Profile:
-  Interests: {{userProfile.interests}}
-  Age: {{userProfile.age}}
-  Location: {{userProfile.location}}
-
-  User Location (derived from IP):
-  {{userLocation}}
-
-  Current Time:
-  {{currentTime}}
-
-  Provide a list of event recommendations with the event name, description, time, location, and a relevance score (0-1) indicating how well the event matches the user's interests and context.  The relevance score should be based on your knowledge of the user's interests and location relative to the event's location.
-
-  Format your output as a JSON object matching the schema PersonalizedEventRecommendationsOutputSchema.
+  - Interests: {{userProfile.interests}}
+  - Location: {{userProfile.homeCity}}
+  
+  Number of recommendations requested: {{count}}
+  
+  1. Use the 'findEvents' tool to search for events that match one or more of the user's interests. You can search for events in their home city.
+  2. For each recommended event, you MUST provide a short, compelling reason why the user would be interested in it. Connect it directly to their stated interests.
+  3. Ensure you return the exact number of recommendations requested.
+  4. Return the eventId for each recommendation so the user can click on it.
+  
+  Format your output as a JSON object matching the schema.
   `,
 });
 

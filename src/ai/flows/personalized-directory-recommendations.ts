@@ -10,35 +10,28 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-
-const UserProfileSchema = z.object({
-  interests: z.array(z.string()).describe('User interests and hobbies.'),
-  skills: z.array(z.string()).describe('User skills and expertise.'),
-  locationPreferences: z.array(z.string()).describe('Preferred locations for activities.'),
-});
+import { findVenues } from '../tools/venue-finder';
 
 const PersonalizedDirectoryRecommendationsInputSchema = z.object({
-  userProfile: UserProfileSchema.describe('The user profile information.'),
-  userLocation: z.string().describe('The current location of the user (e.g., city, state).'),
-  currentTime: z.string().describe('The current time (e.g., 2024-01-01T10:00:00Z).'),
-  numberOfRecommendations: z.number().int().min(1).max(10).default(3).describe('The number of directory entry recommendations to return.'),
+  userProfile: z.object({
+    interests: z.array(z.string()).describe('User interests and hobbies.'),
+    homeCity: z.string().optional().describe('User\'s home city'),
+  }).describe('The user profile information.'),
+  count: z.number().int().min(1).max(8).default(3).describe('The number of recommendations to return'),
 });
 export type PersonalizedDirectoryRecommendationsInput = z.infer<
   typeof PersonalizedDirectoryRecommendationsInputSchema
 >;
 
-const DirectoryEntrySchema = z.object({
-  name: z.string().describe('The name of the directory entry.'),
-  description: z.string().describe('A short description of the directory entry.'),
-  category: z.string().describe('The category of the directory entry (e.g., Networking, Sports, Professional Groups).'),
-  location: z.string().describe('The location of the directory entry.'),
-  availability: z.string().describe('The availability of the directory entry (e.g., specific hours, days of the week).'),
-  suitabilityScore: z.number().describe('The calculated suitability score based on user profile, location and time.'),
+const PersonalizedDirectoryRecommendationsOutputSchema = z.object({
+  recommendations: z.array(z.object({
+      venueId: z.string().describe('The ID of the recommended venue.'),
+      name: z.string().describe('The name of the venue.'),
+      description: z.string().describe('A short description of the venue.'),
+      reason: z.string().describe('A short, compelling reason why this venue is recommended for the user.'),
+  })).describe('A list of personalized venue recommendations'),
 });
 
-const PersonalizedDirectoryRecommendationsOutputSchema = z.array(
-  DirectoryEntrySchema
-);
 export type PersonalizedDirectoryRecommendationsOutput = z.infer<
   typeof PersonalizedDirectoryRecommendationsOutputSchema
 >;
@@ -57,20 +50,21 @@ const prompt = ai.definePrompt({
   output: {
     schema: PersonalizedDirectoryRecommendationsOutputSchema,
   },
-  prompt: `You are an AI assistant that recommends directory entries to users based on their profile, location, and the current time. Your goal is to provide a list of directory entries that are most relevant to the user.
+  tools: [findVenues],
+  prompt: `You are an AI assistant that recommends places (venues) to users based on their profile.
+  Your goal is to provide a list of venues that are most relevant to the user's interests.
 
   User Profile:
-  Interests: {{userProfile.interests}}
-  Skills: {{userProfile.skills}}
-  Location Preferences: {{userProfile.locationPreferences}}
+  - Interests: {{userProfile.interests}}
+  - Location: {{userProfile.homeCity}}
+  
+  Number of recommendations requested: {{count}}
 
-  User Location: {{userLocation}}
-  Current Time: {{currentTime}}
-  Number of Recommendations: {{numberOfRecommendations}}
+  1. Use the 'findVenues' tool to search for venues. Try to find venues that align with the user's interests. You can use their interests as keywords or categories.
+  2. For each recommendation, provide the venue's ID and a short, compelling reason why the user would like this place, linking it to their interests.
+  3. Return exactly the number of recommendations requested.
 
-  Consider the user's interests, skills, and location preferences when recommending directory entries. Also, take into account the user's current location and the current time to recommend entries that are nearby and currently available.
-
-  Return a JSON array of directory entries. Each entry should include the name, description, category, location, and availability. Include a suitabilityScore for each entry.
+  Return a JSON object that matches the specified output schema.
   `,
 });
 
