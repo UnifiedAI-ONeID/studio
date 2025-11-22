@@ -88,6 +88,7 @@ export interface Thread {
     updatedAt: Timestamp;
     lastActivityAt: Timestamp;
     replyCount: number;
+    likeCount?: number;
 }
 
 export interface Comment {
@@ -102,6 +103,7 @@ export interface Comment {
     };
     createdAt: Timestamp;
     updatedAt: Timestamp;
+    likeCount?: number;
 }
 
 export interface Report {
@@ -120,5 +122,16 @@ export interface Follow {
     userId: string;
     targetId: string;
     targetType: FollowTargetType;
+    createdAt: Timestamp;
+}
+
+export type ReactionType = 'like';
+
+export interface Reaction {
+    id: string;
+    userId: string;
+    targetId: string;
+    targetType: 'thread' | 'comment';
+    type: ReactionType;
     createdAt: Timestamp;
 }

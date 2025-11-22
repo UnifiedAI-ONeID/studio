@@ -8,7 +8,7 @@ import type { Thread } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, MessageSquare, Clock } from 'lucide-react';
+import { Plus, MessageSquare, Clock, Heart } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
@@ -102,6 +102,7 @@ export default function CommonsPage() {
                       <span>{thread.authorInfo.displayName}</span>
                     </div>
                     <div className="flex items-center gap-4">
+                      <span className="flex items-center gap-1"><Heart className="h-4 w-4" /> {thread.likeCount || 0}</span>
                       <span className="flex items-center gap-1"><MessageSquare className="h-4 w-4" /> {thread.replyCount}</span>
                       <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {formatDistanceToNow(thread.lastActivityAt.toDate(), { addSuffix: true })}</span>
                     </div>

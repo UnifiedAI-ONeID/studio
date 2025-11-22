@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useDocument, useCollection } from 'react-firebase-hooks/firestore';
 import { doc, collection, query, orderBy, Timestamp } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase';
-import { createComment, reportContent } from '@/lib/firebase/firestore';
+import { createComment, reportContent, addReaction, removeReaction, addCommentReaction, removeCommentReaction, getUserReactionsForThread } from '@/lib/firebase/firestore';
 import type { Thread, Comment, Event, Venue } from '@/lib/types';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,11 +15,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Flag, MessageSquare, Send } from 'lucide-react';
+import { Flag, MessageSquare, Send, Heart } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 function RelatedItem({ type, id }: { type: 'event' | 'venue', id: string }) {
     const itemRef = doc(firestore, `${type}s`, id);
@@ -70,7 +71,7 @@ function RelatedItem({ type, id }: { type: 'event' | 'venue', id: string }) {
     return null;
 }
 
-function CommentItem({ comment }: { comment: Comment }) {
+function CommentItem({ comment, userHasReacted, onReaction, threadId }: { comment: Comment, userHasReacted: boolean, onReaction: (commentId: string, hasReacted: boolean) => void, threadId: string }) {
     const { toast } = useToast();
     const { user } = useAuth();
     
@@ -83,6 +84,14 @@ function CommentItem({ comment }: { comment: Comment }) {
             toast({ variant: 'destructive', title: 'Failed to report' });
         }
     }
+
+    const handleLike = () => {
+        if (!user) {
+            toast({ variant: 'destructive', title: 'Please sign in to like comments.' });
+            return;
+        }
+        onReaction(comment.id, userHasReacted);
+    };
 
     return (
         <div className="flex gap-4 py-4 border-b">
@@ -105,6 +114,12 @@ function CommentItem({ comment }: { comment: Comment }) {
                     )}
                 </div>
                 <p className="text-sm mt-1">{comment.body}</p>
+                 <div className="flex items-center gap-2 mt-2">
+                    <Button variant="ghost" size="sm" onClick={handleLike} className="-ml-2">
+                        <Heart className={cn("h-4 w-4 mr-1", userHasReacted && "fill-red-500 text-red-500")} />
+                        <span>{comment.likeCount || 0}</span>
+                    </Button>
+                </div>
             </div>
         </div>
     )
@@ -117,6 +132,9 @@ export default function ThreadDetailPage() {
     const { toast } = useToast();
     const [commentText, setCommentText] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // State to track user's reactions
+    const [userReactions, setUserReactions] = useState<Set<string>>(new Set());
 
     const threadRef = doc(firestore, 'threads', threadId);
     const [threadSnapshot, threadLoading] = useDocument(threadRef);
@@ -125,6 +143,13 @@ export default function ThreadDetailPage() {
     const commentsQuery = query(collection(firestore, 'threads', threadId, 'comments'), orderBy('createdAt', 'asc'));
     const [commentsSnapshot, commentsLoading] = useCollection(commentsQuery);
     const comments = commentsSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment));
+    
+    useEffect(() => {
+        if(user) {
+            getUserReactionsForThread(user.uid, threadId).then(setUserReactions);
+        }
+    }, [user, threadId]);
+
 
     const handlePostComment = async () => {
         if (!user || !commentText.trim()) return;
@@ -156,6 +181,49 @@ export default function ThreadDetailPage() {
             toast({ variant: 'destructive', title: 'Failed to report thread' });
         }
     }
+
+    const handleThreadReaction = async () => {
+        if (!user) {
+            toast({ variant: "destructive", title: "Please sign in to like posts" });
+            return;
+        }
+
+        const hasReacted = userReactions.has(threadId);
+        const newReactions = new Set(userReactions);
+
+        try {
+            if (hasReacted) {
+                await removeReaction(user.uid, threadId, 'thread');
+                newReactions.delete(threadId);
+            } else {
+                await addReaction(user.uid, threadId, 'thread');
+                newReactions.add(threadId);
+            }
+            setUserReactions(newReactions);
+        } catch (error) {
+            console.error("Failed to update reaction:", error);
+            toast({ variant: "destructive", title: "Something went wrong" });
+        }
+    };
+    
+    const handleCommentReaction = async (commentId: string, hasReacted: boolean) => {
+        if (!user) return;
+        
+        const newReactions = new Set(userReactions);
+        try {
+            if (hasReacted) {
+                await removeCommentReaction(user.uid, threadId, commentId);
+                newReactions.delete(commentId);
+            } else {
+                await addCommentReaction(user.uid, threadId, commentId);
+                newReactions.add(commentId);
+            }
+            setUserReactions(newReactions);
+        } catch (error) {
+             console.error("Failed to update comment reaction:", error);
+            toast({ variant: "destructive", title: "Something went wrong" });
+        }
+    };
 
     if (threadLoading) {
         return (
@@ -196,9 +264,15 @@ export default function ThreadDetailPage() {
             </div>
             
             <div className="flex justify-between items-center mb-8 border-t border-b py-2">
-                 <div className="flex items-center gap-2 text-muted-foreground">
-                    <MessageSquare className="h-5 w-5"/>
-                    <span className="font-semibold">{thread.replyCount} Comments</span>
+                 <div className="flex items-center gap-4 text-muted-foreground">
+                    <Button variant="ghost" size="sm" onClick={handleThreadReaction} className="-ml-3">
+                         <Heart className={cn("h-5 w-5 mr-1.5", userReactions.has(threadId) && "fill-red-500 text-red-500")} />
+                         <span className="font-semibold">{thread.likeCount || 0}</span>
+                    </Button>
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5"/>
+                      <span className="font-semibold">{thread.replyCount}</span>
+                    </div>
                  </div>
                  {user && user.uid !== thread.createdBy && (
                     <Button variant="ghost" onClick={handleReportThread}>
@@ -214,7 +288,7 @@ export default function ThreadDetailPage() {
                         <Skeleton className="h-20 w-full" />
                     </>
                 ) : (
-                    comments?.map(comment => <CommentItem key={comment.id} comment={comment} />)
+                    comments?.map(comment => <CommentItem key={comment.id} comment={comment} userHasReacted={userReactions.has(comment.id)} onReaction={handleCommentReaction} threadId={threadId} />)
                 )}
             </div>
 

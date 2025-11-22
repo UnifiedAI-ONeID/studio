@@ -88,7 +88,8 @@
         "relatedVenueId": { "type": "string", "description": "Optional ID of a related venue." },
         "createdBy": { "type": "string", "description": "The user ID of the creator." },
         "lastActivityAt": { "type": "string", "format": "date-time", "description": "Timestamp of the last activity (creation or new comment)." },
-        "replyCount": { "type": "number", "description": "The number of replies." }
+        "replyCount": { "type": "number", "description": "The number of replies." },
+        "likeCount": { "type": "number", "description": "The number of likes." }
       },
       "required": ["title", "body", "topic", "createdBy", "lastActivityAt", "replyCount"]
     },
@@ -100,7 +101,8 @@
         "threadId": { "type": "string", "description": "The ID of the parent thread." },
         "parentId": { "type": "string", "description": "Optional ID of the parent comment for nesting." },
         "body": { "type": "string", "description": "The content of the comment." },
-        "createdBy": { "type": "string", "description": "The user ID of the commenter." }
+        "createdBy": { "type": "string", "description": "The user ID of the commenter." },
+        "likeCount": { "type": "number", "description": "The number of likes." }
       },
       "required": ["threadId", "body", "createdBy"]
     },
@@ -127,6 +129,19 @@
           "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of when the follow action occurred." }
         },
         "required": ["userId", "targetId", "targetType", "createdAt"]
+    },
+    "Reaction": {
+      "title": "Reaction",
+      "description": "Represents a user's reaction (e.g., a 'like') to a piece of content.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The ID of the user who reacted." },
+        "targetId": { "type": "string", "description": "The ID of the content being reacted to." },
+        "targetType": { "type": "string", "enum": ["thread", "comment"], "description": "The type of content being reacted to." },
+        "type": { "type": "string", "enum": ["like"], "description": "The type of reaction." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "targetId", "targetType", "type", "createdAt"]
     }
   },
   "auth": {
@@ -156,6 +171,14 @@
     "/threads/{threadId}/comments/{commentId}": {
       "schema": { "$ref": "#/backend/entities/Comment" },
       "description": "Stores comments for a specific thread."
+    },
+    "/threads/{threadId}/reactions/{reactionId}": {
+      "schema": { "$ref": "#/backend/entities/Reaction" },
+      "description": "Stores reactions for a specific thread."
+    },
+    "/comments/{commentId}/reactions/{reactionId}": {
+      "schema": { "$ref": "#/backend/entities/Reaction" },
+      "description": "Stores reactions for a specific comment."
     },
     "/reports/{reportId}": {
       "schema": { "$ref": "#/backend/entities/Report" },
