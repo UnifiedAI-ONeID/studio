@@ -5,8 +5,18 @@ const pwaConfig = withPWA({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
   runtimeCaching: [
+    {
+      urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'google-fonts',
+        expiration: {
+          maxEntries: 4,
+          maxAgeSeconds: 365 * 24 * 60 * 60, // 365 days
+        },
+      },
+    },
     {
       urlPattern: /^https?.*/,
       handler: 'NetworkFirst',
@@ -56,17 +66,6 @@ const pwaConfig = withPWA({
 
 const nextConfig: NextConfig = {
   output: 'export',
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  experimental: {
-    allowedDevOrigins: [
-      "https://6000-firebase-studio-1763798265683.cluster-y3k7ko3fang56qzieg3trwgyfg.cloudworkstations.dev"
-    ]
-  },
   images: {
     unoptimized: true,
     remotePatterns: [
@@ -85,6 +84,12 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'picsum.photos',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https' ,
+        hostname: 'i.pravatar.cc',
         port: '',
         pathname: '/**',
       },
