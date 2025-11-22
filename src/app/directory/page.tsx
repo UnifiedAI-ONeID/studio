@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { collection, query, where, orderBy } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/index';
+import { db as firestore } from '@/lib/firebase';
 import { useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import type { Venue } from '@/lib/types';
 import { Button } from '@/components/ui/button';

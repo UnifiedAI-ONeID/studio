@@ -9,7 +9,7 @@ import {
   onAuthStateChanged,
   User,
 } from 'firebase/auth';
-import { auth } from './index';
+import { auth } from '../firebase';
 import { createUserProfile } from './firestore';
 
 const googleProvider = new GoogleAuthProvider();

@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/index';
+import { db as firestore } from '@/lib/firebase';
 import { useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import type { Event } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -39,7 +39,7 @@ function getPriceDisplay(event: Event) {
   if (event.priceType === 'free') return 'Free';
   if (event.priceType === 'donation') return 'Donation';
   if (event.minPrice) {
-    return `$${event.minPrice}${event.maxPrice && event.priceMax > event.minPrice ? ` - $${event.priceMax}`: ''}`;
+    return `$${event.minPrice}${event.maxPrice && event.maxPrice > event.minPrice ? ` - $${event.maxPrice}`: ''}`;
   }
   return 'Paid';
 }
@@ -178,7 +178,7 @@ export default function EventsPage() {
                   <p className="font-semibold">{format((event.startTime as Timestamp).toDate(), "E, MMM d '·' h:mm a")}</p>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
                     <MapPin className="h-4 w-4" />
-                    <span>{event.neighborhood || 'TBA'}</span>
+                    <span>{event.location?.neighborhood || 'TBA'}</span>
                   </div>
                 </CardContent>
               </Card>

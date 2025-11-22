@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/index';
+import { useMemo } from 'react';
+import { collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { db as firestore } from '@/lib/firebase';
 import type { Venue } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { Button } from '../ui/button';
 import { ArrowRight } from 'lucide-react';
 import VenueCard from './venue-card';
+import { useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 
 function SectionSkeleton() {
   return (
@@ -21,26 +22,14 @@ function SectionSkeleton() {
 }
 
 export default function PopularPlacesSection() {
-  const [venues, setVenues] = useState<Venue[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const venuesQuery = useMemo(() => query(
+  const venuesQuery = useMemoFirebase(() => query(
     collection(firestore, 'venues'),
     where('isFeaturedOnLanding', '==', true),
     orderBy('name', 'asc'),
     limit(6)
   ), []);
 
-  useEffect(() => {
-    const unsubscribe = onSnapshot(venuesQuery, (snapshot) => {
-      setVenues(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Venue)));
-      setLoading(false);
-    }, (error) => {
-        console.error("Error fetching popular places:", error);
-        setLoading(false);
-    });
-    return () => unsubscribe();
-  }, [venuesQuery]);
+  const { data: venues, loading } = useCollection<Venue>(venuesQuery);
 
 
   return (

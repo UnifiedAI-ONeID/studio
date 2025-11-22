@@ -158,7 +158,7 @@ export type FollowTargetType = 'user' | 'organization' | 'venue' | 'topic';
 
 export interface Follow extends DocumentWithId {
   id: string;
-  followerUserId: string;
+  userId: string;
   targetType: FollowTargetType;
   targetId: string;
   createdAt: Timestamp;

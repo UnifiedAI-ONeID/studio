@@ -1,3 +1,4 @@
+
 // scripts/seedSampleData.ts
 import * as admin from "firebase-admin";
 
@@ -113,7 +114,7 @@ const seed = async () => {
             ...venue,
             createdAt: now,
             updatedAt: now,
-            stats: venue.stats || { ratingAverage: 0, ratingCount: 0, eventCount: 0 },
+            stats: { ratingAverage: 0, ratingCount: 0, eventCount: 0 },
             isSampleData: true,
         });
     });
@@ -124,7 +125,7 @@ const seed = async () => {
         const ref = db.collection('events').doc(event.id);
         batch.set(ref, {
             ...event,
-            description: event.description || 'Placeholder event description.',
+            description: 'Placeholder event description.',
             timezone: 'Asia/Taipei',
             status: 'published',
             visibility: 'public',

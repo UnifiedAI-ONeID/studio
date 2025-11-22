@@ -31,7 +31,7 @@ import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { Venue } from '@/lib/types';
 import { collection, query, where, orderBy } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/index';
+import { db as firestore } from '@/lib/firebase';
 
 
 const categories = ['Music', 'Food & Drink', 'Talks', 'Sports', 'Arts', 'Networking', 'Other'];
@@ -51,7 +51,7 @@ export default function NewEventPage() {
   const [startTime, setStartTime] = useState<Date | undefined>();
   const [priceType, setPriceType] = useState<'free' | 'paid' | 'donation'>('free');
   const [minPrice, setMinPrice] = useState<number | undefined>();
-  const [coverImage, setCoverImage] = useState<File | null>(null);
+  const [coverImage, setCoverImage]_ = useState<File | null>(null);
   const [venueId, setVenueId] = useState<string | undefined>();
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
 

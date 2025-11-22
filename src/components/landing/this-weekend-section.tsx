@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { collection, query, where, orderBy, limit, Timestamp, onSnapshot } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/index';
+import { useMemo } from 'react';
+import { collection, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { db as firestore } from '@/lib/firebase';
 import type { Event } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
@@ -10,6 +10,7 @@ import { Button } from '../ui/button';
 import { ArrowRight } from 'lucide-react';
 import EventCard from './event-card';
 import { startOfWeek, endOfWeek } from 'date-fns';
+import { useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 
 function SectionSkeleton() {
   return (
@@ -29,10 +30,7 @@ function SectionSkeleton() {
 }
 
 export default function ThisWeekendSection() {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const eventsQuery = useMemo(() => {
+  const eventsQuery = useMemoFirebase(() => {
     const now = new Date();
     // Get Friday of the current week
     const start = startOfWeek(now, { weekStartsOn: 1 }); // Monday
@@ -54,16 +52,7 @@ export default function ThisWeekendSection() {
     );
   }, []);
 
-  useEffect(() => {
-    const unsubscribe = onSnapshot(eventsQuery, (snapshot) => {
-      setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event)));
-      setLoading(false);
-    }, (error) => {
-        console.error("Error fetching weekend events:", error);
-        setLoading(false);
-    });
-    return () => unsubscribe();
-  }, [eventsQuery]);
+  const { data: events, loading } = useCollection<Event>(eventsQuery);
 
 
   return (

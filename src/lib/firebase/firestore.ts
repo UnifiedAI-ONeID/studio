@@ -15,9 +15,9 @@ import {
   deleteDoc,
   limit,
 } from 'firebase/firestore';
-import { firestore } from './index';
+import { db as firestore } from '../firebase';
 import type { User } from 'firebase/auth';
-import type { AppUser, Event, Venue, CommonsThread, CommonsReply, FollowTargetType, EventInteractionType, ApprovalStatus } from '@/lib/types';
+import type { AppUser, Event, Venue, CommonsThread, CommonsReply, FollowTargetType, EventInteractionType, ApprovalStatus } from '../types';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { errorEmitter } from './error-emitter';
 import { FirestorePermissionError } from './errors';
@@ -287,7 +287,7 @@ export const followTarget = async (userId: string, targetId: string, targetType:
     const followId = `${userId}_${targetType}_${targetId}`;
     const followRef = doc(firestore, 'follows', followId);
     const followData = {
-        followerUserId: userId,
+        userId: userId,
         targetId,
         targetType,
         createdAt: serverTimestamp(),

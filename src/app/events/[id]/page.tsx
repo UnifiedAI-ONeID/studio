@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { doc, collection, query, where, limit, Timestamp, orderBy } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/index';
+import { db as firestore } from '@/lib/firebase';
 import { useAuth, useDoc, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import type { Event, EventInteractionType, EventInteraction, AppUser } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -223,8 +223,8 @@ export default function EventDetailPage() {
                     <Link href={`/directory/${event.location.venueId}`} className="flex items-start gap-4 hover:bg-muted/50 p-2 -m-2 rounded-md">
                         <Building className="h-6 w-6 text-primary mt-1 flex-shrink-0"/>
                         <div>
-                            <p className="font-semibold text-foreground">{event.location.neighborhood}</p>
-                            <p>{event.location.address}</p>
+                            <p className="font-semibold text-foreground">{event.location?.neighborhood}</p>
+                            <p>{event.location?.address}</p>
                         </div>
                     </Link>
                   ) : (

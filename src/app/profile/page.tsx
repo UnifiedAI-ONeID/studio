@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Event, EventInteraction, Follow, CommonsThread, Venue } from '@/lib/types';
 import { collection, query, where, orderBy, limit, doc } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/index';
+import { db as firestore } from '@/lib/firebase';
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -124,7 +124,7 @@ function FollowedItem({ follow }: { follow: Follow }) {
 function MyFollows() {
     const { user } = useAuth();
     const followsQuery = useMemoFirebase(() =>
-        user ? query(collection(firestore, 'follows'), where('followerUserId', '==', user.id)) : null
+        user ? query(collection(firestore, 'follows'), where('userId', '==', user.id)) : null
     , [user]);
     const { data: follows, loading } = useCollection<Follow>(followsQuery);
 

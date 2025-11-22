@@ -6,7 +6,6 @@
     "dev": "next dev -p 9002 --hostname 0.0.0.0",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
     "seed": "tsx scripts/seedSampleData.ts"
   },
   "dependencies": {

@@ -3,7 +3,7 @@
 
 import { useAuth, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import { collection, query, where, orderBy, Timestamp, limit } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/index';
+import { db as firestore } from '@/lib/firebase';
 import type { Event, Follow } from '@/lib/types';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -91,7 +91,7 @@ function FollowedVenuesEvents() {
     const { user } = useAuth();
     
     const followsQuery = useMemoFirebase(() =>
-        user ? query(collection(firestore, 'follows'), where('followerUserId', '==', user.id), where('targetType', '==', 'venue')) : null
+        user ? query(collection(firestore, 'follows'), where('userId', '==', user.id), where('targetType', '==', 'venue')) : null
     , [user]);
     const { data: follows, loading: followsLoading } = useCollection<Follow>(followsQuery);
 

@@ -7,11 +7,7 @@ import {
   useContext
 } from 'react';
 import { User as FirebaseUser, Auth } from 'firebase/auth';
-import {
-  initializeFirebase,
-  auth as fAuth,
-  firestore as fs,
-} from '@/lib/firebase';
+import { auth as fAuth, db as fs } from '@/lib/firebase';
 import { useUser } from './auth/use-user';
 
 import type { AppUser } from '@/lib/types';
@@ -42,14 +38,12 @@ export interface FirebaseContextValue {
 export const FirebaseContext = createContext<FirebaseContextValue | null>(null);
 
 export function FirebaseProvider({ children }: { children: ReactNode }) {
-  const { auth, firestore } = useMemo(() => initializeFirebase(), []);
-
   const value = useMemo(
     () => ({
-      auth,
-      firestore,
+      auth: fAuth,
+      firestore: fs,
     }),
-    [auth, firestore]
+    []
   );
   return (
     <FirebaseContext.Provider value={value}>{children}</FirebaseContext.Provider>
