@@ -5,6 +5,18 @@ const isProduction = process.env.NODE_ENV === 'production';
 const withPWA = require('next-pwa')({
   dest: 'public',
   disable: !isProduction,
+  runtimeCaching: [
+    {
+      urlPattern: /^https?.*/,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'offline-cache',
+        expiration: {
+          maxEntries: 200,
+        },
+      },
+    },
+  ],
 });
 
 const nextConfig = {
