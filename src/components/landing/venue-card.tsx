@@ -17,7 +17,7 @@ export default function VenueCard({ venue }: { venue: Venue }) {
     const handleFollow = async (e: React.MouseEvent) => {
         e.preventDefault(); // Prevent link navigation
         if (!user) {
-            setPrompted(true);
+            if (setPrompted) setPrompted(true);
             const continueUrl = `/directory/${venue.id}`;
             router.push(`/login?continueUrl=${encodeURIComponent(continueUrl)}`);
         } else {

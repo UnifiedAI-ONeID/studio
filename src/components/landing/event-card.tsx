@@ -29,7 +29,7 @@ export default function EventCard({ event }: { event: Event }) {
   const handleSave = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigating to event page
     if (!user) {
-      setPrompted(true);
+      if (setPrompted) setPrompted(true);
       const continueUrl = `/events/${event.id}`;
       router.push(`/login?continueUrl=${encodeURIComponent(continueUrl)}`);
     } else {

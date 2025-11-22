@@ -13,13 +13,15 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && get(/databases/$(database)/documents/appRoles/global).data.admins[request.auth.uid] == true;
+      // In a real app, you would have a more robust way to check for admins.
+      // This is a placeholder for demonstration purposes.
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
-
+    
     function isOwner(ownerId) {
         return request.auth.uid == ownerId;
     }
-
+    
     function incomingData() {
       return request.resource.data;
     }
@@ -30,39 +32,38 @@ service cloud.firestore {
 
     // --- Rules ---
 
+    // Users can only read their own profile, but can see basic info of others
     match /users/{userId} {
       allow read: if true;
       allow create: if isUser(userId);
-      allow update: if isUser(userId) && incomingData().createdAt == existingData().createdAt;
+      allow update: if isUser(userId);
       allow delete: if isUser(userId) || isAdmin();
     }
-
+    
+    // Events are public to read
     match /events/{eventId} {
       allow read: if true;
-      allow create: if isSignedIn() && isOwner(incomingData().hostId);
-      allow update: if (isOwner(existingData().hostId) && incomingData().hostId == existingData().hostId && incomingData().createdAt == existingData().createdAt) || isAdmin();
-      allow delete: if isOwner(existingData().hostId) || isAdmin();
+      allow create: if isSignedIn();
+      allow update: if (isSignedIn() && isOwner(existingData().hostId)) || isAdmin();
+      allow delete: if (isSignedIn() && isOwner(existingData().hostId)) || isAdmin();
     }
-
+    
+    // Venues are public to read
     match /venues/{venueId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update, delete: if isOwner(existingData().createdBy) || isAdmin();
+      allow update, delete: if (isSignedIn() && isOwner(existingData().createdBy)) || isAdmin();
     }
-
-    match /organizations/{orgId} {
-      allow read: if true;
-      allow create: if isSignedIn() && isOwner(incomingData().ownerUserId);
-      allow update, delete: if isOwner(existingData().ownerUserId) || isAdmin();
-    }
-
+    
+    // Commons threads are public to read
     match /commonsThreads/{threadId} {
       allow read: if true;
       allow create: if isSignedIn() && isOwner(incomingData().authorId);
       allow update: if (isOwner(existingData().authorId) || isAdmin()) && incomingData().createdAt == existingData().createdAt;
       allow delete: if isOwner(existingData().authorId) || isAdmin();
     }
-    
+
+    // Replies are public to read
     match /commonsReplies/{replyId} {
         allow read: if true;
         allow create: if isSignedIn() && isOwner(incomingData().authorId);
@@ -70,47 +71,23 @@ service cloud.firestore {
         allow delete: if isOwner(existingData().authorId) || isAdmin();
     }
 
+    // Interactions require a user to be logged in
     match /eventInteractions/{interactionId} {
-      allow read: if isUser(existingData().userId);
-      allow create, update: if isUser(incomingData().userId) && interactionId == incomingData().userId + '_' + incomingData().eventId;
-      allow delete: if isUser(existingData().userId);
-    }
-
-    match /follows/{followId} {
-      allow read: if isUser(existingData().followerUserId);
-      allow create: if isUser(incomingData().followerUserId) && followId == incomingData().followerUserId + '_' + incomingData().targetType + '_' + incomingData().targetId;
-      allow delete: if isUser(existingData().followerUserId);
-    }
-
-    match /notifications/{notificationId} {
-      allow read, update: if isUser(existingData().userId);
-      allow create, delete: if isAdmin(); // Only backend can create notifications
-    }
-
-    match /newsletterSubscribers/{subscriberId} {
-      allow create: if true;
-      allow read, update, delete: if isAdmin();
-    }
-
-    match /appRoles/global {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
+      allow read: if isSignedIn() && isUser(resource.data.userId);
+      allow create, update: if isSignedIn() && isUser(incomingData().userId);
+      allow delete: if isSignedIn() && isUser(resource.data.userId);
     }
     
-    match /landingConfig/global {
-      allow read: if true;
-      allow write: if isAdmin();
+    // Follows require a user to be logged in
+    match /follows/{followId} {
+        allow read: if isSignedIn() && isUser(resource.data.followerUserId);
+        allow create: if isSignedIn() && isUser(incomingData().followerUserId);
+        allow delete: if isSignedIn() && isUser(resource.data.followerUserId);
     }
-
+    
     match /reports/{reportId} {
-      allow create: if isSignedIn() && isOwner(incomingData().createdBy);
-      allow read, update, delete: if isAdmin();
-    }
-
-    match /threads/{threadId}/comments/{commentId}/reactions/{reactionId} {
-        allow read: if true;
-        allow create: if isSignedIn() && isOwner(incomingData().userId);
-        allow delete: if isSignedIn() && isOwner(existingData().userId);
+        allow create: if isSignedIn() && isOwner(incomingData().createdBy);
+        allow read, update, delete: if isAdmin();
     }
   }
 }

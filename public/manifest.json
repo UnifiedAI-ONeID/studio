@@ -1,18 +1,30 @@
 {
-  "name": "Avidity – What’s on in Your City",
-  "short_name": "Avidity",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
   "theme_color": "#0f172a",
+  "background_color": "#f5f5f5",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "name": "Avidity",
+  "short_name": "Avidity",
+  "description": "Avidity: Connect, Discover, and Engage.",
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/icons/icon-256x256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }

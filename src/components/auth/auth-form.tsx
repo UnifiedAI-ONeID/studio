@@ -207,7 +207,7 @@ export default function AuthForm({ mode, continueUrl }: AuthFormProps) {
             <>
               Don&apos;t have an account?{' '}
               <Link
-                href={`/signup${continueUrl ? `?continueUrl=${continueUrl}` : ''}`}
+                href={`/signup${continueUrl ? `?continueUrl=${encodeURIComponent(continueUrl || '')}` : ''}`}
                 className="underline underline-offset-4 hover:text-primary"
               >
                 Sign Up
@@ -217,7 +217,7 @@ export default function AuthForm({ mode, continueUrl }: AuthFormProps) {
             <>
               Already have an account?{' '}
               <Link
-                href={`/login${continueUrl ? `?continueUrl=${continueUrl}` : ''}`}
+                href={`/login${continueUrl ? `?continueUrl=${encodeURIComponent(continueUrl || '')}` : ''}`}
                 className="underline underline-offset-4 hover:text-primary"
               >
                 Log In

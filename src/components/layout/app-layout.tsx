@@ -55,10 +55,12 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   const isLandingPage = pathname === '/';
 
   React.useEffect(() => {
+    // If user is logged in, and they land on the marketing or auth pages,
+    // redirect them to the app's home.
     if (!loading && user && (isAuthPage || isLandingPage)) {
       router.push('/home');
     }
-  }, [user, loading, pathname, isAuthPage, isLandingPage, router]);
+  }, [user, loading, isAuthPage, isLandingPage, router]);
 
   if (loading) {
     return (
@@ -71,22 +73,27 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user && (isAuthPage || isLandingPage)) {
-    return (
+  // For anonymous users on any page that is NOT an auth page.
+  // This shows the public-facing version of the site.
+  if (!user && !isAuthPage) {
+    return <PublicLayout>{children}</PublicLayout>;
+  }
+
+  // For anonymous users on an auth page (login/signup)
+  if (!user && isAuthPage) {
+     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
-        {isLandingPage ? <LandingTopNavAndMain>{children}</LandingTopNavAndMain> : children}
+         {children}
       </div>
     );
   }
   
-  if (!user) {
-    return <LandingTopNavAndMain>{children}</LandingTopNavAndMain>
-  }
-  
+  // For authenticated users
   if (user) {
     return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
   }
 
+  // Fallback, should not be reached often
   return (
     <div className="flex h-screen w-full items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-4">
@@ -96,7 +103,13 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   );
 }
 
-const LandingTopNavAndMain = ({ children }: { children: React.ReactNode }) => {
+const PublicLayout = ({ children }: { children: React.ReactNode }) => {
+    const pathname = usePathname();
+    const isLandingPage = pathname === '/';
+
+    // Show top nav for all public pages
+    // The main content for the landing page is handled in page.tsx
+    // The main content for other public pages is the children
     return (
       <>
         <LandingTopNav />
