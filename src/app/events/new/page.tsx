@@ -51,7 +51,7 @@ export default function NewEventPage() {
   const [startTime, setStartTime] = useState<Date | undefined>();
   const [priceType, setPriceType] = useState<'free' | 'paid' | 'donation'>('free');
   const [minPrice, setMinPrice] = useState<number | undefined>();
-  const [coverImage, setCoverImage]_ = useState<File | null>(null);
+  const [coverImage, setCoverImage] = useState<File | null>(null);
   const [venueId, setVenueId] = useState<string | undefined>();
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
 
