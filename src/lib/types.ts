@@ -15,11 +15,12 @@ export interface AppUser extends DocumentWithId {
   locationPreferences?: string[];
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  isSampleData?: boolean;
 }
 
-export type PriceType = 'free' | 'paid' | 'donation';
-export type EventStatus = 'draft' | 'pending_review' | 'published' | 'archived';
-export type EventVisibility = 'public' | 'unlisted';
+export type PriceType = "free" | "paid" | "donation";
+export type EventStatus = "draft" | "pending_review" | "published" | "archived";
+export type EventVisibility = "public" | "unlisted";
 
 export interface Event extends DocumentWithId {
   title: string;
@@ -44,20 +45,20 @@ export interface Event extends DocumentWithId {
   coverImageUrl?: string;
   ticketUrl?: string;
   hostId: string;
-  hostType?: 'user' | 'organization';
+  hostType?: "user" | "organization";
   status: EventStatus;
   visibility: EventVisibility;
   isFeaturedOnLanding?: boolean;
-  homepageSection?: 'hero' | 'this_weekend' | 'editors_pick';
+  homepageSection?: "hero" | "this_weekend" | "editors_pick";
   priorityScore?: number;
   stats: {
     interestedCount: number;
     goingCount: number;
-    savedCount: number;
     viewCount?: number;
   };
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  isSampleData?: boolean;
 }
 
 export interface Venue extends DocumentWithId {
@@ -86,6 +87,7 @@ export interface Venue extends DocumentWithId {
   status?: 'pending_review' | 'approved';
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  isSampleData?: boolean;
 }
 
 export interface Organization extends DocumentWithId {
@@ -98,6 +100,7 @@ export interface Organization extends DocumentWithId {
   ownerUserId: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  isSampleData?: boolean;
 }
 
 export interface CommonsThread extends DocumentWithId {
@@ -122,6 +125,7 @@ export interface CommonsThread extends DocumentWithId {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   lastActivityAt: Timestamp;
+  isSampleData?: boolean;
 }
 
 export interface CommonsReply extends DocumentWithId {
@@ -136,6 +140,7 @@ export interface CommonsReply extends DocumentWithId {
   };
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  isSampleData?: boolean;
 }
 
 export type EventInteractionType = 'saved' | 'interested' | 'going';
@@ -173,6 +178,7 @@ export interface LandingConfig {
   featuredEventIds?: string[];
   featuredVenueIds?: string[];
   highlightedTopics?: string[];
+  isSampleData?: boolean;
 }
 
 export interface NewsletterSubscriber {
