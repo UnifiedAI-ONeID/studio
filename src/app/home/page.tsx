@@ -1,8 +1,8 @@
 'use client';
 
 import { useAuth } from '@/hooks/use-auth';
-import { collection, query, where, orderBy, Timestamp, limit, onSnapshot } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/index';
+import { collection, query, where, orderBy, Timestamp, limit } from 'firebase/firestore';
+import { firestore, useCollection } from '@/lib/firebase';
 import type { Event } from '@/lib/types';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -90,8 +90,6 @@ function FollowedVenuesEvents() {
     const { user } = useAuth();
     const [followedVenueIds, setFollowedVenueIds] = useState<string[]>([]);
     const [loadingIds, setLoadingIds] = useState(true);
-    const [events, setEvents] = useState<Event[]>([]);
-    const [eventsLoading, setEventsLoading] = useState(true);
 
     useEffect(() => {
         if (user) {
@@ -118,19 +116,7 @@ function FollowedVenuesEvents() {
         : null
     , [user, followedVenueIds]);
 
-    useEffect(() => {
-        if (eventsQuery) {
-            setEventsLoading(true);
-            const unsubscribe = onSnapshot(eventsQuery, (snapshot) => {
-                setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event)));
-                setEventsLoading(false);
-            });
-            return () => unsubscribe();
-        } else {
-            setEvents([]);
-            setEventsLoading(false);
-        }
-    }, [eventsQuery]);
+    const { data: events, loading: eventsLoading } = useCollection<Event>(eventsQuery);
     
     if (!user || (!loadingIds && followedVenueIds.length === 0)) {
         return null;
@@ -145,12 +131,6 @@ function FollowedVenuesEvents() {
 export default function HomePage() {
   const { user } = useAuth();
 
-  const [todayEvents, setTodayEvents] = useState<Event[]>();
-  const [todayLoading, setTodayLoading] = useState(true);
-  const [weekendEvents, setWeekendEvents] = useState<Event[]>();
-  const [weekendLoading, setWeekendLoading] = useState(true);
-
-
   // Query for Today's Events
   const todayQuery = useMemo(() => {
       const todayStart = Timestamp.fromDate(startOfToday());
@@ -164,14 +144,7 @@ export default function HomePage() {
         orderBy('startTime', 'asc')
       );
   }, []);
-
-  useEffect(() => {
-      const unsubscribe = onSnapshot(todayQuery, (snapshot) => {
-          setTodayEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event)));
-          setTodayLoading(false);
-      });
-      return () => unsubscribe();
-  }, [todayQuery]);
+  const { data: todayEvents, loading: todayLoading } = useCollection<Event>(todayQuery);
 
 
   // Query for This Weekend's Events
@@ -195,14 +168,7 @@ export default function HomePage() {
         orderBy('startTime', 'asc')
       );
   }, []);
-
-    useEffect(() => {
-      const unsubscribe = onSnapshot(weekendQuery, (snapshot) => {
-          setWeekendEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event)));
-          setWeekendLoading(false);
-      });
-      return () => unsubscribe();
-  }, [weekendQuery]);
+  const { data: weekendEvents, loading: weekendLoading } = useCollection<Event>(weekendQuery);
 
   return (
     <div className="space-y-12">

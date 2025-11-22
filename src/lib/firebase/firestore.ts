@@ -72,7 +72,7 @@ export const getUserProfile = async (uid: string): Promise<AppUser | null> => {
   const userDoc = await getDoc(userRef);
 
   if (userDoc.exists()) {
-    return userDoc.data() as AppUser;
+    return { id: userDoc.id, ...userDoc.data() } as AppUser;
   }
 
   return null;
@@ -225,8 +225,9 @@ export const createThread = async (threadData: CreateThreadData, user: AppUser):
 };
 
 type CreateCommentData = Omit<Comment, 'id' | 'createdAt' | 'updatedAt' | 'authorInfo' | 'likeCount'>;
+type AuthorInfo = { displayName: string | null, photoURL: string | null };
 
-export const createComment = async (commentData: CreateCommentData, user: AppUser): Promise<string> => {
+export const createComment = async (commentData: CreateCommentData, authorInfo: AuthorInfo): Promise<string> => {
     const batch = writeBatch(firestore);
     const now = Timestamp.now();
     
@@ -235,10 +236,7 @@ export const createComment = async (commentData: CreateCommentData, user: AppUse
 
     const newCommentData = {
         ...commentData,
-        authorInfo: {
-            displayName: user.displayName,
-            photoURL: user.photoURL,
-        },
+        authorInfo,
         likeCount: 0,
         createdAt: now,
         updatedAt: now,
@@ -605,3 +603,5 @@ export const seedDatabase = async () => {
     return { success: false, message: message };
   }
 };
+
+    

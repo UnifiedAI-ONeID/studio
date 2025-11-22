@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
-import { doc, collection, query, orderBy, Timestamp, onSnapshot } from 'firebase/firestore';
+import { useAuth, useDoc, useCollection, useMemoFirebase } from '@/lib/firebase';
+import { doc, collection, query, orderBy, Timestamp } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/index';
 import { createComment, reportContent, addReaction, removeReaction, addCommentReaction, removeCommentReaction, getUserReactionsForThread } from '@/lib/firebase/firestore';
 import type { Thread, Comment, Event, Venue } from '@/lib/types';
@@ -22,19 +22,8 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 function RelatedItem({ type, id }: { type: 'event' | 'venue', id: string }) {
-    const [item, setItem] = useState<Event | Venue | null>(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const itemRef = doc(firestore, `${type}s`, id);
-        const unsubscribe = onSnapshot(itemRef, (doc) => {
-            if (doc.exists()) {
-                setItem({ id: doc.id, ...doc.data() } as Event | Venue);
-            }
-            setLoading(false);
-        });
-        return () => unsubscribe();
-    }, [id, type]);
+    const itemRef = useMemoFirebase(() => doc(firestore, `${type}s`, id), [id, type]);
+    const { data: item, loading } = useDoc<Event | Venue>(itemRef);
 
     if (loading || !item) return null;
 
@@ -81,7 +70,7 @@ function RelatedItem({ type, id }: { type: 'event' | 'venue', id: string }) {
     return null;
 }
 
-function CommentItem({ comment, userHasReacted, onReaction, threadId }: { comment: Comment, userHasReacted: boolean, onReaction: (commentId: string, hasReacted: boolean) => void, threadId: string }) {
+function CommentItem({ comment, userHasReacted, onReaction }: { comment: Comment, userHasReacted: boolean, onReaction: (commentId: string, hasReacted: boolean) => void }) {
     const { toast } = useToast();
     const { user } = useAuth();
     
@@ -114,7 +103,7 @@ function CommentItem({ comment, userHasReacted, onReaction, threadId }: { commen
                     <div>
                         <span className="font-semibold">{comment.authorInfo.displayName}</span>
                         <span className="text-xs text-muted-foreground ml-2">
-                            {format(comment.createdAt.toDate(), "MMM d, yyyy")}
+                            {format((comment.createdAt as Timestamp).toDate(), "MMM d, yyyy")}
                         </span>
                     </div>
                     {user && user.uid !== comment.createdBy && (
@@ -144,43 +133,20 @@ export default function ThreadDetailPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     
     const [userReactions, setUserReactions] = useState<Set<string>>(new Set());
-    const [thread, setThread] = useState<Thread | null>(null);
-    const [threadLoading, setThreadLoading] = useState(true);
-    const [comments, setComments] = useState<Comment[]>([]);
-    const [commentsLoading, setCommentsLoading] = useState(true);
 
-    const commentsQuery = useMemo(() => 
+    const threadRef = useMemoFirebase(() => threadId ? doc(firestore, 'threads', threadId) : null, [threadId]);
+    const { data: thread, loading: threadLoading } = useDoc<Thread>(threadRef);
+
+    const commentsQuery = useMemoFirebase(() => 
         threadId ? query(collection(firestore, 'threads', threadId, 'comments'), orderBy('createdAt', 'asc')) : null
     , [threadId]);
-
-    useEffect(() => {
-        if (threadId) {
-            const threadRef = doc(firestore, 'threads', threadId);
-            const unsubscribe = onSnapshot(threadRef, (doc) => {
-                if (doc.exists()) {
-                    setThread({ id: doc.id, ...doc.data() } as Thread);
-                }
-                setThreadLoading(false);
-            });
-            return () => unsubscribe();
-        }
-    }, [threadId]);
-
-    useEffect(() => {
-        if (commentsQuery) {
-            const unsubscribe = onSnapshot(commentsQuery, (snapshot) => {
-                setComments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment)));
-                setCommentsLoading(false);
-            });
-            return () => unsubscribe();
-        }
-    }, [commentsQuery]);
+    const { data: comments, loading: commentsLoading } = useCollection<Comment>(commentsQuery);
     
-    useEffect(() => {
+    useState(() => {
         if(user && threadId) {
             getUserReactionsForThread(user.uid, threadId).then(setUserReactions);
         }
-    }, [user, threadId]);
+    }, [user, threadId, comments]);
 
     const handlePostComment = async () => {
         if (!user || !commentText.trim()) return;
@@ -192,7 +158,10 @@ export default function ThreadDetailPage() {
                 body: commentText,
                 parentId: null,
                 createdBy: user.uid,
-            }, user);
+            }, {
+                displayName: user.displayName,
+                photoURL: user.photoURL,
+            });
             setCommentText('');
             toast({ title: 'Comment posted!' });
         } catch (error) {
@@ -286,7 +255,7 @@ export default function ThreadDetailPage() {
                     </Avatar>
                     <span>{thread.authorInfo.displayName}</span>
                     <span>·</span>
-                    <span>{format(thread.createdAt.toDate(), "MMM d, yyyy")}</span>
+                    <span>{format((thread.createdAt as Timestamp).toDate(), "MMM d, yyyy")}</span>
                 </div>
             </div>
 
@@ -319,7 +288,7 @@ export default function ThreadDetailPage() {
                         <Skeleton className="h-20 w-full" />
                     </>
                 ) : (
-                    comments?.map(comment => <CommentItem key={comment.id} comment={comment} userHasReacted={userReactions.has(comment.id)} onReaction={handleCommentReaction} threadId={threadId} />)
+                    comments?.map(comment => <CommentItem key={comment.id} comment={comment} userHasReacted={userReactions.has(comment.id)} onReaction={handleCommentReaction} />)
                 )}
             </div>
 

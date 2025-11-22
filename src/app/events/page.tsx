@@ -1,9 +1,9 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { collection, query, where, orderBy, Timestamp, onSnapshot } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/index';
+import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { firestore, useCollection, useMemoFirebase } from '@/lib/firebase';
 import type { Event } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,34 +46,16 @@ export default function EventsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   const [activeDateFilter, setActiveDateFilter] = useState('All');
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  
   const placeholder = PlaceHolderImages.find(p => p.id.includes('event')) || PlaceHolderImages[0];
 
-  const eventsQuery = useMemo(() => query(
+  const eventsQuery = useMemoFirebase(() => query(
     collection(firestore, 'events'),
     where('status', '==', 'published'),
     where('approvalStatus', '==', 'approved'),
     orderBy('startTime', 'asc')
   ), []);
 
-  useEffect(() => {
-    setLoading(true);
-    const unsubscribe = onSnapshot(eventsQuery, 
-      (snapshot) => {
-        setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event)));
-        setLoading(false);
-      },
-      (err) => {
-        setError(err);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [eventsQuery]);
+  const { data: events, loading, error } = useCollection<Event>(eventsQuery);
 
 
   const toggleCategory = (category: string) => {
@@ -84,37 +66,40 @@ export default function EventsPage() {
     );
   };
   
-  const filteredEvents = events.filter((event) => {
-      if (!event.startTime) return false;
-      const eventDate = (event.startTime as Timestamp).toDate();
-      const now = new Date();
-      if (eventDate < now && !isToday(eventDate)) return false; // Filter out past events
+  const filteredEvents = useMemo(() => {
+    if (!events) return [];
+    return events.filter((event) => {
+        if (!event.startTime) return false;
+        const eventDate = (event.startTime as Timestamp).toDate();
+        const now = new Date();
+        if (eventDate < now && !isToday(eventDate)) return false; // Filter out past events
 
-      // Date filtering
-      if (activeDateFilter === 'Today' && !isToday(eventDate)) return false;
-      if (activeDateFilter === 'Tomorrow' && !isTomorrow(eventDate)) return false;
-      if (activeDateFilter === 'This weekend') {
-        const startOfThisWeek = startOfWeek(now);
-        const endOfThisWeek = endOfWeek(now);
-        const weekendStart = new Date(startOfThisWeek.setDate(startOfThisWeek.getDate() + (5 - startOfThisWeek.getDay() + 7) % 7)); // Friday
-        const weekendEnd = new Date(new Date(weekendStart).setDate(weekendStart.getDate() + 2)); // Sunday
-        if (!isWithinInterval(eventDate, { start: weekendStart, end: weekendEnd })) {
-            return false;
+        // Date filtering
+        if (activeDateFilter === 'Today' && !isToday(eventDate)) return false;
+        if (activeDateFilter === 'Tomorrow' && !isTomorrow(eventDate)) return false;
+        if (activeDateFilter === 'This weekend') {
+          const startOfThisWeek = startOfWeek(now);
+          const endOfThisWeek = endOfWeek(now);
+          const weekendStart = new Date(startOfThisWeek.setDate(startOfThisWeek.getDate() + (5 - startOfThisWeek.getDay() + 7) % 7)); // Friday
+          const weekendEnd = new Date(new Date(weekendStart).setDate(weekendStart.getDate() + 2)); // Sunday
+          if (!isWithinInterval(eventDate, { start: weekendStart, end: weekendEnd })) {
+              return false;
+          }
         }
-      }
 
-      // Category filtering
-      if (activeCategories.length > 0 && !activeCategories.includes(event.category)) {
-        return false;
-      }
-      
-      // Search term filtering
-      if (searchTerm && !event.title.toLowerCase().includes(searchTerm.toLowerCase())) {
-        return false;
-      }
-      
-      return true;
-    });
+        // Category filtering
+        if (activeCategories.length > 0 && !activeCategories.includes(event.category)) {
+          return false;
+        }
+        
+        // Search term filtering
+        if (searchTerm && !event.title.toLowerCase().includes(searchTerm.toLowerCase())) {
+          return false;
+        }
+        
+        return true;
+      });
+  }, [events, activeDateFilter, activeCategories, searchTerm]);
 
   return (
     <div className="container mx-auto">

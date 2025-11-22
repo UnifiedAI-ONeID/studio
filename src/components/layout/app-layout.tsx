@@ -1,12 +1,10 @@
-
 'use client';
 
-import React, { createContext, useState, useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { auth, getUserProfile } from '@/lib/firebase';
-import { AppUser } from '@/lib/types';
-import { AuthContext, useAuth } from '@/hooks/use-auth';
+import React from 'react';
+import { usePathname } from 'next/navigation';
+
+import { FirebaseClientProvider } from '@/firebase/provider';
+import { useAuth } from '@/hooks/use-auth';
 
 import AvidityLogo from '@/components/logo';
 import Header from './header';
@@ -17,8 +15,6 @@ import FirebaseErrorListener from '../FirebaseErrorListener';
 import {
   Sidebar,
   SidebarProvider,
-  SidebarTrigger,
-  SidebarInset,
   SidebarHeader,
   SidebarContent,
   SidebarFooter,
@@ -26,6 +22,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarSeparator,
+  SidebarInset
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard,
@@ -37,6 +34,7 @@ import {
   Database,
 } from 'lucide-react';
 import Link from 'next/link';
+import { Skeleton } from '../ui/skeleton';
 
 
 const topNavItems = [
@@ -53,34 +51,31 @@ const bottomNavItems = [
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  const router = useRouter();
   const pathname = usePathname();
 
   const isAuthPage = pathname === '/login' || pathname === '/signup';
   const isLandingPage = pathname === '/';
   const isSeedPage = pathname === '/seed';
 
-
-  useEffect(() => {
-    if (loading) return;
-
-    if (user && (isAuthPage || isLandingPage)) {
-      router.replace('/home');
-    } else if (!user && !isAuthPage && !isLandingPage && !isSeedPage) {
-      router.replace('/');
-    }
-  }, [user, loading, router, pathname, isAuthPage, isLandingPage, isSeedPage]);
-
-
-  if (isLandingPage && !user) {
+  if (loading) {
     return (
-      <>
-        <LandingTopNav />
-        <main>{children}</main>
-      </>
+       <div className="flex h-screen w-full items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <AvidityLogo className="h-12 w-12 animate-pulse text-primary" />
+          <p className="text-muted-foreground">Loading Avidity...</p>
+        </div>
+      </div>
     );
   }
 
+  if (!user && !isAuthPage && !isLandingPage && !isSeedPage) {
+    return <LandingTopNavAndMain>{children}</LandingTopNavAndMain>;
+  }
+
+  if (user && (isAuthPage || isLandingPage)) {
+    return <AuthenticatedLayout>{children}</AuthenticatedLayout>
+  }
+  
   if (isAuthPage) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
@@ -89,26 +84,43 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
   
-  if (isSeedPage) {
-    return <main>{children}</main>;
+  if(isLandingPage) {
+      return <LandingTopNavAndMain>{children}</LandingTopNavAndMain>
   }
 
+  if (isSeedPage && !user) {
+    return <LandingTopNavAndMain>{children}</LandingTopNavAndMain>;
+  }
+
+  return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
+}
+
+const LandingTopNavAndMain = ({ children }: { children: React.ReactNode }) => {
+    return (
+      <>
+        <LandingTopNav />
+        <main>{children}</main>
+      </>
+    );
+}
+
+
+const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => {
+  const pathname = usePathname();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <AvidityLogo className="h-12 w-12 animate-pulse text-primary" />
-          <p className="text-muted-foreground">Loading Avidity...</p>
-        </div>
-      </div>
+       <div className="flex h-screen w-full items-center justify-center">
+         <Skeleton className="h-full w-full"/>
+       </div>
     );
   }
-  
-  if (!user) {
-      return null;
-  }
 
+  if (!user) {
+    return <LandingTopNavAndMain><main>{children}</main></LandingTopNavAndMain>;
+  }
+  
   return (
     <SidebarProvider>
       <Sidebar>
@@ -126,7 +138,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                   asChild
                   isActive={
                     (pathname.startsWith(item.href) && item.href !== '/home') ||
-                    (pathname === '/home' && item.href === '/home')
+                    (pathname === item.href)
                   }
                 >
                   <Link href={item.href}>
@@ -170,35 +182,16 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         <BottomNav />
       </SidebarInset>
     </SidebarProvider>
-  );
+  )
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = useState<AppUser | null>(null);
-    const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [prompted, setPrompted] = useState(false);
-
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-            setFirebaseUser(fbUser);
-            if (fbUser) {
-                const userProfile = await getUserProfile(fbUser.uid);
-                setUser(userProfile);
-            } else {
-                setUser(null);
-            }
-            setLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, []);
 
   return (
-    <AuthContext.Provider value={{ user, firebaseUser, loading, prompted, setPrompted }}>
+    <FirebaseClientProvider>
       <LayoutContent>{children}</LayoutContent>
       <Toaster />
       <FirebaseErrorListener />
-    </AuthContext.Provider>
+    </FirebaseClientProvider>
   );
 }

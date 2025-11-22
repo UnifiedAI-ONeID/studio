@@ -1,27 +1,22 @@
 'use client';
-import { useParams, useRouter, usePathname } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { doc, collection, query, where, Timestamp, orderBy, limit, onSnapshot } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/index';
+import { doc, collection, query, where, Timestamp, orderBy, limit } from 'firebase/firestore';
+import { firestore, useAuth, useDoc, useCollection, useMemoFirebase } from '@/lib/firebase';
 import type { Venue, Event } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, Copy, Tag, Calendar, MessageSquare, Plus } from 'lucide-react';
+import { MapPin, Clock, Copy, MessageSquare, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
 import { followTarget, unfollowTarget } from '@/lib/firebase/firestore';
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 
 function UpcomingEvents({ venueId }: { venueId: string }) {
-    const [events, setEvents] = useState<Event[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<Error | null>(null);
-
-    const eventsQuery = useMemo(() => query(
+    const eventsQuery = useMemoFirebase(() => query(
       collection(firestore, 'events'),
       where('venueId', '==', venueId),
       where('startTime', '>=', Timestamp.now()),
@@ -31,19 +26,7 @@ function UpcomingEvents({ venueId }: { venueId: string }) {
       limit(5)
     ), [venueId]);
     
-    useEffect(() => {
-      const unsubscribe = onSnapshot(eventsQuery, 
-        (snapshot) => {
-          setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event)));
-          setLoading(false);
-        },
-        (err) => {
-          setError(err);
-          setLoading(false);
-        }
-      );
-      return () => unsubscribe();
-    }, [eventsQuery]);
+    const { data: events, loading, error } = useCollection<Event>(eventsQuery);
 
     if (loading) {
         return (
@@ -91,49 +74,24 @@ export default function VenueDetailPage() {
   const { user, setPrompted } = useAuth();
   const router = useRouter();
 
-  const [venue, setVenue] = useState<Venue | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const venueRef = useMemoFirebase(() => venueId ? doc(firestore, 'venues', venueId) : null, [venueId]);
+  const { data: venue, loading, error } = useDoc<Venue>(venueRef);
 
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(true);
 
-  useEffect(() => {
-    if (venueId) {
-      const venueRef = doc(firestore, 'venues', venueId);
-      const unsubscribe = onSnapshot(venueRef, 
-        (doc) => {
-          if (doc.exists()) {
-            setVenue({ id: doc.id, ...doc.data() } as Venue);
-          }
-          setLoading(false);
-        },
-        (err) => {
-          setError(err);
-          setLoading(false);
-        }
-      );
-      return () => unsubscribe();
-    }
-  }, [venueId]);
-
-  const userFollowQuery = useMemo(() => 
+  const userFollowQuery = useMemoFirebase(() => 
     user ? query(collection(firestore, `users/${user.uid}/follows`), where('targetId', '==', venueId), where('targetType', '==', 'venue')) : null
   , [user, venueId]);
-
+  
+  const {data: followDocs, loading: followDocsLoading} = useCollection(userFollowQuery);
+  
   useEffect(() => {
-    if (userFollowQuery) {
-        setFollowLoading(true);
-        const unsubscribe = onSnapshot(userFollowQuery, (snapshot) => {
-            setIsFollowing(!snapshot.empty);
-            setFollowLoading(false);
-        });
-        return () => unsubscribe();
-    } else if (!user) {
-        setIsFollowing(false);
-        setFollowLoading(false);
+    if (!followDocsLoading) {
+      setIsFollowing(!!followDocs && followDocs.length > 0);
+      setFollowLoading(false);
     }
-  }, [userFollowQuery, user]);
+  }, [followDocs, followDocsLoading]);
   
   const handleFollow = async () => {
     if (!user) {
@@ -155,7 +113,6 @@ export default function VenueDetailPage() {
     } catch(e) {
         toast({ variant: 'destructive', title: 'Something went wrong.' });
     } finally {
-       // Let the useEffect handle the state update by re-triggering the snapshot listener
        setFollowLoading(false);
     }
   };

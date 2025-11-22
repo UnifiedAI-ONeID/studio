@@ -1,7 +1,7 @@
 import type { User as FirebaseUser } from 'firebase/auth';
 import type { Timestamp } from 'firebase/firestore';
 
-export interface AppUser {
+export interface AppUser extends DocumentWithId {
   uid: string;
   email: string | null;
   displayName: string | null;
@@ -11,9 +11,11 @@ export interface AppUser {
   skills?: string[];
   locationPreferences?: string[];
 }
-
-export interface Event {
+export interface DocumentWithId {
   id: string;
+}
+
+export interface Event extends DocumentWithId {
   title: string;
   description: string;
   category: string;
@@ -46,8 +48,7 @@ export interface Event {
   };
 }
 
-export interface Venue {
-  id: string;
+export interface Venue extends DocumentWithId {
   name: string;
   type: string;
   description:string;
@@ -76,8 +77,7 @@ export interface DirectoryPlaceholder {
   imageHint?: string;
 }
 
-export interface Thread {
-    id: string;
+export interface Thread extends DocumentWithId {
     title: string;
     body: string;
     topic: string;
@@ -96,8 +96,7 @@ export interface Thread {
     likeCount?: number;
 }
 
-export interface Comment {
-    id: string;
+export interface Comment extends DocumentWithId {
     threadId: string;
     parentId: string | null;
     body: string;
@@ -122,8 +121,7 @@ export interface Report {
 
 export type FollowTargetType = 'venue' | 'topic' | 'organization' | 'user';
 
-export interface Follow {
-    id: string;
+export interface Follow extends DocumentWithId {
     userId: string;
     targetId: string;
     targetType: FollowTargetType;
@@ -132,8 +130,7 @@ export interface Follow {
 
 export type ReactionType = 'like';
 
-export interface Reaction {
-    id: string;
+export interface Reaction extends DocumentWithId {
     userId: string;
     targetId: string;
     targetType: 'thread' | 'comment';
@@ -143,10 +140,11 @@ export interface Reaction {
 
 export type EventInteractionType = 'interested' | 'going' | 'saved';
 
-export interface EventInteraction {
-    id: string;
+export interface EventInteraction extends DocumentWithId {
     userId: string;
     eventId: string;
     type: EventInteractionType;
     createdAt: Timestamp;
 }
+
+    

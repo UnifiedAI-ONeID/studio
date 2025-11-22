@@ -1,16 +1,15 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { collection, query, orderBy, where, onSnapshot } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/index';
+import { collection, query, orderBy, where } from 'firebase/firestore';
+import { firestore, useCollection, useAuth, useMemoFirebase } from '@/lib/firebase';
 import type { Thread } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus, MessageSquare, Clock, Heart, Search } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
-import { useAuth } from '@/hooks/use-auth';
 import { Input } from '@/components/ui/input';
 
 const topics = ["all", "general", "neighborhoods", "buy-sell", "housing", "clubs"];
@@ -20,7 +19,6 @@ function ThreadCardSkeleton() {
     <Card>
       <CardHeader>
         <Skeleton className="h-6 w-3/4" />
-        <Skeleton className="h-4 w-1/4 mt-2" />
       </CardHeader>
       <CardContent className="space-y-2">
         <Skeleton className="h-4 w-full" />
@@ -41,39 +39,27 @@ export default function CommonsPage() {
   const { user } = useAuth();
   const [activeTopic, setActiveTopic] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [threads, setThreads] = useState<Thread[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const threadsQuery = useMemo(() => {
+  
+  const threadsQuery = useMemoFirebase(() => {
+    const baseQuery = collection(firestore, 'threads');
     if (activeTopic === 'all') {
-      return query(collection(firestore, 'threads'), orderBy('lastActivityAt', 'desc'));
+      return query(baseQuery, orderBy('lastActivityAt', 'desc'));
     } else {
-      return query(collection(firestore, 'threads'), where('topic', '==', activeTopic), orderBy('lastActivityAt', 'desc'));
+      return query(baseQuery, where('topic', '==', activeTopic), orderBy('lastActivityAt', 'desc'));
     }
   }, [activeTopic]);
 
-  useEffect(() => {
-    setLoading(true);
-    const unsubscribe = onSnapshot(threadsQuery, 
-      (snapshot) => {
-        setThreads(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Thread)));
-        setLoading(false);
-      },
-      (err) => {
-        setError(err);
-        setLoading(false);
-      }
-    );
-    return () => unsubscribe();
-  }, [threadsQuery]);
+  const { data: threads, loading, error } = useCollection<Thread>(threadsQuery);
 
-  const filteredThreads = threads.filter(thread => {
-      if (searchTerm && !thread.title.toLowerCase().includes(searchTerm.toLowerCase()) && !thread.body.toLowerCase().includes(searchTerm.toLowerCase())) {
-        return false;
-      }
-      return true;
-    });
+  const filteredThreads = useMemo(() => {
+    if (!threads) return [];
+    return threads.filter(thread => {
+        if (searchTerm && !thread.title.toLowerCase().includes(searchTerm.toLowerCase()) && !thread.body.toLowerCase().includes(searchTerm.toLowerCase())) {
+          return false;
+        }
+        return true;
+      });
+  }, [threads, searchTerm]);
 
   return (
     <div className="container mx-auto">
@@ -115,7 +101,7 @@ export default function CommonsPage() {
 
       {error && <p className="text-destructive text-center py-10">Error loading threads: {error.message}</p>}
 
-      {!loading && filteredThreads && filteredThreads.length > 0 && (
+      {!loading && filteredThreads.length > 0 && (
         <div className="space-y-4">
           {filteredThreads.map(thread => (
             <Link href={`/commons/${thread.id}`} key={thread.id}>
@@ -136,7 +122,7 @@ export default function CommonsPage() {
                     <div className="flex items-center gap-4">
                       <span className="flex items-center gap-1"><Heart className="h-4 w-4" /> {thread.likeCount || 0}</span>
                       <span className="flex items-center gap-1"><MessageSquare className="h-4 w-4" /> {thread.replyCount}</span>
-                      <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {formatDistanceToNow(thread.lastActivityAt.toDate(), { addSuffix: true })}</span>
+                      <span className="flex items-center gap-1"><Clock className="h-4 w-4" /> {thread.lastActivityAt && formatDistanceToNow(thread.lastActivityAt.toDate(), { addSuffix: true })}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -146,7 +132,7 @@ export default function CommonsPage() {
         </div>
       )}
 
-      {!loading && (!filteredThreads || filteredThreads.length === 0) && (
+      {!loading && filteredThreads.length === 0 && (
         <div className="text-center py-16 border border-dashed rounded-lg">
           <h3 className="text-xl font-semibold">No threads found</h3>
           <p className="text-muted-foreground mt-2">Try adjusting your filters or search term.</p>

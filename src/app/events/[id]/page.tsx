@@ -1,46 +1,33 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { doc, collection, query, where, limit, Timestamp, orderBy, onSnapshot } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/index';
+import { doc, collection, query, where, limit, Timestamp, orderBy } from 'firebase/firestore';
+import { firestore, useAuth, useDoc, useCollection } from '@/lib/firebase';
 import type { Event, EventInteractionType } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, Share2, User, Building, MessageSquare, CheckCircle, Star, Heart } from 'lucide-react';
+import { Calendar, Building, MessageSquare, CheckCircle, Star, Heart, Share2, MapPin, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { addEventInteraction, removeEventInteraction, getUserEventInteraction } from '@/lib/firebase/firestore';
 
 function RelatedEvents({ category, currentEventId }: { category: string; currentEventId: string }) {
-    const [events, setEvents] = useState<Event[]>([]);
-    const [loading, setLoading] = useState(true);
-
     const eventsQuery = useMemo(() => query(
       collection(firestore, 'events'),
       where('status', '==', 'published'),
       where('approvalStatus', '==', 'approved'),
       where('category', '==', category),
-      limit(4)
-    ), [category]);
+      where('id', '!=', currentEventId),
+      limit(3)
+    ), [category, currentEventId]);
     
-    useEffect(() => {
-        const unsubscribe = onSnapshot(eventsQuery, (snapshot) => {
-            const relatedEvents = snapshot.docs
-                .map(doc => ({ id: doc.id, ...doc.data() } as Event))
-                .filter(event => event.id !== currentEventId)
-                .slice(0, 3);
-            setEvents(relatedEvents);
-            setLoading(false);
-        });
-        return () => unsubscribe();
-    }, [eventsQuery, currentEventId]);
+    const { data: events, loading } = useCollection<Event>(eventsQuery);
 
     if (loading) {
         return (
@@ -85,47 +72,35 @@ export default function EventDetailPage() {
   const params = useParams();
   const router = useRouter();
   const eventId = params.id as string;
-  const [isExpanded, setIsExpanded] = useState(false);
   const { user, setPrompted } = useAuth();
   const { toast } = useToast();
 
-  const [event, setEvent] = useState<Event | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
+  const [isExpanded, setIsExpanded] = useState(false);
   const [interaction, setInteraction] = useState<EventInteractionType | null>(null);
   const [interactionLoading, setInteractionLoading] = useState(true);
 
-  useEffect(() => {
-    if (eventId) {
-      const eventRef = doc(firestore, 'events', eventId);
-      const unsubscribe = onSnapshot(eventRef, 
-        (doc) => {
-          if (doc.exists()) {
-            setEvent({ id: doc.id, ...doc.data() } as Event);
-          }
-          setLoading(false);
-        },
-        (err) => {
-          setError(err);
-          setLoading(false);
-        }
-      );
-      return () => unsubscribe();
-    }
-  }, [eventId]);
+  const eventRef = useMemo(() => eventId ? doc(firestore, 'events', eventId) : null, [eventId]);
+  const { data: event, loading: eventLoading, error } = useDoc<Event>(eventRef);
 
-  useEffect(() => {
-    if (user && eventId) {
-      setInteractionLoading(true);
-      getUserEventInteraction(user.uid, eventId).then(type => {
-        setInteraction(type);
-        setInteractionLoading(false);
-      });
-    } else {
+  const interactionQuery = useMemo(() => 
+      user && eventId 
+      ? query(collection(firestore, 'eventInteractions'), where('userId', '==', user.uid), where('eventId', '==', eventId))
+      : null
+  , [user, eventId]);
+
+  const { data: interactions, loading: interactionQueryLoading } = useCollection(interactionQuery);
+
+  // Update local interaction state when the query result changes
+  useState(() => {
+    if (!interactionQueryLoading) {
+      if (interactions && interactions.length > 0) {
+        setInteraction(interactions[0].type as EventInteractionType);
+      } else {
+        setInteraction(null);
+      }
       setInteractionLoading(false);
     }
-  }, [user, eventId]);
+  }, [interactions, interactionQueryLoading]);
 
   const handleInteraction = async (type: EventInteractionType) => {
     if (!user) {
@@ -135,30 +110,35 @@ export default function EventDetailPage() {
     }
     
     setInteractionLoading(true);
+    const oldInteraction = interaction;
+    
+    // Optimistically update UI
+    setInteraction(oldInteraction === type ? null : type);
+
     try {
-      if (interaction === type) {
-        // User is toggling off the current interaction
+      if (oldInteraction === type) {
         await removeEventInteraction(user.uid, eventId, type);
-        setInteraction(null);
         toast({ title: `No longer ${type}` });
       } else {
-        // Switching interaction or setting a new one
-        if (interaction) {
-          await removeEventInteraction(user.uid, eventId, interaction);
+        if (oldInteraction) {
+          await removeEventInteraction(user.uid, eventId, oldInteraction);
         }
         await addEventInteraction(user.uid, eventId, type);
-        setInteraction(type);
         toast({ title: `You are ${type}!` });
       }
     } catch (e) {
       console.error(e);
+      // Revert optimistic update on error
+      setInteraction(oldInteraction);
       toast({ variant: 'destructive', title: 'Something went wrong' });
     } finally {
+        // The onSnapshot listener will eventually sync the state,
+        // but we can set loading to false sooner.
         setInteractionLoading(false);
     }
   };
 
-  if (loading) {
+  if (eventLoading) {
     return (
       <div className="container mx-auto max-w-4xl animate-pulse">
         <Skeleton className="h-64 w-full md:h-96 rounded-b-lg -mt-8 -mx-8" />

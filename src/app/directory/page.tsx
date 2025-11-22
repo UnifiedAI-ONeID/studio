@@ -1,15 +1,15 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase/index';
+import { collection, query, where, orderBy } from 'firebase/firestore';
+import { firestore, useCollection, useMemoFirebase } from '@/lib/firebase';
 import type { Venue } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Plus, Building, Coffee, GalleryVertical, BarChart } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
 import PlaceHolderImages from '@/lib/placeholder-images';
 
 const venueTypes = ['cafe', 'bar', 'gallery', 'venue', 'ngo', 'other'];
@@ -42,33 +42,17 @@ function PriceLevel({ level }: { level: number }) {
 export default function DirectoryPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTypes, setActiveTypes] = useState<string[]>([]);
-  const [venues, setVenues] = useState<Venue[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
   
   const placeholder = PlaceHolderImages.find(p => p.id.includes('directory')) || PlaceHolderImages[0];
 
 
-  const venuesQuery = useMemo(() => query(
+  const venuesQuery = useMemoFirebase(() => query(
     collection(firestore, 'venues'),
     where('verified', '==', true),
     orderBy('name', 'asc')
   ), []);
 
-  useEffect(() => {
-    setLoading(true);
-    const unsubscribe = onSnapshot(venuesQuery, 
-      (snapshot) => {
-        setVenues(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Venue)));
-        setLoading(false);
-      },
-      (err) => {
-        setError(err);
-        setLoading(false);
-      }
-    );
-    return () => unsubscribe();
-  }, [venuesQuery]);
+  const { data: venues, loading, error } = useCollection<Venue>(venuesQuery);
 
 
   const toggleType = (type: string) => {
@@ -79,19 +63,22 @@ export default function DirectoryPage() {
     );
   };
   
-  const filteredVenues = venues.filter((venue) => {
-      // Type filtering
-      if (activeTypes.length > 0 && !activeTypes.includes(venue.type)) {
-        return false;
-      }
-      
-      // Search term filtering
-      if (searchTerm && !venue.name.toLowerCase().includes(searchTerm.toLowerCase()) && !venue.description.toLowerCase().includes(searchTerm.toLowerCase())) {
-        return false;
-      }
-      
-      return true;
-    });
+  const filteredVenues = useMemo(() => {
+    if (!venues) return [];
+    return venues.filter((venue) => {
+        // Type filtering
+        if (activeTypes.length > 0 && !activeTypes.includes(venue.type)) {
+          return false;
+        }
+        
+        // Search term filtering
+        if (searchTerm && !venue.name.toLowerCase().includes(searchTerm.toLowerCase()) && !venue.description.toLowerCase().includes(searchTerm.toLowerCase())) {
+          return false;
+        }
+        
+        return true;
+      });
+  }, [venues, activeTypes, searchTerm]);
 
   return (
     <div className="container mx-auto">
