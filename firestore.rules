@@ -21,22 +21,30 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(userId)).data;
     }
 
+    // Protect against changing certain fields on update
+    function protectedFieldsUnchanged(fieldsToProtect) {
+      return fieldsToProtect.size() == 0 || fieldsToProtect.map(field -> request.resource.data[field] == resource.data[field]).reduce(true, (acc, curr) -> acc && curr);
+    }
+
     match /users/{userId} {
       allow read: if true;
-      allow write: if isOwner(userId);
-
-      match /follows/{followId} {
-        allow read, create, delete: if isOwner(userId);
-      }
+      allow create: if isOwner(userId) && request.resource.data.role == 'user'; // Users can't assign themselves admin
+      allow update: if isOwner(userId) && request.resource.data.role == resource.data.role; // Prevent self-promotion
     }
+
+    match /users/{userId}/follows/{followId} {
+      allow read, create, delete: if isOwner(userId);
+    }
+    
 
     match /events/{eventId} {
       allow read: if resource.data.status == 'published' && resource.data.approvalStatus == 'approved' && resource.data.visibility == 'public';
       allow create: if isSignedIn()
                     && request.resource.data.createdBy == request.auth.uid
-                    && request.resource.data.approvalStatus == 'pending';
-      allow update: if (isOwner(request.resource.data.createdBy) && resource.data.approvalStatus == 'pending') || isAdmin();
-      allow delete: if isOwner(request.resource.data.createdBy) || isAdmin();
+                    && request.resource.data.approvalStatus == 'pending'
+                    && !('stats' in request.resource.data); // Stats should not be set by client on create
+      allow update: if (isOwner(resource.data.createdBy) && resource.data.approvalStatus != 'approved') || isAdmin();
+      allow delete: if isOwner(resource.data.createdBy) || isAdmin();
     }
 
     match /venues/{venueId} {
@@ -50,38 +58,47 @@ service cloud.firestore {
     
     match /threads/{threadId} {
       allow read: if true;
-      allow create: if isSignedIn() && isOwner(request.resource.data.createdBy) && request.resource.data.title.size() < 100 && request.resource.data.body.size() < 10000;
-      allow update: if (isOwner(resource.data.createdBy) || isAdmin()) && request.resource.data.title.size() < 100 && request.resource.data.body.size() < 10000;
+      allow create: if isSignedIn() 
+                    && isOwner(request.resource.data.createdBy) 
+                    && request.resource.data.title.size() < 100 
+                    && request.resource.data.body.size() < 10000;
+      allow update: if (isOwner(resource.data.createdBy) || isAdmin()) 
+                    && request.resource.data.title.size() < 100 
+                    && request.resource.data.body.size() < 10000
+                    && protectedFieldsUnchanged(['createdBy', 'createdAt']);
       allow delete: if isOwner(resource.data.createdBy) || isAdmin();
 
        match /reactions/{reactionId} {
         allow read: if true;
-        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-        allow delete: if isOwner(get(path).data.userId);
+        allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+        allow delete: if isSignedIn() && isOwner(get(path).data.userId);
       }
     }
     
     match /threads/{threadId}/comments/{commentId} {
         allow read: if true;
-        allow create: if isSignedIn() && isOwner(request.resource.data.createdBy) && request.resource.data.body.size() < 5000;
-        allow update: if (isOwner(resource.data.createdBy) || isAdmin()) && request.resource.data.body.size() < 5000;
+        allow create: if isSignedIn() 
+                      && isOwner(request.resource.data.createdBy) 
+                      && request.resource.data.body.size() < 5000;
+        allow update: if (isOwner(resource.data.createdBy) || isAdmin()) 
+                      && request.resource.data.body.size() < 5000
+                      && protectedFieldsUnchanged(['createdBy', 'createdAt', 'threadId']);
         allow delete: if isOwner(resource.data.createdBy) || isAdmin();
     }
     
-    // Standalone collection for comment reactions for easier rule management
     match /comments/{commentId}/reactions/{reactionId} {
       allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow delete: if isOwner(get(path).data.userId);
+      allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+      allow delete: if isSignedIn() && isOwner(get(path).data.userId);
     }
 
     match /reports/{reportId} {
         allow create: if isSignedIn() && isOwner(request.resource.data.createdBy);
-        allow read, write: if isAdmin();
+        allow read, write, delete: if isAdmin();
     }
 
     match /eventInteractions/{interactionId} {
-      allow read: if true;
+      allow read: if isSignedIn() && isOwner(resource.data.userId);
       allow create: if isSignedIn() && isOwner(request.resource.data.userId);
       allow delete: if isSignedIn() && isOwner(get(path).data.userId);
     }

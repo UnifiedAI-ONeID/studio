@@ -54,7 +54,7 @@ const pwaConfig = withPWA({
 
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: 'export',
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -66,6 +66,7 @@ const nextConfig: NextConfig = {
     allowedDevOrigins: ["*.cloudworkstations.dev"],
   },
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -80,7 +81,7 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https',
+        protocol: 'https'
         hostname: 'picsum.photos',
         port: '',
         pathname: '/**',
