@@ -1,52 +1,40 @@
 'use client';
 
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import React, { useEffect, ReactNode } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { getUserProfile } from '@/lib/firebase/firestore';
-import type { AppUser } from '@/lib/types';
+import { useAuth } from '@/hooks/use-auth';
 
-interface AuthContextType {
-  user: AppUser | null;
-  firebaseUser: FirebaseUser | null;
-  loading: boolean;
-  prompted: boolean;
-  setPrompted: React.Dispatch<React.SetStateAction<boolean>>;
-}
+// This component's sole purpose is to listen to auth state changes
+// and update the Zustand store. It doesn't render anything itself.
+const AuthStateInitializer = () => {
+    const { setUser, setFirebaseUser, setLoading } = useAuth();
+    
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+            setFirebaseUser(fbUser);
+            if (fbUser) {
+                const userProfile = await getUserProfile(fbUser.uid);
+                setUser(userProfile);
+            } else {
+                setUser(null);
+            }
+            setLoading(false);
+        });
 
-export const AuthContext = createContext<AuthContextType>({
-  user: null,
-  firebaseUser: null,
-  loading: true,
-  prompted: false,
-  setPrompted: () => {},
-});
+        return () => unsubscribe();
+    }, [setUser, setFirebaseUser, setLoading]);
+    
+    return null; // This component does not render anything.
+};
+
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<AppUser | null>(null);
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [prompted, setPrompted] = useState(false);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      setFirebaseUser(fbUser);
-      if (fbUser) {
-        // Fetch extended user profile from Firestore
-        const userProfile = await getUserProfile(fbUser.uid);
-        setUser(userProfile);
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
   return (
-    <AuthContext.Provider value={{ user, firebaseUser, loading, prompted, setPrompted }}>
+    <>
+      <AuthStateInitializer />
       {children}
-    </AuthContext.Provider>
+    </>
   );
 };
