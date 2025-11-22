@@ -7,13 +7,15 @@ import { firestore } from '@/lib/firebase';
 import type { Event } from '@/lib/types';
 import Link from 'next/link';
 import Image from 'next/image';
-import { format, isToday, startOfToday, endOfToday, startOfWeek, endOfWeek } from 'date-fns';
+import { format, startOfToday, endOfToday, startOfWeek, endOfWeek } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Calendar, Plus } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import RecommendedEvents from '@/components/ai/recommended-events';
 import RecommendedDirectory from '@/components/ai/recommended-directory';
+import { getFollowedVenueIds } from '@/lib/firebase/firestore';
+import { useEffect, useState } from 'react';
 
 function getPriceDisplay(event: Event) {
   if (event.priceType === 'free') return 'Free';
@@ -82,6 +84,45 @@ function EventSection({ title, events, loading }: { title: string; events: Event
   );
 }
 
+function FollowedVenuesEvents() {
+    const { user } = useAuth();
+    const [followedVenueIds, setFollowedVenueIds] = useState<string[]>([]);
+    const [loadingIds, setLoadingIds] = useState(true);
+
+    useEffect(() => {
+        if (user) {
+            getFollowedVenueIds(user.uid).then(ids => {
+                setFollowedVenueIds(ids);
+                setLoadingIds(false);
+            });
+        } else {
+            setLoadingIds(false);
+        }
+    }, [user]);
+
+    const eventsQuery = (user && followedVenueIds.length > 0)
+        ? query(
+            collection(firestore, 'events'),
+            where('status', '==', 'published'),
+            where('visibility', '==', 'public'),
+            where('venueId', 'in', followedVenueIds),
+            where('startTime', '>=', Timestamp.now()),
+            orderBy('startTime', 'asc')
+          )
+        : null;
+
+    const [eventsSnapshot, eventsLoading] = useCollection(eventsQuery);
+    const events = eventsSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
+    
+    if (!user || followedVenueIds.length === 0) {
+        return null;
+    }
+
+    return (
+        <EventSection title="From Places You Follow" events={events} loading={loadingIds || eventsLoading} />
+    )
+}
+
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -133,11 +174,10 @@ export default function HomePage() {
           Here’s what’s happening in your community.
         </p>
       </div>
-
-      <EventSection title={`Today in ${city}`} events={todayEvents} loading={todayLoading} />
       
+      <FollowedVenuesEvents />
+      <EventSection title={`Today in ${city}`} events={todayEvents} loading={todayLoading} />
       <EventSection title="This Weekend" events={weekendEvents} loading={weekendLoading} />
-
       <RecommendedEvents />
       <RecommendedDirectory />
     </div>

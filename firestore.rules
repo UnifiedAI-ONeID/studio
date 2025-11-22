@@ -24,6 +24,10 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if true;
       allow write: if isOwner(userId);
+
+      match /follows/{followId} {
+        allow read, create, delete: if isOwner(userId);
+      }
     }
 
     match /events/{eventId} {

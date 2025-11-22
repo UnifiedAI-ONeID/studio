@@ -9,11 +9,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, Copy, Tag, Calendar, MessageSquare } from 'lucide-react';
+import { MapPin, Clock, Copy, Tag, Calendar, MessageSquare, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { followTarget, unfollowTarget } from '@/lib/firebase/firestore';
+import { useEffect, useState } from 'react';
 
 function UpcomingEvents({ venueId }: { venueId: string }) {
     const eventsQuery = query(
@@ -72,11 +74,52 @@ export default function VenueDetailPage() {
   const params = useParams();
   const venueId = params.id as string;
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, firebaseUser, setPrompted } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(true);
 
   const venueRef = doc(firestore, 'venues', venueId);
   const [venueSnapshot, loading, error] = useDocument(venueRef);
+
+  const userFollowQuery = user ? query(collection(firestore, `users/${user.uid}/follows`), where('targetId', '==', venueId), where('targetType', '==', 'venue')) : null;
+  const [followSnapshot] = useCollection(userFollowQuery);
+
+  useEffect(() => {
+    if(followSnapshot) {
+        setIsFollowing(!followSnapshot.empty);
+        setFollowLoading(false);
+    } else if (!user) {
+        setFollowLoading(false);
+    }
+  }, [followSnapshot, user]);
   
+  const handleFollow = async () => {
+    if (!user) {
+      setPrompted(true);
+      const continueUrl = `/directory/${venueId}`;
+      router.push(`/login?continueUrl=${encodeURIComponent(continueUrl)}`);
+      return;
+    }
+
+    setFollowLoading(true);
+    try {
+        if(isFollowing) {
+            await unfollowTarget(user.uid, venueId, 'venue');
+            toast({ title: 'Unfollowed!' });
+        } else {
+            await followTarget(user.uid, venueId, 'venue');
+            toast({ title: 'Followed!' });
+        }
+    } catch(e) {
+        toast({ variant: 'destructive', title: 'Something went wrong.' });
+    } finally {
+       // Let the useEffect handle the state update
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto max-w-4xl animate-pulse">
@@ -123,10 +166,11 @@ export default function VenueDetailPage() {
             <CardHeader>
               <div className="flex justify-between items-start">
                 <Badge className="capitalize">{venue.type}</Badge>
-                {venue.tags && (
-                  <div className="flex flex-wrap gap-2">
-                    {venue.tags.map(tag => <Badge key={tag} variant="outline">{tag}</Badge>)}
-                  </div>
+                {user && (
+                    <Button variant={isFollowing ? 'default' : 'outline'} onClick={handleFollow} disabled={followLoading}>
+                        <Plus className={`mr-2 h-4 w-4 ${isFollowing ? 'rotate-45' : ''} transition-transform`} />
+                        {isFollowing ? 'Following' : 'Follow'}
+                    </Button>
                 )}
               </div>
               <CardTitle className="text-3xl md:text-4xl font-headline mt-2">{venue.name}</CardTitle>
@@ -174,3 +218,6 @@ export default function VenueDetailPage() {
     </div>
   );
 }
+
+// Need to add useRouter and usePathname for the auth redirect
+import { useRouter, usePathname } from 'next/navigation';

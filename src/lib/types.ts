@@ -67,7 +67,7 @@ export interface DirectoryEntry {
   category: string;
   location: string;
   contact?: string;
-  imageUrl?: string;
+imageUrl?: string;
   imageHint?: string;
 }
 
@@ -110,5 +110,15 @@ export interface Report {
     targetId: string;
     reason: string;
     createdBy: string;
+    createdAt: Timestamp;
+}
+
+export type FollowTargetType = 'venue' | 'topic' | 'organization' | 'user';
+
+export interface Follow {
+    id: string;
+    userId: string;
+    targetId: string;
+    targetType: FollowTargetType;
     createdAt: Timestamp;
 }

@@ -115,6 +115,18 @@
         "createdBy": { "type": "string", "description": "The user ID of the person who made the report." }
       },
       "required": ["type", "targetId", "reason", "createdBy"]
+    },
+    "Follow": {
+        "title": "Follow",
+        "description": "Represents a user following a specific target (e.g., venue, topic).",
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string", "description": "The ID of the user who is following." },
+          "targetId": { "type": "string", "description": "The ID of the entity being followed." },
+          "targetType": { "type": "string", "enum": ["venue", "topic", "organization", "user"], "description": "The type of entity being followed." },
+          "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of when the follow action occurred." }
+        },
+        "required": ["userId", "targetId", "targetType", "createdAt"]
     }
   },
   "auth": {
@@ -124,6 +136,10 @@
     "/users/{userId}": {
       "schema": { "$ref": "#/backend/entities/UserProfile" },
       "description": "Stores public-facing user profile information."
+    },
+    "/users/{userId}/follows/{followId}": {
+        "schema": { "$ref": "#/backend/entities/Follow" },
+        "description": "Stores a user's follow relationships."
     },
     "/events/{eventId}": {
       "schema": { "$ref": "#/backend/entities/Event" },

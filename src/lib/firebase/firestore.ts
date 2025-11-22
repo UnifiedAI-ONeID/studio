@@ -9,10 +9,14 @@ import {
   updateDoc,
   increment,
   writeBatch,
+  query,
+  where,
+  getDocs,
+  deleteDoc,
 } from 'firebase/firestore';
 import { firestore } from './index';
 import type { User } from 'firebase/auth';
-import type { AppUser, Event, Venue, Thread, Comment } from '@/lib/types';
+import type { AppUser, Event, Venue, Thread, Comment, FollowTargetType } from '@/lib/types';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export const createUserProfile = async (user: User) => {
@@ -169,4 +173,31 @@ export const reportContent = async (type: 'thread' | 'comment', targetId: string
         createdBy: userId,
         createdAt: serverTimestamp(),
     });
+};
+
+export const followTarget = async (userId: string, targetId: string, targetType: FollowTargetType) => {
+    const followCollection = collection(firestore, `users/${userId}/follows`);
+    await addDoc(followCollection, {
+        userId,
+        targetId,
+        targetType,
+        createdAt: serverTimestamp(),
+    });
+};
+
+export const unfollowTarget = async (userId: string, targetId: string, targetType: FollowTargetType) => {
+    const followCollection = collection(firestore, `users/${userId}/follows`);
+    const q = query(followCollection, where('targetId', '==', targetId), where('targetType', '==', targetType));
+    const snapshot = await getDocs(q);
+    if (!snapshot.empty) {
+        const docToDelete = snapshot.docs[0];
+        await deleteDoc(docToDelete.ref);
+    }
+};
+
+export const getFollowedVenueIds = async (userId: string): Promise<string[]> => {
+    const followCollection = collection(firestore, `users/${userId}/follows`);
+    const q = query(followCollection, where('targetType', '==', 'venue'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => doc.data().targetId);
 };
