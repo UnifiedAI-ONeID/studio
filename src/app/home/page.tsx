@@ -14,6 +14,8 @@ import { MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getFollowedVenueIds } from '@/lib/firebase/firestore';
 import { useEffect, useState } from 'react';
+import RecommendedEvents from '@/components/ai/recommended-events';
+import RecommendedDirectory from '@/components/ai/recommended-directory';
 
 function getPriceDisplay(event: Event) {
   if (event.priceType === 'free') return 'Free';
@@ -174,6 +176,12 @@ export default function HomePage() {
         </p>
       </div>
       
+      {user && (
+        <>
+          <RecommendedEvents />
+          <RecommendedDirectory />
+        </>
+      )}
       <FollowedVenuesEvents />
       <EventSection title={`Today in ${city}`} events={todayEvents} loading={todayLoading} />
       <EventSection title="This Weekend" events={weekendEvents} loading={weekendLoading} />

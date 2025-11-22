@@ -72,7 +72,7 @@ export interface DirectoryEntry {
   category: string;
   location: string;
   contact?: string;
-imageUrl?: string;
+  imageUrl?: string;
   imageHint?: string;
 }
 
