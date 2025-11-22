@@ -1,4 +1,3 @@
-
 import {
   doc,
   setDoc,
@@ -15,12 +14,15 @@ import {
   getDocs,
   deleteDoc,
   collectionGroup,
+  limit,
 } from 'firebase/firestore';
 import { firestore } from './index';
 import type { User } from 'firebase/auth';
 import type { AppUser, Event, Venue, Thread, Comment, FollowTargetType, ReactionType, EventInteractionType } from '@/lib/types';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { placeholderEvents, placeholderVenues, placeholderThreads } from './placeholder-data';
+import { errorEmitter } from './error-emitter';
+import { FirestorePermissionError } from './errors';
 
 // Custom error for validation
 class ValidationError extends Error {
@@ -42,7 +44,7 @@ export const createUserProfile = async (user: User) => {
 
   if (!userDoc.exists()) {
     const { uid, email, displayName, photoURL } = user;
-    await setDoc(userRef, {
+    const profileData = {
       uid,
       email,
       displayName: displayName || email?.split('@')[0],
@@ -51,6 +53,15 @@ export const createUserProfile = async (user: User) => {
       interests: [],
       skills: [],
       locationPreferences: [],
+    };
+    
+    setDoc(userRef, profileData)
+    .catch(async (serverError) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: userRef.path,
+            operation: 'create',
+            requestResourceData: profileData,
+        }));
     });
   }
 };
@@ -92,8 +103,6 @@ export const createEvent = async (
         throw new ValidationError('Validation failed', errors);
     }
 
-  const eventCollection = collection(firestore, 'events');
-  
   let venueName: string | undefined;
   let neighborhood: string | undefined;
   if (eventData.venueId) {
@@ -105,7 +114,7 @@ export const createEvent = async (
       }
   }
 
-  const newEvent = {
+  const newEventData = {
     ...eventData,
     createdBy: userId,
     hostName: (await getUserProfile(userId))?.displayName || 'Community Member',
@@ -120,7 +129,18 @@ export const createEvent = async (
         savedCount: 0,
     }
   };
-  const docRef = await addDoc(eventCollection, newEvent);
+
+  const eventCollection = collection(firestore, 'events');
+  const docRef = await addDoc(eventCollection, newEventData)
+    .catch(async (serverError) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: eventCollection.path,
+            operation: 'create',
+            requestResourceData: newEventData,
+        }));
+        throw serverError;
+    });
+
   return docRef.id;
 };
 
@@ -142,14 +162,24 @@ export const createVenue = async (
     }
 
   const venueCollection = collection(firestore, 'venues');
-  const newVenue = {
+  const newVenueData = {
     ...venueData,
     createdBy: userId,
     verified: false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
-  const docRef = await addDoc(venueCollection, newVenue);
+
+  const docRef = await addDoc(venueCollection, newVenueData)
+    .catch(async (serverError) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: venueCollection.path,
+            operation: 'create',
+            requestResourceData: newVenueData,
+        }));
+        throw serverError;
+    });
+
   return docRef.id;
 };
 
@@ -167,7 +197,7 @@ export const createThread = async (threadData: CreateThreadData, user: AppUser):
 
     const threadCollection = collection(firestore, 'threads');
     const now = Timestamp.now();
-    const newThread = {
+    const newThreadData = {
         ...threadData,
         authorInfo: {
             displayName: user.displayName,
@@ -179,7 +209,17 @@ export const createThread = async (threadData: CreateThreadData, user: AppUser):
         updatedAt: now,
         lastActivityAt: now,
     };
-    const docRef = await addDoc(threadCollection, newThread);
+    
+    const docRef = await addDoc(threadCollection, newThreadData)
+      .catch(async (serverError) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: threadCollection.path,
+              operation: 'create',
+              requestResourceData: newThreadData,
+          }));
+          throw serverError;
+      });
+
     return docRef.id;
 };
 
@@ -191,7 +231,8 @@ export const createComment = async (commentData: CreateCommentData, user: AppUse
     
     const commentCollection = collection(firestore, 'threads', commentData.threadId, 'comments');
     const newCommentRef = doc(commentCollection);
-    batch.set(newCommentRef, {
+
+    const newCommentData = {
         ...commentData,
         authorInfo: {
             displayName: user.displayName,
@@ -200,7 +241,8 @@ export const createComment = async (commentData: CreateCommentData, user: AppUse
         likeCount: 0,
         createdAt: now,
         updatedAt: now,
-    });
+    };
+    batch.set(newCommentRef, newCommentData);
 
     const threadRef = doc(firestore, 'threads', commentData.threadId);
     batch.update(threadRef, {
@@ -208,30 +250,55 @@ export const createComment = async (commentData: CreateCommentData, user: AppUse
         lastActivityAt: now,
     });
 
-    await batch.commit();
+    batch.commit().catch(async (serverError) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: newCommentRef.path,
+            operation: 'create',
+            requestResourceData: newCommentData,
+        }));
+    });
+
     return newCommentRef.id;
 };
 
 
 export const reportContent = async (type: 'thread' | 'comment', targetId: string, reason: string, userId: string) => {
     const reportCollection = collection(firestore, 'reports');
-    await addDoc(reportCollection, {
+    const reportData = {
         type,
         targetId,
         reason,
         createdBy: userId,
         createdAt: serverTimestamp(),
-    });
+    };
+    
+    addDoc(reportCollection, reportData)
+      .catch(async (serverError) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: reportCollection.path,
+              operation: 'create',
+              requestResourceData: reportData,
+          }));
+      });
 };
 
 export const followTarget = async (userId: string, targetId: string, targetType: FollowTargetType) => {
     const followCollection = collection(firestore, `users/${userId}/follows`);
-    await addDoc(followCollection, {
+    const followData = {
         userId,
         targetId,
         targetType,
         createdAt: serverTimestamp(),
-    });
+    };
+    
+    addDoc(followCollection, followData)
+      .catch(async (serverError) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: followCollection.path,
+              operation: 'create',
+              requestResourceData: followData,
+          }));
+      });
 };
 
 export const unfollowTarget = async (userId: string, targetId: string, targetType: FollowTargetType) => {
@@ -240,7 +307,13 @@ export const unfollowTarget = async (userId: string, targetId: string, targetTyp
     const snapshot = await getDocs(q);
     if (!snapshot.empty) {
         const docToDelete = snapshot.docs[0];
-        await deleteDoc(docToDelete.ref);
+        deleteDoc(docToDelete.ref)
+          .catch(async (serverError) => {
+              errorEmitter.emit('permission-error', new FirestorePermissionError({
+                  path: docToDelete.ref.path,
+                  operation: 'delete',
+              }));
+          });
     }
 };
 
@@ -270,20 +343,27 @@ export const addReaction = async (
     
     const reactionCollection = getReactionCollection(targetType, targetId);
     const reactionDocRef = doc(reactionCollection, userId); 
-    batch.set(reactionDocRef, {
+    const reactionData = {
         userId,
         targetId,
         targetType,
         type: reactionType,
         createdAt: serverTimestamp(),
-    });
+    };
+    batch.set(reactionDocRef, reactionData);
 
     if (targetType === 'thread') {
         const targetRef = doc(firestore, 'threads', targetId);
         batch.update(targetRef, { likeCount: increment(1) });
     }
 
-    await batch.commit();
+    batch.commit().catch(async (serverError) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: reactionDocRef.path,
+            operation: 'create',
+            requestResourceData: reactionData,
+        }));
+    });
 };
 
 export const addCommentReaction = async (
@@ -295,18 +375,25 @@ export const addCommentReaction = async (
     const batch = writeBatch(firestore);
 
     const reactionDocRef = doc(firestore, 'comments', commentId, 'reactions', userId);
-     batch.set(reactionDocRef, {
+    const reactionData = {
         userId,
         targetId: commentId,
         targetType: 'comment',
         type: reactionType,
         createdAt: serverTimestamp(),
-    });
+    };
+    batch.set(reactionDocRef, reactionData);
 
     const commentRef = doc(firestore, 'threads', threadId, 'comments', commentId);
     batch.update(commentRef, { likeCount: increment(1) });
 
-    await batch.commit();
+    batch.commit().catch(async (serverError) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: reactionDocRef.path,
+            operation: 'create',
+            requestResourceData: reactionData,
+        }));
+    });
 }
 
 
@@ -326,7 +413,12 @@ export const removeReaction = async (
         batch.update(targetRef, { likeCount: increment(-1) });
     }
    
-    await batch.commit();
+    batch.commit().catch(async (serverError) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: reactionDocRef.path,
+            operation: 'delete',
+        }));
+    });
 };
 
 export const removeCommentReaction = async (
@@ -342,7 +434,12 @@ export const removeCommentReaction = async (
     const commentRef = doc(firestore, 'threads', threadId, 'comments', commentId);
     batch.update(commentRef, { likeCount: increment(-1) });
     
-    await batch.commit();
+    batch.commit().catch(async (serverError) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: reactionDocRef.path,
+            operation: 'delete',
+        }));
+    });
 }
 
 export const getUserReactionsForThread = async (userId: string, threadId: string): Promise<Set<string>> => {
@@ -373,18 +470,25 @@ export const addEventInteraction = async (userId: string, eventId: string, type:
     const batch = writeBatch(firestore);
 
     const interactionRef = doc(collection(firestore, 'eventInteractions'));
-    batch.set(interactionRef, {
+    const interactionData = {
         userId,
         eventId,
         type,
         createdAt: serverTimestamp(),
-    });
+    };
+    batch.set(interactionRef, interactionData);
 
     const eventRef = doc(firestore, 'events', eventId);
     const statField = `stats.${type}Count`;
     batch.update(eventRef, { [statField]: increment(1) });
     
-    await batch.commit();
+    batch.commit().catch(async (serverError) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: interactionRef.path,
+            operation: 'create',
+            requestResourceData: interactionData,
+        }));
+    });
     return interactionRef.id;
 };
 
@@ -407,7 +511,12 @@ export const removeEventInteraction = async (userId: string, eventId: string, ty
         const statField = `stats.${type}Count`;
         batch.update(eventRef, { [statField]: increment(-1) });
         
-        await batch.commit();
+        batch.commit().catch(async (serverError) => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: interactionDoc.ref.path,
+                operation: 'delete',
+            }));
+        });
     }
 };
 

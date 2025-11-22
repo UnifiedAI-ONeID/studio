@@ -12,6 +12,7 @@ import Header from './header';
 import BottomNav from './bottom-nav';
 import LandingTopNav from '../landing/landing-top-nav';
 import { Toaster } from '../ui/toaster';
+import FirebaseErrorListener from '../FirebaseErrorListener';
 import {
   Sidebar,
   SidebarProvider,
@@ -196,8 +197,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider value={{ user, firebaseUser, loading, prompted, setPrompted }}>
       <LayoutContent>{children}</LayoutContent>
       <Toaster />
+      <FirebaseErrorListener />
     </AuthContext.Provider>
   );
 }
-
-    
