@@ -190,7 +190,7 @@ export const createThread = async (threadData: CreateThreadData, user: AppUser):
         throw new ValidationError('Validation failed', errors);
     }
 
-    const threadCollection = collection(firestore, 'commonsThreads');
+    const threadCollection = collection(firestore, 'threads');
     const now = Timestamp.now();
     const newThreadData = {
         ...threadData,
@@ -228,7 +228,7 @@ export const createReply = async (replyData: CreateReplyData, user: AppUser): Pr
     const batch = writeBatch(firestore);
     const now = Timestamp.now();
     
-    const replyCollection = collection(firestore, 'commonsReplies');
+    const replyCollection = collection(firestore, `threads/${replyData.threadId}/comments`);
     const newReplyRef = doc(replyCollection);
 
     const newReplyData = {
@@ -243,7 +243,7 @@ export const createReply = async (replyData: CreateReplyData, user: AppUser): Pr
     };
     batch.set(newReplyRef, newReplyData);
 
-    const threadRef = doc(firestore, 'commonsThreads', replyData.threadId);
+    const threadRef = doc(firestore, 'threads', replyData.threadId);
     batch.update(threadRef, {
         'stats.replyCount': increment(1),
         lastActivityAt: now,
@@ -365,26 +365,6 @@ export const removeEventInteraction = async (userId: string, eventId: string, ty
         throw serverError;
     });
 };
-
-export async function seedDatabase(db: typeof firestore): Promise<{ success: boolean; message: string }> {
-  const sampleCheckQuery = query(collection(db, 'events'), where('isSampleData', '==', true), limit(1));
-  
-  try {
-    const sampleCheck = await getDocs(sampleCheckQuery);
-    if (!sampleCheck.empty) {
-      return { success: false, message: 'Sample data already exists. Seeding skipped.' };
-    }
-    
-    return { success: false, message: 'This function is deprecated. Please run `npm run seed` from your terminal.' };
-
-  } catch (error: any) {
-    console.error("Error checking for sample data:", error);
-    if (error.code === 'permission-denied') {
-        return { success: false, message: 'Permission denied. Ensure you have the correct Firestore rules or are running with admin privileges.' };
-    }
-    return { success: false, message: error.message };
-  }
-}
 
 export const addNewsletterSubscriber = async (email: string, city: string = 'unknown') => {
     if (!email || !email.includes('@')) {

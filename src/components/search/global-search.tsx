@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,11 +9,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Search, Calendar, List, Users2 } from 'lucide-react';
+import { Search, Calendar, Building, MessageSquare } from 'lucide-react';
 import {
   collection,
   query,
-  where,
   getDocs,
   limit,
   orderBy,
@@ -22,7 +20,7 @@ import {
   endAt,
 } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/index';
-import type { Event, Venue, Thread } from '@/lib/types';
+import type { Event, Venue, CommonsThread } from '@/lib/types';
 import Link from 'next/link';
 import { Skeleton } from '../ui/skeleton';
 
@@ -37,14 +35,17 @@ const searchCollections = async (searchTerm: string): Promise<SearchResult[]> =>
   if (!searchTerm) return [];
 
   const term = searchTerm.toLowerCase();
+  const searchTermEnd = term + '\uf8ff';
 
   const searchInCollection = async (collectionName: string, titleField: string, type: 'event' | 'venue' | 'thread', pathPrefix: string) => {
     const collRef = collection(firestore, collectionName);
+    // Note: This kind of query requires a composite index on the `titleField` for each collection.
+    // If not configured, it will fail.
     const q = query(
         collRef, 
         orderBy(titleField), 
         startAt(term), 
-        endAt(term + '\uf8ff'),
+        endAt(searchTermEnd),
         limit(5)
     );
 
@@ -65,13 +66,12 @@ const searchCollections = async (searchTerm: string): Promise<SearchResult[]> =>
     ]);
     return [...events, ...venues, ...threads];
   } catch (error) {
-      console.error("Search failed:", error);
-      // Fallback for when composite indexes aren't ready
-      // This is less efficient and should be avoided in production
+      console.error("Search failed, likely due to missing composite indexes. Falling back to less efficient client-side filtering.", error);
+      
       const [eventSnap, venueSnap, threadSnap] = await Promise.all([
-        getDocs(query(collection(firestore, 'events'), limit(20))),
-        getDocs(query(collection(firestore, 'venues'), limit(20))),
-        getDocs(query(collection(firestore, 'threads'), limit(20))),
+        getDocs(query(collection(firestore, 'events'), limit(50))),
+        getDocs(query(collection(firestore, 'venues'), limit(50))),
+        getDocs(query(collection(firestore, 'threads'), limit(50))),
       ]);
 
       const results: SearchResult[] = [];
@@ -88,7 +88,7 @@ const searchCollections = async (searchTerm: string): Promise<SearchResult[]> =>
         }
       });
       threadSnap.forEach(doc => {
-        const thread = doc.data() as Thread;
+        const thread = doc.data() as CommonsThread;
         if (thread.title.toLowerCase().includes(term)) {
           results.push({ id: doc.id, title: thread.title, type: 'thread', path: `/commons/${doc.id}` });
         }
@@ -132,8 +132,8 @@ export default function GlobalSearch({
   const getIcon = (type: SearchResult['type']) => {
     switch (type) {
       case 'event': return <Calendar className="h-5 w-5 text-muted-foreground" />;
-      case 'venue': return <List className="h-5 w-5 text-muted-foreground" />;
-      case 'thread': return <Users2 className="h-5 w-5 text-muted-foreground" />;
+      case 'venue': return <Building className="h-5 w-5 text-muted-foreground" />;
+      case 'thread': return <MessageSquare className="h-5 w-5 text-muted-foreground" />;
     }
   };
 
@@ -141,7 +141,7 @@ export default function GlobalSearch({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[625px]">
         <DialogHeader>
-          <DialogTitle>Global Search</DialogTitle>
+          <DialogTitle>Search</DialogTitle>
         </DialogHeader>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -181,5 +181,3 @@ export default function GlobalSearch({
     </Dialog>
   );
 }
-
-    

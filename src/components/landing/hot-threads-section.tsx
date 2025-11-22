@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/index';
 import type { CommonsThread } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -41,26 +41,14 @@ function SectionSkeleton() {
 }
 
 export default function HotThreadsSection() {
-  const [threads, setThreads] = useState<CommonsThread[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const threadsQuery = useMemo(() => query(
-    collection(firestore, 'commonsThreads'),
+  const threadsQuery = useMemoFirebase(() => query(
+    collection(firestore, 'threads'),
     orderBy('stats.replyCount', 'desc'),
     orderBy('createdAt', 'desc'),
     limit(5)
   ), []);
+  const { data: threads, loading } = useCollection<CommonsThread>(threadsQuery);
 
-  useEffect(() => {
-    const unsubscribe = onSnapshot(threadsQuery, (snapshot) => {
-      setThreads(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CommonsThread)));
-      setLoading(false);
-    }, (error) => {
-        console.error("Error fetching hot threads:", error);
-        setLoading(false);
-    });
-    return () => unsubscribe();
-  }, [threadsQuery]);
 
   return (
     <section id="community" className="bg-white">

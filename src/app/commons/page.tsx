@@ -43,7 +43,7 @@ export default function CommonsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   
   const threadsQuery = useMemoFirebase(() => {
-    const baseQuery = collection(firestore, 'commonsThreads');
+    const baseQuery = collection(firestore, 'threads');
     const constraints: QueryConstraint[] = [orderBy('lastActivityAt', 'desc'), limit(20)];
     
     if (activeTopic !== 'all') {

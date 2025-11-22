@@ -37,7 +37,7 @@ const deleteCollectionByQuery = async (query: admin.firestore.Query, batchSize: 
 
 const clearExistingSampleData = async () => {
     console.log("Clearing existing sample data...");
-    const collections = ['users', 'events', 'venues', 'commonsThreads', 'commonsReplies', 'landingConfig'];
+    const collections = ['users', 'events', 'venues', 'threads', 'comments', 'landingConfig'];
     
     for (const collectionName of collections) {
         const query = db.collection(collectionName).where('isSampleData', '==', true);
@@ -71,13 +71,13 @@ const sampleEvents = [
     { id: 'seed_event_3', title: 'Startup Founder Breakfast Meetup', category: 'Networking', startTime: getFutureDate(9, 8), city: 'Taipei', neighborhood: 'Xinyi', hostId: 'seed_user_host_1', priceType: 'paid', minPrice: 250, location: { venueId: 'seed_venue_3' }, coverImageUrl: 'https://images.unsplash.com/photo-1543269865-cbf427effbad?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', stats: { interestedCount: 120, goingCount: 60 } },
     { id: 'seed_event_4', title: 'Sunday Yoga by the Riverside', category: 'Wellness', startTime: getFutureDate(5, 9), city: 'Taipei', neighborhood: 'Songshan', hostId: 'seed_user_host_2', priceType: 'donation', coverImageUrl: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=2120&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', isFeaturedOnLanding: true, priorityScore: 80, stats: { interestedCount: 95, goingCount: 55 } },
     { id: 'seed_event_5', title: 'Indie Band Showcase at The Wall', category: 'Music', startTime: getFutureDate(11, 20), city: 'Taipei', location: { venueId: 'seed_venue_5' }, neighborhood: 'Wenshan', hostId: 'seed_user_host_3', priceType: 'paid', minPrice: 400, coverImageUrl: 'https://images.unsplash.com/photo-1496337589254-7e23d04de0f0?q=80&w=2070&auto=format&fit=crop&ixlib.rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', isFeaturedOnLanding: true, priorityScore: 90, stats: { interestedCount: 150, goingCount: 80 } },
-    { id: 'seed_event_6', title: 'Taipei Dumpling Making Class', category: 'Food & Drink', startTime: getFutureDate(12, 18), city: 'Taipei', neighborhood: 'Wanhua', hostId: 'seed_user_alex', priceType: 'paid', minPrice: 1200, coverImageUrl: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?q=80&w=2069&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', stats: { interestedCount: 60, goingCount: 30 } },
+    { id: 'seed_event_6', title: 'Taipei Dumpling Making Class', category: 'Food & Drink', startTime: getFutureDate(12, 18), city: 'Taipei', neighborhood: 'Wanhua', hostId: 'seed_user_alex', priceType: 'paid', minPrice: 1200, coverImageUrl: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?q=80&w=2069&auto=format&fit=crop&ixlib.rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', stats: { interestedCount: 60, goingCount: 30 } },
 ];
 
 const sampleThreads = [
-    { id: 'seed_thread_1', title: 'Best places for live music this weekend?', topic: 'Events', city: 'Taipei', body: 'My friends are visiting and I want to show them the best of Taipei\'s live music scene. Any recommendations for this Friday or Saturday? Open to anything from jazz to indie rock.', authorId: 'seed_user_alex', stats: { replyCount: 2, viewCount: 150, likeCount: 12 } },
-    { id: 'seed_thread_2', title: 'Solo-friendly spots to grab a drink in Xinyi', topic: 'Neighborhoods', city: 'Taipei', body: 'Looking for a bar in Xinyi where it\'s comfortable to just sit with a book and have a nice cocktail. Not too loud, not a total dive. Any ideas?', authorId: 'seed_user_mei', stats: { replyCount: 1, viewCount: 220, likeCount: 25 }, relatedVenueId: 'seed_venue_1' },
-    { id: 'seed_thread_3', title: 'Looking for a co-working space near an MRT line', topic: 'Tips', city: 'Taipei', body: 'Remote worker here. My apartment is getting too cramped. I need a co-working space with reliable internet that\'s a short walk from any MRT station. Any favorites?', authorId: 'seed_user_liam', stats: { replyCount: 0, viewCount: 95, likeCount: 8 }, relatedVenueId: 'seed_venue_3' },
+    { id: 'seed_thread_1', title: 'Best places for live music this weekend?', topic: 'general', city: 'Taipei', body: 'My friends are visiting and I want to show them the best of Taipei\'s live music scene. Any recommendations for this Friday or Saturday? Open to anything from jazz to indie rock.', authorId: 'seed_user_alex', stats: { replyCount: 2, viewCount: 150, likeCount: 12 } },
+    { id: 'seed_thread_2', title: 'Solo-friendly spots to grab a drink in Xinyi', topic: 'neighborhoods', city: 'Taipei', body: 'Looking for a bar in Xinyi where it\'s comfortable to just sit with a book and have a nice cocktail. Not too loud, not a total dive. Any ideas?', authorId: 'seed_user_mei', stats: { replyCount: 1, viewCount: 220, likeCount: 25 }, relatedVenueId: 'seed_venue_1' },
+    { id: 'seed_thread_3', title: 'Looking for a co-working space near an MRT line', topic: 'general', city: 'Taipei', body: 'Remote worker here. My apartment is getting too cramped. I need a co-working space with reliable internet that\'s a short walk from any MRT station. Any favorites?', authorId: 'seed_user_liam', stats: { replyCount: 0, viewCount: 95, likeCount: 8 }, relatedVenueId: 'seed_venue_3' },
 ];
 
 const sampleReplies = [
@@ -138,7 +138,7 @@ const seed = async () => {
 
     console.log("Seeding threads...");
     sampleThreads.forEach(thread => {
-        const ref = db.collection('commonsThreads').doc(thread.id);
+        const ref = db.collection('threads').doc(thread.id);
         batch.set(ref, {
             ...thread,
             createdAt: now,
@@ -151,7 +151,7 @@ const seed = async () => {
 
     console.log("Seeding replies...");
     sampleReplies.forEach((reply, index) => {
-        const ref = db.collection('commonsReplies').doc(`seed_reply_${index + 1}`);
+        const ref = db.collection(`threads/${reply.threadId}/comments`).doc(`seed_reply_${index + 1}`);
         batch.set(ref, {
             ...reply,
             createdAt: now,

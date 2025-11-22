@@ -72,16 +72,13 @@ function MyEvents() {
 function FollowedItem({ follow }: { follow: Follow }) {
     const { targetId, targetType } = follow;
     
-    // Determine the correct collection and link path based on the target type
     const collectionName = targetType === 'venue' ? 'venues' : null;
-    const linkPath = targetType === 'venue' ? '/directory' : '/commons/topics'; // Adjust as needed for other types
+    const linkPath = targetType === 'venue' ? '/directory' : '/commons/topics';
 
-    // Memoize the document reference
     const docRef = useMemoFirebase(() => 
         collectionName ? doc(firestore, collectionName, targetId) : null
     , [collectionName, targetId]);
 
-    // Fetch the document data
     const { data, loading } = useDoc<Venue | { name: string }>(docRef);
 
     if (loading) {
@@ -112,7 +109,7 @@ function FollowedItem({ follow }: { follow: Follow }) {
 function MyFollows() {
     const { user } = useAuth();
     const followsQuery = useMemoFirebase(() =>
-        user ? query(collection(firestore, 'follows'), where('followerUserId', '==', user.id)) : null
+        user ? query(collection(firestore, 'follows'), where('userId', '==', user.id)) : null
     , [user]);
     const { data: follows, loading } = useCollection<Follow>(followsQuery);
 
@@ -139,7 +136,7 @@ function MyThreads() {
     const { user } = useAuth();
     const threadsQuery = useMemoFirebase(() =>
         user ? query(
-            collection(firestore, 'commonsThreads'),
+            collection(firestore, 'threads'),
             where('authorId', '==', user.id),
             orderBy('createdAt', 'desc'),
             limit(20)

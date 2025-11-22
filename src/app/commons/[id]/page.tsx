@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth, useDoc, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
-import { doc, collection, query, orderBy, Timestamp } from 'firebase/firestore';
+import { doc, collection, query, orderBy, Timestamp, where } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/index';
 import { createReply, reportContent } from '@/lib/firebase/firestore';
 import type { CommonsThread, CommonsReply, Event, Venue } from '@/lib/types';
@@ -119,11 +119,11 @@ export default function ThreadDetailPage() {
     const [replyText, setReplyText] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     
-    const threadRef = useMemoFirebase(() => threadId ? doc(firestore, 'commonsThreads', threadId) : null, [threadId]);
+    const threadRef = useMemoFirebase(() => threadId ? doc(firestore, 'threads', threadId) : null, [threadId]);
     const { data: thread, loading: threadLoading } = useDoc<CommonsThread>(threadRef);
 
     const repliesQuery = useMemoFirebase(() => 
-        threadId ? query(collection(firestore, 'commonsReplies'), where('threadId', '==', threadId), orderBy('createdAt', 'asc')) : null
+        threadId ? query(collection(firestore, `threads/${threadId}/comments`), orderBy('createdAt', 'asc')) : null
     , [threadId]);
     const { data: replies, loading: repliesLoading } = useCollection<CommonsReply>(repliesQuery);
     

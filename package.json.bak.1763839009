@@ -1,3 +1,10 @@
+cd /home/user/studio
+
+# backup your current package.json just in case
+mv package.json package.json.bak.$(date +%s) || true
+
+# write a clean package.json from scratch
+cat << 'EOF' > package.json
 {
   "name": "studio-next-pwa",
   "version": "0.1.0",
@@ -24,3 +31,4 @@
     "typescript": "^5.0.0"
   }
 }
+EOF
