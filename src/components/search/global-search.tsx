@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -17,6 +18,8 @@ import {
   getDocs,
   limit,
   orderBy,
+  startAt,
+  endAt,
 } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/index';
 import type { Event, Venue, Thread } from '@/lib/types';
@@ -33,67 +36,65 @@ type SearchResult = {
 const searchCollections = async (searchTerm: string): Promise<SearchResult[]> => {
   if (!searchTerm) return [];
 
-  const lowerCaseTerm = searchTerm.toLowerCase();
+  const term = searchTerm.toLowerCase();
 
-  const eventsQuery = query(
-    collection(firestore, 'events'),
-    where('status', '==', 'published')
-  );
-  
-  const venuesQuery = query(
-    collection(firestore, 'venues'),
-    where('verified', '==', true)
-  );
+  const searchInCollection = async (collectionName: string, titleField: string, type: 'event' | 'venue' | 'thread', pathPrefix: string) => {
+    const collRef = collection(firestore, collectionName);
+    const q = query(
+        collRef, 
+        orderBy(titleField), 
+        startAt(term), 
+        endAt(term + '\uf8ff'),
+        limit(5)
+    );
 
-  const threadsQuery = query(
-    collection(firestore, 'threads')
-  );
-
-  const [eventSnap, venueSnap, threadSnap] = await Promise.all([
-      getDocs(eventsQuery),
-      getDocs(venuesQuery),
-      getDocs(threadsQuery),
-  ]);
-
-  const results: SearchResult[] = [];
-
-  eventSnap.forEach(doc => {
-    const event = doc.data() as Event;
-    if (event.title.toLowerCase().includes(lowerCaseTerm)) {
-      results.push({
+    const snap = await getDocs(q);
+    return snap.docs.map(doc => ({
         id: doc.id,
-        title: event.title,
-        type: 'event',
-        path: `/events/${doc.id}`,
-      });
-    }
-  });
+        title: doc.data()[titleField],
+        type: type,
+        path: `${pathPrefix}/${doc.id}`
+    }));
+  };
 
-  venueSnap.forEach(doc => {
-    const venue = doc.data() as Venue;
-    if (venue.name.toLowerCase().includes(lowerCaseTerm)) {
-      results.push({
-        id: doc.id,
-        title: venue.name,
-        type: 'venue',
-        path: `/directory/${doc.id}`,
-      });
-    }
-  });
+  try {
+    const [events, venues, threads] = await Promise.all([
+      searchInCollection('events', 'title', 'event', '/events'),
+      searchInCollection('venues', 'name', 'venue', '/directory'),
+      searchInCollection('threads', 'title', 'thread', '/commons'),
+    ]);
+    return [...events, ...venues, ...threads];
+  } catch (error) {
+      console.error("Search failed:", error);
+      // Fallback for when composite indexes aren't ready
+      // This is less efficient and should be avoided in production
+      const [eventSnap, venueSnap, threadSnap] = await Promise.all([
+        getDocs(query(collection(firestore, 'events'), limit(20))),
+        getDocs(query(collection(firestore, 'venues'), limit(20))),
+        getDocs(query(collection(firestore, 'threads'), limit(20))),
+      ]);
 
-  threadSnap.forEach(doc => {
-    const thread = doc.data() as Thread;
-    if (thread.title.toLowerCase().includes(lowerCaseTerm)) {
-      results.push({
-        id: doc.id,
-        title: thread.title,
-        type: 'thread',
-        path: `/commons/${doc.id}`,
+      const results: SearchResult[] = [];
+      eventSnap.forEach(doc => {
+        const event = doc.data() as Event;
+        if (event.title.toLowerCase().includes(term)) {
+          results.push({ id: doc.id, title: event.title, type: 'event', path: `/events/${doc.id}` });
+        }
       });
-    }
-  });
-
-  return results.slice(0, 15); // Limit total results
+      venueSnap.forEach(doc => {
+        const venue = doc.data() as Venue;
+        if (venue.name.toLowerCase().includes(term)) {
+          results.push({ id: doc.id, title: venue.name, type: 'venue', path: `/directory/${doc.id}` });
+        }
+      });
+      threadSnap.forEach(doc => {
+        const thread = doc.data() as Thread;
+        if (thread.title.toLowerCase().includes(term)) {
+          results.push({ id: doc.id, title: thread.title, type: 'thread', path: `/commons/${doc.id}` });
+        }
+      });
+      return results.slice(0, 15);
+  }
 };
 
 export default function GlobalSearch({
@@ -180,3 +181,5 @@ export default function GlobalSearch({
     </Dialog>
   );
 }
+
+    

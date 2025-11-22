@@ -76,7 +76,7 @@ export const uploadImage = async (
   return await getDownloadURL(snapshot.ref);
 };
 
-type CreateEventData = Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'approvalStatus' | 'createdBy' | 'stats'>;
+type CreateEventData = Partial<Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'approvalStatus' | 'createdBy' | 'stats'>>;
 
 export const createEvent = async (
   eventData: CreateEventData,
@@ -108,6 +108,7 @@ export const createEvent = async (
   const newEvent = {
     ...eventData,
     createdBy: userId,
+    hostName: (await getUserProfile(userId))?.displayName || 'Community Member',
     approvalStatus: 'pending' as const,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -123,7 +124,7 @@ export const createEvent = async (
   return docRef.id;
 };
 
-type CreateVenueData = Omit<Venue, 'id' | 'createdAt' | 'updatedAt' | 'verified' | 'createdBy' | 'isFeaturedOnLanding'>;
+type CreateVenueData = Partial<Omit<Venue, 'id' | 'createdAt' | 'updatedAt' | 'verified' | 'createdBy'>>;
 
 export const createVenue = async (
   venueData: CreateVenueData,
@@ -153,7 +154,7 @@ export const createVenue = async (
 };
 
 
-type CreateThreadData = Omit<Thread, 'id' | 'createdAt' | 'updatedAt' | 'lastActivityAt' | 'replyCount' | 'authorInfo' | 'likeCount'>;
+type CreateThreadData = Partial<Omit<Thread, 'id' | 'createdAt' | 'updatedAt' | 'lastActivityAt' | 'replyCount' | 'authorInfo' | 'likeCount'>>;
 
 export const createThread = async (threadData: CreateThreadData, user: AppUser): Promise<string> => {
     const errors: {[key: string]: string} = {};
@@ -428,21 +429,42 @@ export const seedDatabase = async () => {
   const batch = writeBatch(firestore);
   const now = Timestamp.now();
 
-  // Seed Venues
-  placeholderVenues.forEach(venue => {
-    const docRef = doc(firestore, 'venues', venue.id);
+  const venueCollection = collection(firestore, 'venues');
+  const eventCollection = collection(firestore, 'events');
+  const threadCollection = collection(firestore, 'threads');
+
+  // Clear existing seeded data if necessary (optional)
+  // This is a simple way to avoid duplicates. For production, you'd want a more robust migration strategy.
+  const oldVenues = await getDocs(query(venueCollection, where('createdBy', '==', 'system')));
+  oldVenues.forEach(doc => batch.delete(doc.ref));
+  const oldEvents = await getDocs(query(eventCollection, where('createdBy', '==', 'system')));
+  oldEvents.forEach(doc => batch.delete(doc.ref));
+  const oldThreads = await getDocs(query(threadCollection, where('createdBy', '==', 'system-user-1')));
+  oldThreads.forEach(doc => batch.delete(doc.ref));
+
+
+  // Seed Venues and keep track of their new IDs
+  const venueIdMap = new Map<string, string>();
+  for (const venue of placeholderVenues) {
+    const { id: oldId, ...venueData } = venue;
+    const docRef = doc(venueCollection);
     batch.set(docRef, {
-        ...venue,
+        ...venueData,
         createdAt: now,
         updatedAt: now,
     });
-  });
+    venueIdMap.set(oldId, docRef.id);
+  }
 
-  // Seed Events
+  // Seed Events, updating venueId with the new IDs
   placeholderEvents.forEach(event => {
-    const docRef = doc(firestore, 'events', event.id);
+    const { venueId: oldVenueId, ...eventData } = event;
+    const newVenueId = oldVenueId ? venueIdMap.get(oldVenueId) : undefined;
+    
+    const docRef = doc(eventCollection);
     batch.set(docRef, {
-        ...event,
+        ...eventData,
+        venueId: newVenueId,
         startTime: Timestamp.fromDate(new Date(event.startTime as unknown as string)),
         endTime: event.endTime ? Timestamp.fromDate(new Date(event.endTime as unknown as string)) : undefined,
         createdAt: now,
@@ -452,9 +474,10 @@ export const seedDatabase = async () => {
   
   // Seed Threads
   placeholderThreads.forEach(thread => {
-      const docRef = doc(firestore, 'threads', thread.id);
+      const { id, ...threadData } = thread;
+      const docRef = doc(threadCollection);
       batch.set(docRef, {
-          ...thread,
+          ...threadData,
           createdAt: now,
           updatedAt: now,
           lastActivityAt: now,
@@ -470,3 +493,5 @@ export const seedDatabase = async () => {
     return { success: false, message: `Error seeding database: ${error}` };
   }
 };
+
+    
