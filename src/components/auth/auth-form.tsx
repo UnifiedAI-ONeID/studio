@@ -20,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { signInWithGoogle, signUpWithEmail, signInWithEmail } from '@/lib/firebase/auth';
 import AvidityLogo from '../logo';
+import { useAuth } from '@/hooks/use-auth';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -30,13 +31,15 @@ const formSchema = z.object({
 
 type AuthFormProps = {
   mode: 'login' | 'signup';
+  continueUrl?: string;
 };
 
-export default function AuthForm({ mode }: AuthFormProps) {
+export default function AuthForm({ mode, continueUrl }: AuthFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const { setPrompted } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -45,6 +48,11 @@ export default function AuthForm({ mode }: AuthFormProps) {
       password: '',
     },
   });
+
+  const handleSuccess = () => {
+    setPrompted(false);
+    router.push(continueUrl || '/home');
+  }
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
@@ -58,7 +66,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
       } else {
         await signInWithEmail(values.email, values.password);
       }
-      router.push('/home');
+      handleSuccess();
     } catch (error: any) {
       console.error(error);
       toast({
@@ -75,7 +83,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
     setIsGoogleLoading(true);
     try {
       await signInWithGoogle();
-      router.push('/home');
+      handleSuccess();
     } catch (error: any) {
       console.error(error);
       toast({
@@ -89,7 +97,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
   };
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className="w-full max-w-sm border-slate-200 shadow-xl shadow-slate-200/50">
       <CardHeader className="text-center">
         <div className="mx-auto mb-4">
           <AvidityLogo className="h-12 w-12 text-primary" />
@@ -219,7 +227,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
             <>
               Don&apos;t have an account?{' '}
               <Link
-                href="/signup"
+                href={`/signup${continueUrl ? `?continueUrl=${continueUrl}` : ''}`}
                 className="underline underline-offset-4 hover:text-primary"
               >
                 Sign Up
@@ -229,7 +237,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
             <>
               Already have an account?{' '}
               <Link
-                href="/login"
+                href={`/login${continueUrl ? `?continueUrl=${continueUrl}` : ''}`}
                 className="underline underline-offset-4 hover:text-primary"
               >
                 Log In

@@ -33,6 +33,8 @@ export interface Event {
   createdBy: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  isFeaturedOnLanding?: boolean;
+  priorityScore?: number;
   // For UI display
   neighborhood?: string;
   hostName?: string;
@@ -55,6 +57,7 @@ export interface Venue {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   verified: boolean;
+  isFeaturedOnLanding?: boolean;
 }
 
 export interface DirectoryEntry {

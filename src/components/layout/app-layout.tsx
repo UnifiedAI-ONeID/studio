@@ -3,28 +3,44 @@
 import { useAuth } from '@/hooks/use-auth';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
 import AvidityLogo from '@/components/logo';
 import Header from './header';
 import SideNav from './side-nav';
 import BottomNav from './bottom-nav';
+import LandingTopNav from '../landing/landing-top-nav';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, prompted } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   const isAuthPage = pathname === '/login' || pathname === '/signup';
+  const isLandingPage = pathname === '/';
 
   useEffect(() => {
-    if (!loading && !user && !isAuthPage) {
-      router.replace('/login');
+    if (!loading) {
+      if (user && (isAuthPage || isLandingPage)) {
+        // If user is logged in and on an auth page or landing page, redirect to home
+        router.replace('/home');
+      } else if (!user && !isAuthPage && !isLandingPage && !prompted) {
+        // If user is not logged in and not on a public page, redirect to landing
+         router.replace('/');
+      }
     }
-  }, [user, loading, router, isAuthPage]);
+  }, [user, loading, router, isAuthPage, isLandingPage, prompted]);
+
+  if (isLandingPage && !user) {
+    return (
+       <>
+        <LandingTopNav />
+        <main>{children}</main>
+      </>
+    )
+  }
 
   if (isAuthPage) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <div className="flex min-h-screen items-center justify-center bg-slate-50/60 p-4">
         {children}
       </div>
     );
@@ -42,7 +58,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-background">
+    <div className="flex min-h-screen w-full flex-col bg-slate-50/60">
       <div className="flex flex-1">
         <SideNav />
         <div className="flex flex-1 flex-col">

@@ -5,6 +5,14 @@ export const metadata: Metadata = {
   title: 'Sign Up',
 };
 
-export default function SignUpPage() {
-  return <AuthForm mode="signup" />;
+export default function SignUpPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+   const continueUrl = Array.isArray(searchParams.continueUrl)
+    ? searchParams.continueUrl[0]
+    : searchParams.continueUrl;
+
+  return <AuthForm mode="signup" continueUrl={continueUrl} />;
 }

@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -39,7 +40,9 @@
         "approvalStatus": { "type": "string", "enum": ["pending", "approved", "rejected"] },
         "createdBy": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "isFeaturedOnLanding": { "type": "boolean" },
+        "priorityScore": { "type": "number" }
       },
       "required": ["title", "category", "startTime", "hostId", "status", "visibility", "approvalStatus", "createdBy", "createdAt", "updatedAt"]
     },
@@ -67,7 +70,8 @@
         "verified": { "type": "boolean" },
         "createdBy": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "isFeaturedOnLanding": { "type": "boolean" }
       },
       "required": ["name", "type", "address", "neighborhood", "createdBy", "createdAt", "updatedAt", "verified"]
     },

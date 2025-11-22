@@ -10,18 +10,23 @@ interface AuthContextType {
   user: AppUser | null;
   firebaseUser: FirebaseUser | null;
   loading: boolean;
+  prompted: boolean;
+  setPrompted: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   firebaseUser: null,
   loading: true,
+  prompted: false,
+  setPrompted: () => {},
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [prompted, setPrompted] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
@@ -40,7 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, firebaseUser, loading }}>
+    <AuthContext.Provider value={{ user, firebaseUser, loading, prompted, setPrompted }}>
       {children}
     </AuthContext.Provider>
   );
