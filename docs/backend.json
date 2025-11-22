@@ -70,6 +70,47 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "type", "address", "neighborhood", "createdBy", "createdAt", "updatedAt", "verified"]
+    },
+    "Thread": {
+      "title": "Thread",
+      "description": "A discussion thread in the Commons.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "The title of the thread." },
+        "body": { "type": "string", "description": "The initial content of the thread." },
+        "topic": { "type": "string", "enum": ["general", "neighborhoods", "buy-sell", "housing", "clubs"] },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "relatedEventId": { "type": "string", "description": "Optional ID of a related event." },
+        "relatedVenueId": { "type": "string", "description": "Optional ID of a related venue." },
+        "createdBy": { "type": "string", "description": "The user ID of the creator." },
+        "lastActivityAt": { "type": "string", "format": "date-time", "description": "Timestamp of the last activity (creation or new comment)." },
+        "replyCount": { "type": "number", "description": "The number of replies." }
+      },
+      "required": ["title", "body", "topic", "createdBy", "lastActivityAt", "replyCount"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "A reply to a thread in the Commons.",
+      "type": "object",
+      "properties": {
+        "threadId": { "type": "string", "description": "The ID of the parent thread." },
+        "parentId": { "type": "string", "description": "Optional ID of the parent comment for nesting." },
+        "body": { "type": "string", "description": "The content of the comment." },
+        "createdBy": { "type": "string", "description": "The user ID of the commenter." }
+      },
+      "required": ["threadId", "body", "createdBy"]
+    },
+    "Report": {
+      "title": "Report",
+      "description": "A report submitted by a user for a thread or comment.",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["thread", "comment"], "description": "The type of content being reported." },
+        "targetId": { "type": "string", "description": "The ID of the reported thread or comment." },
+        "reason": { "type": "string", "description": "The reason for the report." },
+        "createdBy": { "type": "string", "description": "The user ID of the person who made the report." }
+      },
+      "required": ["type", "targetId", "reason", "createdBy"]
     }
   },
   "auth": {
@@ -87,6 +128,18 @@
     "/venues/{venueId}": {
       "schema": { "$ref": "#/backend/entities/Venue" },
       "description": "Stores data for physical venues."
+    },
+    "/threads/{threadId}": {
+      "schema": { "$ref": "#/backend/entities/Thread" },
+      "description": "Stores discussion threads for the Commons."
+    },
+    "/threads/{threadId}/comments/{commentId}": {
+      "schema": { "$ref": "#/backend/entities/Comment" },
+      "description": "Stores comments for a specific thread."
+    },
+    "/reports/{reportId}": {
+      "schema": { "$ref": "#/backend/entities/Report" },
+      "description": "Stores user-submitted reports for moderation."
     }
   }
 }

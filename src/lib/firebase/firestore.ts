@@ -6,10 +6,13 @@ import {
   collection,
   serverTimestamp,
   Timestamp,
+  updateDoc,
+  increment,
+  writeBatch,
 } from 'firebase/firestore';
 import { firestore } from './index';
 import type { User } from 'firebase/auth';
-import type { AppUser, Event, Venue } from '@/lib/types';
+import type { AppUser, Event, Venue, Thread, Comment } from '@/lib/types';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export const createUserProfile = async (user: User) => {
@@ -103,4 +106,67 @@ export const createVenue = async (
   };
   const docRef = await addDoc(venueCollection, newVenue);
   return docRef.id;
+};
+
+
+type CreateThreadData = Omit<Thread, 'id' | 'createdAt' | 'updatedAt' | 'lastActivityAt' | 'replyCount' | 'authorInfo'>;
+
+export const createThread = async (threadData: CreateThreadData, user: AppUser): Promise<string> => {
+    const threadCollection = collection(firestore, 'threads');
+    const now = serverTimestamp();
+    const newThread = {
+        ...threadData,
+        authorInfo: {
+            displayName: user.displayName,
+            photoURL: user.photoURL
+        },
+        replyCount: 0,
+        createdAt: now,
+        updatedAt: now,
+        lastActivityAt: now,
+    };
+    const docRef = await addDoc(threadCollection, newThread);
+    return docRef.id;
+};
+
+type CreateCommentData = Omit<Comment, 'id' | 'createdAt' | 'updatedAt' | 'authorInfo'>;
+
+export const createComment = async (commentData: CreateCommentData, user: AppUser): Promise<string> => {
+    const batch = writeBatch(firestore);
+    const now = serverTimestamp();
+    
+    // 1. Create the new comment
+    const commentCollection = collection(firestore, 'threads', commentData.threadId, 'comments');
+    const newCommentRef = doc(commentCollection);
+    batch.set(newCommentRef, {
+        ...commentData,
+        authorInfo: {
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+        },
+        createdAt: now,
+        updatedAt: now,
+    });
+
+    // 2. Update the parent thread's metadata
+    const threadRef = doc(firestore, 'threads', commentData.threadId);
+    batch.update(threadRef, {
+        replyCount: increment(1),
+        lastActivityAt: now,
+    });
+
+    await batch.commit();
+    return newCommentRef.id;
+};
+
+
+export const reportContent = async (type: 'thread' | 'comment', targetId: string, reason: string, userId: string) => {
+    const reportCollection = collection(firestore, 'reports');
+    await addDoc(reportCollection, {
+        type,
+        targetId,
+        reason,
+        createdBy: userId,
+        createdAt: serverTimestamp(),
+    });
 };

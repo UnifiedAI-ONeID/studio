@@ -9,10 +9,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, Copy, Tag, Calendar } from 'lucide-react';
+import { MapPin, Clock, Copy, Tag, Calendar, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 
 function UpcomingEvents({ venueId }: { venueId: string }) {
     const eventsQuery = query(
@@ -71,6 +72,7 @@ export default function VenueDetailPage() {
   const params = useParams();
   const venueId = params.id as string;
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const venueRef = doc(firestore, 'venues', venueId);
   const [venueSnapshot, loading, error] = useDocument(venueRef);
@@ -105,6 +107,8 @@ export default function VenueDetailPage() {
     navigator.clipboard.writeText(venue.address);
     toast({ title: 'Address copied to clipboard!' });
   };
+  
+  const discussionLink = `/commons/new?relatedVenueId=${venue.id}&title=${encodeURIComponent(`About: ${venue.name}`)}&topic=neighborhoods`;
 
   return (
     <div className="bg-background">
@@ -150,6 +154,16 @@ export default function VenueDetailPage() {
               <div className="prose prose-sm dark:prose-invert max-w-none pt-2">
                   <p>{venue.description}</p>
               </div>
+              
+              {user && (
+                 <div className="border-t pt-6">
+                    <Button variant="outline" asChild>
+                      <Link href={discussionLink}>
+                        <MessageSquare className="mr-2 h-4 w-4"/> Discuss this place
+                      </Link>
+                    </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
           

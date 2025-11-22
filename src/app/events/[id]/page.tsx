@@ -10,11 +10,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, Share2, User, Building } from 'lucide-react';
+import { Calendar, MapPin, Share2, User, Building, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
 
 function RelatedEvents({ category, currentEventId }: { category: string; currentEventId: string }) {
     const eventsQuery = query(
@@ -75,6 +77,8 @@ export default function EventDetailPage() {
   const params = useParams();
   const eventId = params.id as string;
   const [isExpanded, setIsExpanded] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   const eventRef = doc(firestore, 'events', eventId);
   const [eventSnapshot, loading, error] = useDocument(eventRef);
@@ -121,9 +125,11 @@ export default function EventDetailPage() {
       }).catch(console.error);
     } else {
       navigator.clipboard.writeText(window.location.href);
-      alert('Link copied to clipboard!');
+      toast({ title: 'Link copied to clipboard!' });
     }
   };
+  
+  const discussionLink = `/commons/new?relatedEventId=${event.id}&title=${encodeURIComponent(`Discuss: ${event.title}`)}&topic=general`;
 
   return (
     <div className="bg-background">
@@ -198,7 +204,7 @@ export default function EventDetailPage() {
                 </CollapsibleContent>
               </Collapsible>
 
-              <div className="border-t pt-6">
+              <div className="border-t pt-6 space-y-4">
                   <div className="flex items-center gap-4">
                       <div className="bg-muted rounded-full h-12 w-12 flex items-center justify-center">
                           <User className="h-6 w-6 text-muted-foreground"/>
@@ -208,6 +214,13 @@ export default function EventDetailPage() {
                           <p className="font-semibold text-foreground">{event.hostName || 'Community Organizer'}</p>
                       </div>
                   </div>
+                  {user && (
+                    <Button variant="outline" asChild>
+                      <Link href={discussionLink}>
+                        <MessageSquare className="mr-2 h-4 w-4"/> Discuss in Commons
+                      </Link>
+                    </Button>
+                  )}
               </div>
               
             </CardContent>

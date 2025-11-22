@@ -43,7 +43,7 @@ export interface Venue {
   id: string;
   name: string;
   type: string;
-  description: string;
+  description:string;
   address: string;
   neighborhood: string;
   location: { latitude: number; longitude: number };
@@ -68,12 +68,44 @@ export interface DirectoryEntry {
   imageHint?: string;
 }
 
-export interface CommonsPost {
-  id: string;
-  content: string;
-  authorId: string;
-  authorName:string;
-  authorPhotoURL: string | null;
-  timestamp: number; // Firestore server timestamp
-  likes: string[]; // Array of user UIDs
+export interface Thread {
+    id: string;
+    title: string;
+    body: string;
+    topic: string;
+    tags: string[];
+    relatedEventId?: string;
+    relatedVenueId?: string;
+    createdBy: string;
+    authorInfo: {
+        displayName: string;
+        photoURL: string | null;
+    };
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+    lastActivityAt: Timestamp;
+    replyCount: number;
+}
+
+export interface Comment {
+    id: string;
+    threadId: string;
+    parentId: string | null;
+    body: string;
+    createdBy: string;
+    authorInfo: {
+        displayName: string;
+        photoURL: string | null;
+    };
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+}
+
+export interface Report {
+    id: string;
+    type: 'thread' | 'comment';
+    targetId: string;
+    reason: string;
+    createdBy: string;
+    createdAt: Timestamp;
 }
