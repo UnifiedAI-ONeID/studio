@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import AvidityLogo from '../logo';
+import NewsletterSignup from './newsletter-signup';
 
 export default function LandingFooter() {
     const sections = {
@@ -23,7 +24,9 @@ export default function LandingFooter() {
     return (
         <footer className="bg-slate-800 text-slate-300">
             <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <NewsletterSignup />
+
+                <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-8">
                     <div className="col-span-2 md:col-span-1">
                         <Link href="/" className="flex items-center gap-2">
                            <AvidityLogo className="h-8 w-8 text-white" />

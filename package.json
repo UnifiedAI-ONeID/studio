@@ -6,7 +6,8 @@
     "dev": "next dev -p 9002 --hostname 0.0.0.0",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "seed": "tsx scripts/seedSampleData.ts"
   },
   "dependencies": {
     "@genkit-ai/google-genai": "1.24.0",
@@ -52,13 +53,16 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/firebase": "^3.2.1",
     "@types/lodash": "^4.17.5",
     "@types/node": "^20.0.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "autoprefixer": "^10.4.22",
+    "firebase-admin": "^12.1.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.18",
+    "tsx": "^4.15.7",
     "typescript": "^5.0.0"
   }
 }

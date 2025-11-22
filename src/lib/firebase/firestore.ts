@@ -21,7 +21,6 @@ import type { AppUser, Event, Venue, CommonsThread, CommonsReply, FollowTargetTy
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { errorEmitter } from './error-emitter';
 import { FirestorePermissionError } from './errors';
-import { seedSampleData } from './placeholder-data';
 
 // Custom error for validation
 class ValidationError extends Error {
@@ -367,7 +366,6 @@ export const removeEventInteraction = async (userId: string, eventId: string, ty
     });
 };
 
-
 export async function seedDatabase(db: typeof firestore): Promise<{ success: boolean; message: string }> {
   const sampleCheckQuery = query(collection(db, 'events'), where('isSampleData', '==', true), limit(1));
   
@@ -377,15 +375,35 @@ export async function seedDatabase(db: typeof firestore): Promise<{ success: boo
       return { success: false, message: 'Sample data already exists. Seeding skipped.' };
     }
     
-    // This is not an ideal way to call an admin script, but for this environment it's a workaround.
-    await seedSampleData();
+    return { success: false, message: 'This function is deprecated. Please run `npm run seed` from your terminal.' };
 
-    return { success: true, message: 'Database seeded successfully with placeholder data.' };
   } catch (error: any) {
-    console.error("Error seeding database:", error);
+    console.error("Error checking for sample data:", error);
     if (error.code === 'permission-denied') {
         return { success: false, message: 'Permission denied. Ensure you have the correct Firestore rules or are running with admin privileges.' };
     }
     return { success: false, message: error.message };
   }
 }
+
+export const addNewsletterSubscriber = async (email: string, city: string = 'unknown') => {
+    if (!email || !email.includes('@')) {
+        throw new Error("A valid email is required.");
+    }
+    const subscriberCollection = collection(firestore, 'newsletterSubscribers');
+    const subscriberData = {
+        email,
+        city,
+        createdAt: serverTimestamp()
+    };
+
+    await addDoc(subscriberCollection, subscriberData)
+        .catch((serverError) => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: subscriberCollection.path,
+                operation: 'create',
+                requestResourceData: subscriberData,
+            }));
+            throw serverError;
+        });
+};

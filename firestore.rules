@@ -89,5 +89,11 @@ service cloud.firestore {
         allow create: if isSignedIn() && isOwner(incomingData().createdBy);
         allow read, update, delete: if isAdmin();
     }
+    
+    // Newsletter subscribers can be created by anyone
+    match /newsletterSubscribers/{subscriberId} {
+        allow create: if true;
+        allow read, update, delete: if isAdmin();
+    }
   }
 }
