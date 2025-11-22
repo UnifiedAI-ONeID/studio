@@ -1,21 +1,39 @@
 {
   "name": "Avidity",
   "short_name": "Avidity",
-  "description": "Avidity: Connect, Discover, and Engage.",
+  "description": "Connect, Discover, and Engage.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f5f5f5",
-  "theme_color": "#3F51B5",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Explore Events",
+      "short_name": "Events",
+      "description": "Find upcoming events",
+      "url": "/events",
+      "icons": [{ "src": "/icons/shortcut-events.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Browse Directory",
+      "short_name": "Directory",
+      "description": "Discover local places",
+      "url": "/directory",
+      "icons": [{ "src": "/icons/shortcut-directory.png", "sizes": "96x96" }]
     }
   ]
 }

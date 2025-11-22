@@ -51,19 +51,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const isAuthPage = pathname === '/login' || pathname === '/signup';
   const isLandingPage = pathname === '/';
+  const isSeedPage = pathname === '/seed';
+
 
   useEffect(() => {
     if (!loading) {
       if (user && (isAuthPage || isLandingPage)) {
         router.replace('/home');
-      } else if (!user && !isAuthPage && !isLandingPage) {
-        // Allow access to /seed page even when not logged in
-        if (pathname !== '/seed') {
-          router.replace('/');
-        }
+      } else if (!user && !isAuthPage && !isLandingPage && !isSeedPage) {
+        router.replace('/');
       }
     }
-  }, [user, loading, router, isAuthPage, isLandingPage, pathname]);
+  }, [user, loading, router, isAuthPage, isLandingPage, isSeedPage, pathname]);
 
 
   if (isLandingPage && !user) {
@@ -82,6 +81,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
+  
+  if (isSeedPage) {
+    return <main>{children}</main>;
+  }
+
 
   if (loading) {
     return (
@@ -94,7 +98,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
   
-  if (!user && pathname !== '/seed') {
+  if (!user) {
       return null; // Don't render layout if not logged in and not on a public page
   }
 
@@ -129,14 +133,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarContent>
         <SidebarFooter>
            <SidebarMenu>
-             <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith('/seed')}>
-                  <Link href="/seed">
-                    <Database />
-                    <span>Seed Database</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             <SidebarSeparator/>
             {bottomNavItems.map((item) => (
               <SidebarMenuItem key={item.href}>

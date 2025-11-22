@@ -16,6 +16,7 @@ import { getFollowedVenueIds } from '@/lib/firebase/firestore';
 import { useEffect, useState } from 'react';
 import RecommendedEvents from '@/components/ai/recommended-events';
 import RecommendedDirectory from '@/components/ai/recommended-directory';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 function getPriceDisplay(event: Event) {
   if (event.priceType === 'free') return 'Free';
@@ -27,15 +28,17 @@ function getPriceDisplay(event: Event) {
 }
 
 function EventCard({ event }: { event: Event }) {
+    const placeholder = PlaceHolderImages.find(p => p.id.includes('event')) || PlaceHolderImages[0];
   return (
     <Link href={`/events/${event.id}`} key={event.id}>
       <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-lg hover:-translate-y-1">
         <div className="relative h-40 w-full">
           <Image
-            src={event.coverImageUrl || 'https://picsum.photos/seed/event/400/200'}
+            src={event.coverImageUrl || placeholder.imageUrl}
             alt={event.title}
             fill
             className="object-cover"
+            data-ai-hint={placeholder.imageHint}
           />
           <Badge variant="secondary" className="absolute top-2 right-2">{getPriceDisplay(event)}</Badge>
         </div>
@@ -188,5 +191,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-    

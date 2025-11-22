@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, MapPin, Plus } from 'lucide-react';
 import { format, isToday, isTomorrow, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const categories = ['Music', 'Food & Drink', 'Talks', 'Sports', 'Arts', 'Networking', 'Other'];
 const dateFilters = ['All', 'Today', 'Tomorrow', 'This weekend'];
@@ -46,6 +47,9 @@ export default function EventsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   const [activeDateFilter, setActiveDateFilter] = useState('All');
+  
+  const placeholder = PlaceHolderImages.find(p => p.id.includes('event')) || PlaceHolderImages[0];
+
 
   const eventsQuery = query(
     collection(firestore, 'events'),
@@ -157,10 +161,11 @@ export default function EventsPage() {
               <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-lg hover:-translate-y-1">
                 <div className="relative h-40 w-full">
                   <Image
-                    src={event.coverImageUrl || 'https://picsum.photos/seed/event/400/200'}
+                    src={event.coverImageUrl || placeholder.imageUrl}
                     alt={event.title}
                     fill
                     className="object-cover"
+                    data-ai-hint={placeholder.imageHint}
                   />
                   <Badge variant="secondary" className="absolute top-2 right-2">{getPriceDisplay(event)}</Badge>
                 </div>
@@ -190,5 +195,3 @@ export default function EventsPage() {
     </div>
   );
 }
-
-    

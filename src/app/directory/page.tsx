@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Plus, Building, Coffee, GalleryVertical, BarChart } from 'lucide-react';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const venueTypes = ['cafe', 'bar', 'gallery', 'venue', 'ngo', 'other'];
 
@@ -42,6 +43,9 @@ function PriceLevel({ level }: { level: number }) {
 export default function DirectoryPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTypes, setActiveTypes] = useState<string[]>([]);
+  
+  const placeholder = PlaceHolderImages.find(p => p.id.includes('directory')) || PlaceHolderImages[0];
+
 
   const venuesQuery = query(
     collection(firestore, 'venues'),
@@ -121,10 +125,11 @@ export default function DirectoryPage() {
               <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-lg hover:-translate-y-1">
                 <div className="relative h-32 w-full">
                   <Image
-                    src={venue.coverImageUrl || 'https://picsum.photos/seed/venue/400/200'}
+                    src={venue.coverImageUrl || placeholder.imageUrl}
                     alt={venue.name}
                     fill
                     className="object-cover"
+                    data-ai-hint={placeholder.imageHint}
                   />
                 </div>
                 <CardHeader>
@@ -152,5 +157,3 @@ export default function DirectoryPage() {
     </div>
   );
 }
-
-    

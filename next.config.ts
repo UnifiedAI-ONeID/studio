@@ -38,17 +38,6 @@ const pwaConfig = withPWA({
         },
       },
     },
-     {
-      urlPattern: /^https:\/\/picsum\.photos\//,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'picsum-images',
-        expiration: {
-          maxEntries: 60,
-          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
-        },
-      },
-    },
   ],
 });
 
@@ -62,7 +51,6 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   experimental: {
-    // No longer placing allowedDevOrigins here
   },
   allowedDevOrigins: ["*.cloudworkstations.dev"],
   images: {
