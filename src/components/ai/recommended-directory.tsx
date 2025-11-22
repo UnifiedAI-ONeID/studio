@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import {
+  getPersonalizedDirectoryRecommendations,
   PersonalizedDirectoryRecommendationsInput,
   PersonalizedDirectoryRecommendationsOutput,
 } from '@/ai/flows/personalized-directory-recommendations';
@@ -45,7 +46,10 @@ export default function RecommendedDirectory() {
 
   useEffect(() => {
     async function fetchRecommendations() {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
       try {
         const input: PersonalizedDirectoryRecommendationsInput = {
@@ -58,17 +62,7 @@ export default function RecommendedDirectory() {
           currentTime: new Date().toISOString(),
           numberOfRecommendations: 3,
         };
-        const response = await fetch('/api/genkit/personalizedDirectoryRecommendationsFlow', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(input),
-        });
-        if (!response.ok) {
-          throw new Error('Failed to fetch recommendations');
-        }
-        const result = await response.json();
+        const result = await getPersonalizedDirectoryRecommendations(input);
         setRecommendations(result);
       } catch (error) {
         console.error('Failed to get directory recommendations:', error);
@@ -79,6 +73,10 @@ export default function RecommendedDirectory() {
 
     fetchRecommendations();
   }, [user]);
+
+  if (!user) {
+    return null;
+  }
 
   if (loading) {
     return (

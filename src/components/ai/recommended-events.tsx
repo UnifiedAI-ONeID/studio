@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import {
+  getPersonalizedEventRecommendations,
   PersonalizedEventRecommendationsInput,
   PersonalizedEventRecommendationsOutput,
 } from '@/ai/flows/personalized-event-recommendations';
@@ -52,7 +53,10 @@ export default function RecommendedEvents() {
 
   useEffect(() => {
     async function fetchRecommendations() {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
       try {
         const input: PersonalizedEventRecommendationsInput = {
           userProfile: {
@@ -64,19 +68,7 @@ export default function RecommendedEvents() {
           currentTime: new Date().toISOString(),
         };
 
-        const response = await fetch('/api/genkit/personalizedEventRecommendationsFlow', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(input),
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to fetch recommendations');
-        }
-
-        const result = await response.json();
+        const result = await getPersonalizedEventRecommendations(input);
         setRecommendations(result);
       } catch (error) {
         console.error('Failed to get event recommendations:', error);
@@ -87,6 +79,10 @@ export default function RecommendedEvents() {
 
     fetchRecommendations();
   }, [user]);
+
+  if (!user) {
+      return null;
+  }
 
   if (loading) {
     return (
