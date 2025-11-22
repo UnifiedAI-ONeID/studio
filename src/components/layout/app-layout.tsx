@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -34,8 +33,6 @@ import {
   Database,
 } from 'lucide-react';
 import Link from 'next/link';
-import { Skeleton } from '../ui/skeleton';
-
 
 const topNavItems = [
   { href: '/home', icon: Home, label: 'Home' },
@@ -56,21 +53,16 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
   const isAuthPage = pathname === '/login' || pathname === '/signup';
   const isLandingPage = pathname === '/';
-  const isSeedPage = pathname === '/seed';
 
   React.useEffect(() => {
-      if (!loading && !user && !isAuthPage && !isLandingPage && !isSeedPage) {
-        router.push('/');
-      }
-      if (!loading && user && (isAuthPage || isLandingPage)) {
-          router.push('/home');
-      }
-  }, [user, loading, pathname, isAuthPage, isLandingPage, isSeedPage, router]);
-
+    if (!loading && user && (isAuthPage || isLandingPage)) {
+      router.push('/home');
+    }
+  }, [user, loading, pathname, isAuthPage, isLandingPage, router]);
 
   if (loading) {
     return (
-       <div className="flex h-screen w-full items-center justify-center bg-background">
+      <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <AvidityLogo className="h-12 w-12 animate-pulse text-primary" />
           <p className="text-muted-foreground">Loading Avidity...</p>
@@ -79,29 +71,28 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user && (isLandingPage || isSeedPage)) {
-     return <LandingTopNavAndMain>{children}</LandingTopNavAndMain>
-  }
-  
-  if (isAuthPage) {
+  if (!user && (isAuthPage || isLandingPage)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
-        {children}
+        {isLandingPage ? <LandingTopNavAndMain>{children}</LandingTopNavAndMain> : children}
       </div>
     );
   }
   
-  if(user) {
+  if (!user) {
+    return <LandingTopNavAndMain>{children}</LandingTopNavAndMain>
+  }
+  
+  if (user) {
     return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
   }
 
-  // Fallback for non-authed users on non-public pages, should be redirected by useEffect
   return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <AvidityLogo className="h-12 w-12 animate-pulse text-primary" />
-        </div>
+    <div className="flex h-screen w-full items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-4">
+        <AvidityLogo className="h-12 w-12 animate-pulse text-primary" />
       </div>
+    </div>
   );
 }
 
@@ -113,7 +104,6 @@ const LandingTopNavAndMain = ({ children }: { children: React.ReactNode }) => {
       </>
     );
 }
-
 
 const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
@@ -180,7 +170,6 @@ const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => {
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-
   return (
     <FirebaseClientProvider>
       <LayoutContent>{children}</LayoutContent>

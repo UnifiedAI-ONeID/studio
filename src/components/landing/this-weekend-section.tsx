@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -41,7 +40,7 @@ export default function ThisWeekendSection() {
     friday.setDate(start.getDate() + 4);
     friday.setHours(0,0,0,0);
     // Get Sunday of the current week
-    const sunday = endOfWeek(now, { weekStartsOn: 1 }); // Sunday
+    const sunday = endOfWeek(now, { weekStartsOn: 1 });
     
     return query(
       collection(firestore, 'events'),

@@ -1,4 +1,3 @@
-
 import {
   doc,
   setDoc,
@@ -366,25 +365,6 @@ export const removeEventInteraction = async (userId: string, eventId: string, ty
         }));
         throw serverError;
     });
-};
-
-
-export const setEventInteraction = async (
-  userId: string,
-  eventId: string,
-  type: EventInteractionType,
-): Promise<void> => {
-  const interactionId = `${userId}_${eventId}`;
-  const interactionRef = doc(firestore, 'eventInteractions', interactionId);
-
-  const interactionData = {
-    userId,
-    eventId,
-    type,
-    createdAt: serverTimestamp(),
-  };
-
-  await setDoc(interactionRef, interactionData, { merge: true });
 };
 
 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -49,7 +48,7 @@ export default function VenueCard({ venue }: { venue: Venue }) {
               )}
           </div>
           <Button variant="outline" size="sm" onClick={handleFollow}>
-            <Plus className="mr-1.5" /> Follow
+            <Plus className="mr-1.5 h-4 w-4" /> Follow
           </Button>
         </div>
       </div>

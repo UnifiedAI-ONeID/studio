@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -10,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Bookmark } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import { setEventInteraction } from '@/lib/firebase/firestore';
+import { addEventInteraction } from '@/lib/firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 function getPriceDisplay(event: Event) {
@@ -35,7 +34,7 @@ export default function EventCard({ event }: { event: Event }) {
       router.push(`/login?continueUrl=${encodeURIComponent(continueUrl)}`);
     } else {
       try {
-        await setEventInteraction(user.id, event.id, 'saved');
+        await addEventInteraction(user.id, event.id, 'saved');
         toast({ title: "Event saved!" });
       } catch (error) {
         toast({ variant: 'destructive', title: "Could not save event." });
@@ -84,7 +83,7 @@ export default function EventCard({ event }: { event: Event }) {
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={handleSave}>
-            <Bookmark className="mr-1.5" />
+            <Bookmark className="mr-1.5 h-4 w-4" />
             Save
           </Button>
         </div>

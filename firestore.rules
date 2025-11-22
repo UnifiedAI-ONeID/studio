@@ -13,8 +13,6 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // Check for admin role in a dedicated document.
-      // Assumes a document at /appRoles/global with a map of admin UIDs.
       return isSignedIn() && get(/databases/$(database)/documents/appRoles/global).data.admins[request.auth.uid] == true;
     }
 
@@ -35,22 +33,14 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if true;
       allow create: if isUser(userId);
-      // Prevent users from changing their role or createdAt timestamp
       allow update: if isUser(userId) && incomingData().createdAt == existingData().createdAt;
       allow delete: if isUser(userId) || isAdmin();
     }
 
     match /events/{eventId} {
-      // Public reads for published and public events
-      allow read: if (existingData().status == "published" && existingData().visibility == "public") || (isSignedIn() && isOwner(existingData().hostId)) || isAdmin();
-
-      // Any signed-in user can create events, linking themselves as the host.
+      allow read: if true;
       allow create: if isSignedIn() && isOwner(incomingData().hostId);
-
-      // Hosts can update their own events (but not status), Admins can update anything.
       allow update: if (isOwner(existingData().hostId) && incomingData().hostId == existingData().hostId && incomingData().createdAt == existingData().createdAt) || isAdmin();
-
-      // Delete: host or admin
       allow delete: if isOwner(existingData().hostId) || isAdmin();
     }
 
@@ -82,7 +72,6 @@ service cloud.firestore {
 
     match /eventInteractions/{interactionId} {
       allow read: if isUser(existingData().userId);
-      // Ensure the interaction ID matches the user and event
       allow create, update: if isUser(incomingData().userId) && interactionId == incomingData().userId + '_' + incomingData().eventId;
       allow delete: if isUser(existingData().userId);
     }
@@ -99,7 +88,7 @@ service cloud.firestore {
     }
 
     match /newsletterSubscribers/{subscriberId} {
-      allow create: if incomingData().email.matches('.+@.+\..+');
+      allow create: if true;
       allow read, update, delete: if isAdmin();
     }
 
