@@ -1,8 +1,11 @@
 import type {NextConfig} from 'next';
-import withPWA from 'next-pwa';
+import withPWAInit from 'next-pwa';
 
-const pwaConfig = withPWA({
+const isProduction = process.env.NODE_ENV === 'production';
+
+const withPWA = withPWAInit({
   dest: 'public',
+  disable: !isProduction,
   register: true,
   skipWaiting: true,
   runtimeCaching: [
@@ -65,7 +68,6 @@ const pwaConfig = withPWA({
 
 
 const nextConfig: NextConfig = {
-  output: 'export',
   images: {
     unoptimized: true,
     remotePatterns: [
@@ -101,6 +103,9 @@ const nextConfig: NextConfig = {
       }
     ],
   },
+  experimental: {
+    allowedDevOrigins: ["*.cloudworkstations.dev"],
+  },
 };
 
-export default pwaConfig(nextConfig);
+export default withPWA(nextConfig);
