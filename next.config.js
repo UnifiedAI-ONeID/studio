@@ -7,16 +7,54 @@ const withPWA = require('next-pwa')({
   disable: !isProduction,
   runtimeCaching: [
     {
-      urlPattern: /^https?.*/,
-      handler: 'NetworkFirst',
+      urlPattern: ({ url }) => url.origin === self.location.origin && url.pathname.startsWith('/_next/static/'),
+      handler: 'CacheFirst',
       options: {
-        cacheName: 'offline-cache',
+        cacheName: 'next-static',
         expiration: {
-          maxEntries: 200,
+          maxEntries: 60,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
         },
       },
     },
+    {
+      urlPattern: ({ url }) => url.origin === self.location.origin && url.pathname.startsWith('/_next/image'),
+      handler: 'StaleWhileRevalidate',
+      options: {
+        cacheName: 'next-image',
+        expiration: {
+          maxEntries: 60,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+        },
+      },
+    },
+    {
+      urlPattern: ({ request }) => request.mode === 'navigate',
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'pages-cache',
+        networkTimeoutSeconds: 4, // If network fails, fallback to cache in 4 seconds
+        expiration: {
+          maxEntries: 60,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+        },
+      },
+    },
+    {
+      urlPattern: new RegExp('^https://(images.unsplash.com|picsum.photos|i.pravatar.cc|lh3.googleusercontent.com)'),
+      handler: 'StaleWhileRevalidate',
+      options: {
+          cacheName: 'remote-images-cache',
+          expiration: {
+              maxEntries: 50,
+              maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+          },
+      },
+    },
   ],
+  fallbacks: {
+    document: '/offline', // Fallback for document requests
+  },
 });
 
 const nextConfig = {
