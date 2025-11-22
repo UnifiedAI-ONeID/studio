@@ -1,3 +1,4 @@
+
 {
   "indexes": [
     {
@@ -78,6 +79,14 @@
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "eventId", "order": "ASCENDING" },
         { "fieldPath": "type", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "follows",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "targetType", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     }
   ]

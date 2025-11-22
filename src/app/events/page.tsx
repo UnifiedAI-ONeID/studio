@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, MapPin, Plus } from 'lucide-react';
 import { format, isToday, isTomorrow, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import PlaceHolderImages from '@/lib/placeholder-images';
 
 const categories = ['Music', 'Food & Drink', 'Talks', 'Sports', 'Arts', 'Networking', 'Other'];
 const dateFilters = ['All', 'Today', 'Tomorrow', 'This weekend'];

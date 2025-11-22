@@ -126,7 +126,7 @@ type CreateThreadData = Omit<Thread, 'id' | 'createdAt' | 'updatedAt' | 'lastAct
 
 export const createThread = async (threadData: CreateThreadData, user: AppUser): Promise<string> => {
     const threadCollection = collection(firestore, 'threads');
-    const now = serverTimestamp();
+    const now = Timestamp.now();
     const newThread = {
         ...threadData,
         authorInfo: {
@@ -147,7 +147,7 @@ type CreateCommentData = Omit<Comment, 'id' | 'createdAt' | 'updatedAt' | 'autho
 
 export const createComment = async (commentData: CreateCommentData, user: AppUser): Promise<string> => {
     const batch = writeBatch(firestore);
-    const now = serverTimestamp();
+    const now = Timestamp.now();
     
     // 1. Create the new comment
     const commentCollection = collection(firestore, 'threads', commentData.threadId, 'comments');
@@ -391,14 +391,15 @@ export const getUserEventInteraction = async (userId: string, eventId: string): 
 // --- DATABASE SEEDING ---
 export const seedDatabase = async () => {
   const batch = writeBatch(firestore);
+  const now = Timestamp.now();
 
   // Seed Venues
   placeholderVenues.forEach(venue => {
     const docRef = doc(firestore, 'venues', venue.id);
     batch.set(docRef, {
         ...venue,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        createdAt: now,
+        updatedAt: now,
     });
   });
 
@@ -409,8 +410,8 @@ export const seedDatabase = async () => {
         ...event,
         startTime: Timestamp.fromDate(new Date(event.startTime as unknown as string)),
         endTime: event.endTime ? Timestamp.fromDate(new Date(event.endTime as unknown as string)) : undefined,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        createdAt: now,
+        updatedAt: now,
     });
   });
   
@@ -419,9 +420,9 @@ export const seedDatabase = async () => {
       const docRef = doc(firestore, 'threads', thread.id);
       batch.set(docRef, {
           ...thread,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          lastActivityAt: serverTimestamp(),
+          createdAt: now,
+          updatedAt: now,
+          lastActivityAt: now,
       });
   });
 

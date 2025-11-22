@@ -38,7 +38,7 @@ service cloud.firestore {
     
 
     match /events/{eventId} {
-      allow read: if resource.data.status == 'published' && resource.data.approvalStatus == 'approved' && resource.data.visibility == 'public';
+      allow read: if (resource.data.status == 'published' && resource.data.approvalStatus == 'approved' && resource.data.visibility == 'public') || (isSignedIn() && isOwner(resource.data.createdBy));
       allow create: if isSignedIn()
                     && request.resource.data.createdBy == request.auth.uid
                     && request.resource.data.approvalStatus == 'pending'

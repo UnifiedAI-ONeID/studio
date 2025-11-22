@@ -16,7 +16,7 @@ import { getFollowedVenueIds } from '@/lib/firebase/firestore';
 import { useEffect, useState } from 'react';
 import RecommendedEvents from '@/components/ai/recommended-events';
 import RecommendedDirectory from '@/components/ai/recommended-directory';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import PlaceHolderImages from '@/lib/placeholder-images';
 
 function getPriceDisplay(event: Event) {
   if (event.priceType === 'free') return 'Free';
