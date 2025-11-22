@@ -12,8 +12,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import RecommendedEvents from '@/components/ai/recommended-events';
-import RecommendedDirectory from '@/components/ai/recommended-directory';
 import { getFollowedVenueIds } from '@/lib/firebase/firestore';
 import { useEffect, useState } from 'react';
 
@@ -176,8 +174,6 @@ export default function HomePage() {
         </p>
       </div>
       
-      <RecommendedEvents />
-      <RecommendedDirectory />
       <FollowedVenuesEvents />
       <EventSection title={`Today in ${city}`} events={todayEvents} loading={todayLoading} />
       <EventSection title="This Weekend" events={weekendEvents} loading={weekendLoading} />
