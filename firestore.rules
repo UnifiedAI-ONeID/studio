@@ -29,5 +29,14 @@ service cloud.firestore {
       allow update: if (isOwner(request.resource.data.createdBy) && resource.data.approvalStatus == 'pending') || isAdmin();
       allow delete: if isOwner(request.resource.data.createdBy) || isAdmin();
     }
+
+    match /venues/{venueId} {
+      allow read: if resource.data.verified == true;
+      allow create: if request.auth != null 
+                    && request.resource.data.createdBy == request.auth.uid
+                    && request.resource.data.verified == false;
+      allow update: if (isOwner(resource.data.createdBy) && resource.data.verified == false) || isAdmin();
+      allow delete: if isOwner(resource.data.createdBy) || isAdmin();
+    }
   }
 }

@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Upload } from 'lucide-react';
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp, collection, query, where, getDocs } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -36,9 +36,12 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { firestore } from '@/lib/firebase';
 import { createEvent, uploadImage } from '@/lib/firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Venue } from '@/lib/types';
+import { useCollection } from 'react-firebase-hooks/firestore';
 
 const categories = ['Music', 'Food & Drink', 'Talks', 'Sports', 'Arts', 'Networking', 'Other'];
 
@@ -50,6 +53,7 @@ const eventFormSchema = z.object({
   priceType: z.enum(['free', 'paid', 'donation']),
   priceMin: z.coerce.number().optional(),
   coverImage: z.any().refine(file => file instanceof File, 'Cover image is required.'),
+  venueId: z.string().optional(),
 });
 
 export default function NewEventPage() {
@@ -58,6 +62,10 @@ export default function NewEventPage() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+
+  const venuesQuery = query(collection(firestore, 'venues'), where('verified', '==', true), orderBy('name'));
+  const [venuesSnapshot] = useCollection(venuesQuery);
+  const venues = venuesSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as Venue));
 
   const form = useForm<z.infer<typeof eventFormSchema>>({
     resolver: zodResolver(eventFormSchema),
@@ -103,6 +111,7 @@ export default function NewEventPage() {
         priceType: values.priceType,
         priceMin: values.priceMin,
         coverImageUrl,
+        venueId: values.venueId,
         tags: [],
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         hostId: user.uid,
@@ -258,6 +267,31 @@ export default function NewEventPage() {
                         </div>
                       </PopoverContent>
                     </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="venueId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Venue</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a venue (optional)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">No specific venue</SelectItem>
+                        {venues?.map((venue) => (
+                          <SelectItem key={venue.id} value={venue.id}>{venue.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>Link your event to a place in the directory.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

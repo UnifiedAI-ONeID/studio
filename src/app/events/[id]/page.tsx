@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, MapPin, Share2, User } from 'lucide-react';
+import { Calendar, MapPin, Share2, User, Building } from 'lucide-react';
 import { format } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import Link from 'next/link';
@@ -155,13 +155,23 @@ export default function EventDetailPage() {
                           <p>{format((event.startTime as Timestamp).toDate(), "h:mm a")} {event.endTime && ` - ${format((event.endTime as Timestamp).toDate(), "h:mm a")}`} ({event.timezone})</p>
                       </div>
                   </div>
-                  <div className="flex items-start gap-4">
+                  {event.venueId ? (
+                    <Link href={`/directory/${event.venueId}`} className="flex items-start gap-4 hover:bg-muted/50 p-2 -m-2 rounded-md">
+                        <Building className="h-6 w-6 text-primary mt-1 flex-shrink-0"/>
+                        <div>
+                            <p className="font-semibold text-foreground">{event.venueName}</p>
+                            <p>{event.neighborhood}</p>
+                        </div>
+                    </Link>
+                  ) : (
+                    <div className="flex items-start gap-4">
                       <MapPin className="h-6 w-6 text-primary mt-1 flex-shrink-0"/>
                       <div>
                           <p className="font-semibold text-foreground">{event.neighborhood || 'Location To Be Announced'}</p>
                           <p>Venue details coming soon.</p>
                       </div>
-                  </div>
+                    </div>
+                  )}
               </div>
 
               <div className="flex items-center gap-4">

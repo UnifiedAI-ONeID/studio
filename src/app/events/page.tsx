@@ -70,18 +70,18 @@ export default function EventsPage() {
       if (!event.startTime) return false;
       const eventDate = (event.startTime as Timestamp).toDate();
       const now = new Date();
+      if (eventDate < now && !isToday(eventDate)) return false; // Filter out past events
 
       // Date filtering
       if (activeDateFilter === 'Today' && !isToday(eventDate)) return false;
       if (activeDateFilter === 'Tomorrow' && !isTomorrow(eventDate)) return false;
       if (activeDateFilter === 'This weekend') {
-        const start = startOfWeek(now, { weekStartsOn: 5 }); // Friday
-        const end = endOfWeek(now, { weekStartsOn: 5 }); // Next Thursday, but we are checking for Sat/Sun
-        if (!isWithinInterval(eventDate, { start, end }) || (eventDate.getDay() !== 6 && eventDate.getDay() !== 0)) {
-           // Simplified: Let's consider Fri, Sat, Sun of the current week
-            const currentDay = now.getDay();
-            const weekendDays = [5,6,0]; // Fri, Sat, Sun
-            if (!weekendDays.includes(eventDate.getDay())) return false;
+        const startOfThisWeek = startOfWeek(now);
+        const endOfThisWeek = endOfWeek(now);
+        const weekendStart = new Date(startOfThisWeek.setDate(startOfThisWeek.getDate() + (5 - startOfThisWeek.getDay() + 7) % 7)); // Friday
+        const weekendEnd = new Date(new Date(weekendStart).setDate(weekendStart.getDate() + 2)); // Sunday
+        if (!isWithinInterval(eventDate, { start: weekendStart, end: weekendEnd })) {
+            return false;
         }
       }
 

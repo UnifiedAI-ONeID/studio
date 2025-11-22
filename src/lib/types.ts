@@ -36,6 +36,25 @@ export interface Event {
   // For UI display
   neighborhood?: string;
   hostName?: string;
+  venueName?: string;
+}
+
+export interface Venue {
+  id: string;
+  name: string;
+  type: string;
+  description: string;
+  address: string;
+  neighborhood: string;
+  location: { latitude: number; longitude: number };
+  openingHours: string;
+  priceLevel: number;
+  tags: string[];
+  coverImageUrl: string;
+  createdBy: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  verified: boolean;
 }
 
 export interface DirectoryEntry {

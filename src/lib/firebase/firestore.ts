@@ -9,7 +9,7 @@ import {
 } from 'firebase/firestore';
 import { firestore } from './index';
 import type { User } from 'firebase/auth';
-import type { AppUser, Event } from '@/lib/types';
+import type { AppUser, Event, Venue } from '@/lib/types';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export const createUserProfile = async (user: User) => {
@@ -61,13 +61,46 @@ export const createEvent = async (
   userId: string
 ): Promise<string> => {
   const eventCollection = collection(firestore, 'events');
+  
+  // Fetch venue details if venueId is provided
+  let venueName: string | undefined;
+  let neighborhood: string | undefined;
+  if (eventData.venueId) {
+      const venueDoc = await getDoc(doc(firestore, 'venues', eventData.venueId));
+      if (venueDoc.exists()) {
+          const venueData = venueDoc.data() as Venue;
+          venueName = venueData.name;
+          neighborhood = venueData.neighborhood;
+      }
+  }
+
   const newEvent = {
     ...eventData,
     createdBy: userId,
     approvalStatus: 'pending' as const,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
+    venueName: venueName,
+    neighborhood: neighborhood,
   };
   const docRef = await addDoc(eventCollection, newEvent);
+  return docRef.id;
+};
+
+type CreateVenueData = Omit<Venue, 'id' | 'createdAt' | 'updatedAt' | 'verified' | 'createdBy'>;
+
+export const createVenue = async (
+  venueData: CreateVenueData,
+  userId: string
+): Promise<string> => {
+  const venueCollection = collection(firestore, 'venues');
+  const newVenue = {
+    ...venueData,
+    createdBy: userId,
+    verified: false,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+  const docRef = await addDoc(venueCollection, newVenue);
   return docRef.id;
 };
