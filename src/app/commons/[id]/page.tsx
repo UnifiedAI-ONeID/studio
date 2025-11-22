@@ -47,7 +47,26 @@ function RelatedItem({ type, id }: { type: 'event' | 'venue', id: string }) {
         );
     }
     
-    // TODO: Add Venue related item card
+    if (type === 'venue') {
+        const venue = { id: itemSnapshot.id, ...itemSnapshot.data() } as Venue;
+        return (
+            <Card className="mb-6">
+                <CardHeader>
+                    <CardTitle className="text-sm text-muted-foreground">Related Venue</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Link href={`/directory/${venue.id}`} className="flex items-center gap-4">
+                        <Image src={venue.coverImageUrl} alt={venue.name} width={80} height={45} className="rounded-md object-cover aspect-video" />
+                        <div>
+                            <p className="font-semibold">{venue.name}</p>
+                            <p className="text-sm text-muted-foreground">{venue.neighborhood}</p>
+                        </div>
+                    </Link>
+                </CardContent>
+            </Card>
+        )
+    }
+
     return null;
 }
 
@@ -156,6 +175,7 @@ export default function ThreadDetailPage() {
     return (
         <div className="container mx-auto max-w-3xl pb-12">
             {thread.relatedEventId && <RelatedItem type="event" id={thread.relatedEventId} />}
+            {thread.relatedVenueId && <RelatedItem type="venue" id={thread.relatedVenueId} />}
             
             <div className="mb-8">
                 <Badge variant="secondary" className="capitalize mb-2">{thread.topic}</Badge>
