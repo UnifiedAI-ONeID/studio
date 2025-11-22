@@ -40,7 +40,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (isAuthPage) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50/60 p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
         {children}
       </div>
     );
@@ -58,7 +58,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-slate-50/60">
+    <div className="flex min-h-screen w-full flex-col bg-gray-100 dark:bg-black">
       <div className="flex flex-1">
         <SideNav />
         <div className="flex flex-1 flex-col">

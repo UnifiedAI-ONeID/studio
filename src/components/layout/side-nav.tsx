@@ -8,16 +8,22 @@ import {
   List,
   Users2,
   UserCircle,
+  Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AvidityLogo from '../logo';
+import { Separator } from '../ui/separator';
 
-const navItems = [
+const topNavItems = [
   { href: '/home', icon: LayoutDashboard, label: 'Home' },
   { href: '/events', icon: Calendar, label: 'Events' },
   { href: '/directory', icon: List, label: 'Directory' },
   { href: '/commons', icon: Users2, label: 'Commons' },
-  { href: '/profile', icon: UserCircle, label: 'Profile' },
+];
+
+const bottomNavItems = [
+    { href: '/profile', icon: UserCircle, label: 'Profile' },
+    { href: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function SideNav() {
@@ -31,23 +37,43 @@ export default function SideNav() {
           <span className="font-headline text-xl tracking-tight">Avidity</span>
         </Link>
       </div>
-      <nav className="flex-1 space-y-2 p-4">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:bg-accent hover:text-accent-foreground',
-              {
-                'bg-accent text-accent-foreground': pathname === item.href,
-              }
-            )}
-          >
-            <item.icon className="h-5 w-5" />
-            {item.label}
-          </Link>
-        ))}
-      </nav>
+      <div className="flex flex-1 flex-col justify-between">
+        <nav className="flex-1 space-y-1 p-4">
+          {topNavItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:bg-accent hover:text-accent-foreground',
+                {
+                  'bg-accent text-accent-foreground': pathname.startsWith(item.href) && item.href !== '/home' || pathname === '/home' && item.href === '/home',
+                }
+              )}
+            >
+              <item.icon className="h-5 w-5" />
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+        <nav className="space-y-1 p-4">
+            <Separator className="my-2"/>
+             {bottomNavItems.map((item) => (
+                <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:bg-accent hover:text-accent-foreground',
+                    {
+                        'bg-accent text-accent-foreground': pathname.startsWith(item.href),
+                    }
+                    )}
+                >
+                    <item.icon className="h-5 w-5" />
+                    {item.label}
+                </Link>
+                ))}
+        </nav>
+      </div>
     </aside>
   );
 }

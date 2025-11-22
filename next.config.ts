@@ -1,4 +1,57 @@
 import type {NextConfig} from 'next';
+import withPWA from 'next-pwa';
+
+const pwaConfig = withPWA({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  runtimeCaching: [
+    {
+      urlPattern: /^https?.*/,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'offlineCache',
+        expiration: {
+          maxEntries: 200,
+        },
+      },
+    },
+    {
+      urlPattern: /\.(?:png|jpg|jpeg|svg|gif)$/,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'images',
+        expiration: {
+          maxEntries: 60,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+        },
+      },
+    },
+    {
+      urlPattern: /^https:\/\/images\.unsplash\.com\//,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'unsplash-images',
+        expiration: {
+          maxEntries: 60,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+        },
+      },
+    },
+     {
+      urlPattern: /^https:\/\/picsum\.photos\//,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'picsum-images',
+        expiration: {
+          maxEntries: 60,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+        },
+      },
+    },
+  ],
+});
+
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -32,4 +85,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default pwaConfig(nextConfig);

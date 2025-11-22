@@ -32,7 +32,7 @@ export default function BottomNav() {
             className={cn(
               'flex flex-col items-center gap-1 p-2 text-muted-foreground',
               {
-                'text-primary': pathname === item.href,
+                'text-primary': pathname.startsWith(item.href) && item.href !== '/home' || pathname === '/home' && item.href === '/home',
               }
             )}
           >
