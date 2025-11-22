@@ -20,8 +20,11 @@ import { Input } from '../ui/input';
 
 const getTitleFromPathname = (pathname: string) => {
   if (pathname === '/home') return 'Home';
+  if (pathname.startsWith('/events/new')) return 'New Event';
   if (pathname.startsWith('/events/')) return 'Event';
+  if (pathname.startsWith('/directory/new')) return 'New Place';
   if (pathname.startsWith('/directory/')) return 'Venue';
+  if (pathname.startsWith('/commons/new')) return 'New Thread';
   if (pathname.startsWith('/commons/')) return 'Commons';
   const title = pathname.split('/').pop();
   return title ? title.charAt(0).toUpperCase() + title.slice(1) : 'Dashboard';
@@ -34,29 +37,30 @@ export default function Header() {
 
   const handleSignOut = async () => {
     await signOut();
-    // The AuthProvider will handle redirecting to /login
+    // The AuthProvider will handle redirecting to /
   };
 
   const userInitial = user?.displayName?.charAt(0).toUpperCase() || '?';
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 md:hidden">
         <Link href="/home" className="md:hidden">
           <AvidityLogo className="h-8 w-8 text-primary" />
           <span className="sr-only">Home</span>
         </Link>
-        <div className="relative hidden md:block">
-           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-           <Input placeholder="Search..." className="pl-10 w-64 bg-gray-100 dark:bg-card border-none" />
-        </div>
       </div>
 
-      <h1 className="font-headline text-xl font-semibold absolute left-1/2 -translate-x-1/2 hidden md:block">
+      <h1 className="font-headline text-xl font-semibold md:hidden">
         {pageTitle}
       </h1>
       
-      <div className="flex items-center gap-2">
+      <div className="flex w-full items-center gap-4">
+        <div className="relative hidden md:block">
+           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+           <Input placeholder="Search..." className="pl-10 w-64 lg:w-96 bg-gray-100 dark:bg-card border-none" />
+        </div>
+        <div className="flex w-full justify-end items-center gap-2">
          <Button variant="ghost" size="icon" className="md:hidden">
             <Search className="h-6 w-6"/>
         </Button>
@@ -94,6 +98,7 @@ export default function Header() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+       </div>
       </div>
     </header>
   );

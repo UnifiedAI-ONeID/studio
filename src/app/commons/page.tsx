@@ -8,10 +8,11 @@ import type { Thread } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, MessageSquare, Clock, Heart } from 'lucide-react';
+import { Plus, MessageSquare, Clock, Heart, Search } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
+import { Input } from '@/components/ui/input';
 
 const topics = ["all", "general", "neighborhoods", "buy-sell", "housing", "clubs"];
 
@@ -40,6 +41,7 @@ function ThreadCardSkeleton() {
 export default function CommonsPage() {
   const { user } = useAuth();
   const [activeTopic, setActiveTopic] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const threadsQuery = activeTopic === 'all' 
     ? query(collection(firestore, 'threads'), orderBy('lastActivityAt', 'desc'))
@@ -47,7 +49,15 @@ export default function CommonsPage() {
 
   const [threadsSnapshot, loading, error] = useCollection(threadsQuery);
 
-  const threads = threadsSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as Thread));
+  const filteredThreads = threadsSnapshot?.docs
+    .map(doc => ({ id: doc.id, ...doc.data() } as Thread))
+    .filter(thread => {
+      // Search term filtering
+      if (searchTerm && !thread.title.toLowerCase().includes(searchTerm.toLowerCase()) && !thread.body.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false;
+      }
+      return true;
+    });
 
   return (
     <div className="container mx-auto">
@@ -62,17 +72,23 @@ export default function CommonsPage() {
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-8 border-b pb-4">
-        {topics.map(topic => (
-          <Button
-            key={topic}
-            variant={activeTopic === topic ? 'secondary' : 'ghost'}
-            onClick={() => setActiveTopic(topic)}
-            className="capitalize"
-          >
-            {topic}
-          </Button>
-        ))}
+       <div className="space-y-4 mb-8">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          <Input placeholder="Search threads..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        </div>
+        <div className="flex flex-wrap gap-2 border-b pb-4">
+            {topics.map(topic => (
+            <Button
+                key={topic}
+                variant={activeTopic === topic ? 'secondary' : 'ghost'}
+                onClick={() => setActiveTopic(topic)}
+                className="capitalize"
+            >
+                {topic}
+            </Button>
+            ))}
+        </div>
       </div>
 
       {loading && (
@@ -83,9 +99,9 @@ export default function CommonsPage() {
 
       {error && <p className="text-destructive text-center py-10">Error loading threads: {error.message}</p>}
 
-      {!loading && threads && threads.length > 0 && (
+      {!loading && filteredThreads && filteredThreads.length > 0 && (
         <div className="space-y-4">
-          {threads.map(thread => (
+          {filteredThreads.map(thread => (
             <Link href={`/commons/${thread.id}`} key={thread.id}>
               <Card className="hover:bg-muted/50 transition-colors">
                 <CardHeader>
@@ -114,10 +130,10 @@ export default function CommonsPage() {
         </div>
       )}
 
-      {!loading && (!threads || threads.length === 0) && (
+      {!loading && (!filteredThreads || filteredThreads.length === 0) && (
         <div className="text-center py-16 border border-dashed rounded-lg">
           <h3 className="text-xl font-semibold">No threads found</h3>
-          <p className="text-muted-foreground mt-2">Be the first to start a conversation in this topic.</p>
+          <p className="text-muted-foreground mt-2">Try adjusting your filters or search term.</p>
         </div>
       )}
     </div>
