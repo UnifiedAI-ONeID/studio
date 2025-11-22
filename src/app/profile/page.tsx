@@ -71,27 +71,42 @@ function MyEvents() {
 
 function FollowedItem({ follow }: { follow: Follow }) {
     const { targetId, targetType } = follow;
-    
-    const collectionName = targetType === 'venue' ? 'venues' : null;
-    const linkPath = targetType === 'venue' ? '/directory' : '/commons/topics';
+
+    const isVenue = targetType === 'venue';
+    const collectionName = isVenue ? 'venues' : null;
+    const linkPath = isVenue ? '/directory' : '/commons'; // Fallback for topic
 
     const docRef = useMemoFirebase(() => 
         collectionName ? doc(firestore, collectionName, targetId) : null
     , [collectionName, targetId]);
 
-    const { data, loading } = useDoc<Venue | { name: string }>(docRef);
+    // The 'useDoc' hook is only used for Firestore documents (venues in this case).
+    // For topics, which are not documents, we handle them differently.
+    const { data: docData, loading } = useDoc<Venue>(docRef);
 
     if (loading) {
         return <Skeleton className="h-14 w-full" />;
     }
     
-    if (!data) return null;
+    // Determine the name and icon based on the target type
+    let name = 'Unknown';
+    let icon = <BookText className="h-5 w-5 text-muted-foreground" />;
+    
+    if (isVenue && docData) {
+        name = docData.name;
+        icon = <Building className="h-5 w-5 text-muted-foreground" />;
+    } else if (targetType === 'topic') {
+        name = targetId; // For topics, the ID is the name itself
+    } else if (!isVenue) {
+      // Could be a user or organization in the future
+      return null;
+    }
 
-    const name = (data as Venue).name || 'Unknown';
-    const icon = targetType === 'venue' ? <Building className="h-5 w-5 text-muted-foreground"/> : <BookText className="h-5 w-5 text-muted-foreground"/>;
+    // Construct the final link href
+    const finalLink = targetType === 'topic' ? `${linkPath}?topic=${targetId}` : `${linkPath}/${targetId}`;
 
     return (
-        <Link href={`${linkPath}/${targetId}`}>
+        <Link href={finalLink}>
             <Card className="hover:bg-muted/50">
                 <CardContent className="p-3 flex items-center gap-3">
                     {icon}
@@ -109,7 +124,7 @@ function FollowedItem({ follow }: { follow: Follow }) {
 function MyFollows() {
     const { user } = useAuth();
     const followsQuery = useMemoFirebase(() =>
-        user ? query(collection(firestore, 'follows'), where('userId', '==', user.id)) : null
+        user ? query(collection(firestore, 'follows'), where('followerUserId', '==', user.id)) : null
     , [user]);
     const { data: follows, loading } = useCollection<Follow>(followsQuery);
 

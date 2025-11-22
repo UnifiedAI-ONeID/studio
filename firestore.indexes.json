@@ -41,7 +41,7 @@
       ]
     },
     {
-      "collectionGroup": "commonsThreads",
+      "collectionGroup": "threads",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "stats.replyCount", "order": "DESCENDING" },
@@ -49,7 +49,7 @@
       ]
     },
     {
-      "collectionGroup": "commonsThreads",
+      "collectionGroup": "threads",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "topic", "order": "ASCENDING" },
@@ -57,7 +57,7 @@
       ]
     },
     {
-      "collectionGroup": "commonsThreads",
+      "collectionGroup": "threads",
       "queryScope": "COLLECTION",
       "fields": [
           { "fieldPath": "authorId", "order": "ASCENDING" },
@@ -65,7 +65,7 @@
       ]
     },
     {
-      "collectionGroup": "commonsReplies",
+      "collectionGroup": "comments",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "threadId", "order": "ASCENDING" },
@@ -102,6 +102,27 @@
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "title", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "venues",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "name", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "threads",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "title", "order": "ASCENDING" }
       ]
     }
   ]
