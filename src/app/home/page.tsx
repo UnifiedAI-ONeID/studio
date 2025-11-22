@@ -175,11 +175,11 @@ export default function HomePage() {
         </p>
       </div>
       
+      <RecommendedEvents />
+      <RecommendedDirectory />
       <FollowedVenuesEvents />
       <EventSection title={`Today in ${city}`} events={todayEvents} loading={todayLoading} />
       <EventSection title="This Weekend" events={weekendEvents} loading={weekendLoading} />
-      <RecommendedEvents />
-      <RecommendedDirectory />
     </div>
   );
 }

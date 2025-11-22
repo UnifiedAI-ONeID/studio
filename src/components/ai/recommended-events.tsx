@@ -63,6 +63,10 @@ export default function RecommendedEvents() {
   const concertImage = PlaceHolderImages.find(p => p.id === 'event-concert');
   const techImage = PlaceHolderImages.find(p => p.id === 'event-tech-meetup');
 
+  if (!user) {
+    return null;
+  }
+
   if (loading) {
     return (
       <section>

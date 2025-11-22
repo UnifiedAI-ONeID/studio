@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Plus, Building, Coffee, GalleryVertical, BarChart } from 'lucide-react';
 
-const venueTypes = ['cafe', 'bar', 'gallery', 'venue', 'ngo'];
+const venueTypes = ['cafe', 'bar', 'gallery', 'venue', 'ngo', 'other'];
 
 function VenueCardSkeleton() {
   return (
