@@ -5,7 +5,6 @@ import { useAuth } from '@/hooks/use-auth';
 import {
   PersonalizedEventRecommendationsInput,
   PersonalizedEventRecommendationsOutput,
-  getPersonalizedEventRecommendations,
 } from '@/ai/flows/personalized-event-recommendations';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -65,7 +64,19 @@ export default function RecommendedEvents() {
           currentTime: new Date().toISOString(),
         };
 
-        const result = await getPersonalizedEventRecommendations(input);
+        const response = await fetch('/api/genkit/personalizedEventRecommendationsFlow', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(input),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch recommendations');
+        }
+
+        const result = await response.json();
         setRecommendations(result);
       } catch (error) {
         console.error('Failed to get event recommendations:', error);

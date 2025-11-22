@@ -5,7 +5,6 @@ import { useAuth } from '@/hooks/use-auth';
 import {
   PersonalizedDirectoryRecommendationsInput,
   PersonalizedDirectoryRecommendationsOutput,
-  getPersonalizedDirectoryRecommendations,
 } from '@/ai/flows/personalized-directory-recommendations';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
@@ -59,7 +58,17 @@ export default function RecommendedDirectory() {
           currentTime: new Date().toISOString(),
           numberOfRecommendations: 3,
         };
-        const result = await getPersonalizedDirectoryRecommendations(input);
+        const response = await fetch('/api/genkit/personalizedDirectoryRecommendationsFlow', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(input),
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch recommendations');
+        }
+        const result = await response.json();
         setRecommendations(result);
       } catch (error) {
         console.error('Failed to get directory recommendations:', error);

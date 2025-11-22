@@ -38,6 +38,17 @@ const pwaConfig = withPWA({
         },
       },
     },
+    {
+      urlPattern: /^https:\/\/lh3\.googleusercontent\.com\//,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'google-user-images',
+        expiration: {
+          maxEntries: 60,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+        },
+      },
+    },
   ],
 });
 
