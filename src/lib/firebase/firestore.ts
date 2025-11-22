@@ -5,11 +5,12 @@ import {
   addDoc,
   collection,
   serverTimestamp,
+  Timestamp,
 } from 'firebase/firestore';
 import { firestore } from './index';
 import type { User } from 'firebase/auth';
 import type { AppUser, Event } from '@/lib/types';
-import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export const createUserProfile = async (user: User) => {
   const userRef = doc(firestore, 'users', user.uid);
@@ -43,23 +44,27 @@ export const getUserProfile = async (uid: string): Promise<AppUser | null> => {
 
 export const uploadImage = async (
   path: string,
-  dataUrl: string
+  file: File
 ): Promise<string> => {
   const storage = getStorage();
   const storageRef = ref(storage, path);
-  await uploadString(storageRef, dataUrl, 'data_url');
-  return await getDownloadURL(storageRef);
+  const snapshot = await uploadBytes(storageRef, file);
+  return await getDownloadURL(snapshot.ref);
+};
+
+type CreateEventData = Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'approvalStatus' | 'createdBy' | 'startTime'> & {
+  startTime: Timestamp;
 };
 
 export const createEvent = async (
-  eventData: Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'approvalStatus' | 'createdBy'>,
+  eventData: CreateEventData,
   userId: string
 ): Promise<string> => {
   const eventCollection = collection(firestore, 'events');
   const newEvent = {
     ...eventData,
     createdBy: userId,
-    approvalStatus: 'pending',
+    approvalStatus: 'pending' as const,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };

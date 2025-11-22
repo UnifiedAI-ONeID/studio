@@ -19,7 +19,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/componentsui/input';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -46,10 +46,10 @@ const eventFormSchema = z.object({
   title: z.string().min(3, { message: 'Title must be at least 3 characters.' }),
   description: z.string().min(10, { message: 'Description must be at least 10 characters.' }),
   category: z.string({ required_error: 'Please select a category.' }),
-  startTime: z.date({ required_error: 'An event date is required.' }),
+  startTime: z.date({ required_error: 'An event date and time is required.' }),
   priceType: z.enum(['free', 'paid', 'donation']),
   priceMin: z.coerce.number().optional(),
-  coverImage: z.any().refine(file => file, 'Cover image is required.'),
+  coverImage: z.any().refine(file => file instanceof File, 'Cover image is required.'),
 });
 
 export default function NewEventPage() {
@@ -89,9 +89,10 @@ export default function NewEventPage() {
     setIsLoading(true);
     try {
       let coverImageUrl = '';
-      if (coverImagePreview) {
-        const imagePath = `events/${user.uid}/${Date.now()}_${values.coverImage.name}`;
-        coverImageUrl = await uploadImage(imagePath, coverImagePreview);
+      if (values.coverImage) {
+        const imageFile = values.coverImage as File;
+        const imagePath = `events/${user.uid}/${Date.now()}_${imageFile.name}`;
+        coverImageUrl = await uploadImage(imagePath, imageFile);
       }
 
       const eventData = {
@@ -105,6 +106,7 @@ export default function NewEventPage() {
         tags: [],
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         hostId: user.uid,
+        hostName: user.displayName,
         status: 'published' as const,
         visibility: 'public' as const,
       };
@@ -112,8 +114,8 @@ export default function NewEventPage() {
       const eventId = await createEvent(eventData, user.uid);
 
       toast({
-        title: 'Event Created!',
-        description: 'Your event has been submitted for approval.',
+        title: 'Event Submitted!',
+        description: 'Your event has been submitted for approval and will be live shortly.',
       });
       router.push(`/events/${eventId}`);
     } catch (error: any) {
@@ -132,7 +134,8 @@ export default function NewEventPage() {
     <div className="container mx-auto max-w-2xl py-8">
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline text-3xl">Create a New Event</CardTitle>
+          <CardTitle className="font-headline text-3xl">Create an Event</CardTitle>
+          <FormDescription>Fill out the details below to post your event.</FormDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -184,11 +187,11 @@ export default function NewEventPage() {
                       <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md">
                         <div className="space-y-1 text-center">
                           {coverImagePreview ? (
-                            <img src={coverImagePreview} alt="Cover preview" className="mx-auto h-48 w-auto" />
+                            <img src={coverImagePreview} alt="Cover preview" className="mx-auto h-48 w-auto rounded-md" />
                           ) : (
                             <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
                           )}
-                          <div className="flex text-sm text-muted-foreground">
+                          <div className="flex text-sm text-muted-foreground justify-center">
                             <label
                               htmlFor="file-upload"
                               className="relative cursor-pointer rounded-md font-medium text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 hover:text-primary/80"
@@ -198,7 +201,7 @@ export default function NewEventPage() {
                             </label>
                             <p className="pl-1">or drag and drop</p>
                           </div>
-                          <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 10MB</p>
+                          <p className="text-xs text-muted-foreground">PNG, JPG up to 10MB</p>
                         </div>
                       </div>
                     </FormControl>
@@ -212,41 +215,43 @@ export default function NewEventPage() {
                 name="startTime"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>Date and Time</FormLabel>
+                    <FormLabel>Start Date and Time</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
                             variant={'outline'}
                             className={cn(
-                              'w-full pl-3 text-left font-normal',
+                              'w-full justify-start text-left font-normal',
                               !field.value && 'text-muted-foreground'
                             )}
                           >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
                             {field.value ? (
-                              format(field.value, 'PPP HH:mm')
+                              format(field.value, 'PPP p')
                             ) : (
-                              <span>Pick a date and time</span>
+                              <span>Pick a date</span>
                             )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0">
                         <Calendar
                           mode="single"
                           selected={field.value}
                           onSelect={field.onChange}
-                          disabled={(date) => date < new Date()}
+                          disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
                           initialFocus
                         />
-                        <div className="p-3 border-t">
+                         <div className="p-3 border-t border-border">
                             <Input
                                 type="time"
+                                defaultValue={field.value ? format(field.value, 'HH:mm') : ''}
                                 onChange={(e) => {
-                                    const [hours, minutes] = e.target.value.split(':');
-                                    const newDate = new Date(field.value);
-                                    newDate.setHours(parseInt(hours), parseInt(minutes));
+                                    const time = e.target.value;
+                                    const [hours, minutes] = time.split(':').map(Number);
+                                    const newDate = field.value ? new Date(field.value) : new Date();
+                                    newDate.setHours(hours, minutes);
                                     field.onChange(newDate);
                                 }}
                             />
@@ -292,7 +297,7 @@ export default function NewEventPage() {
                       <SelectContent>
                         <SelectItem value="free">Free</SelectItem>
                         <SelectItem value="paid">Paid</SelectItem>
-                        <SelectItem value="donation">Donation</SelectItem>
+                        <SelectItem value="donation">Donation-based</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -307,7 +312,7 @@ export default function NewEventPage() {
                     <FormItem>
                       <FormLabel>Price Amount ($)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="25.00" {...field} />
+                        <Input type="number" placeholder="25.00" {...field} step="0.01" min="0" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -315,8 +320,8 @@ export default function NewEventPage() {
                 />
               )}
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Creating...' : 'Create Event'}
+              <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
+                {isLoading ? 'Submitting...' : 'Submit Event for Approval'}
               </Button>
             </form>
           </Form>

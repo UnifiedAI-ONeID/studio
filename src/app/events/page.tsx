@@ -3,19 +3,19 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase';
 import type { Event } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, MapPin, Plus } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isToday, isTomorrow, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 
-const categories = ['Music', 'Food & Drink', 'Talks', 'Sports', 'Arts'];
-const dateFilters = ['Today', 'Tomorrow', 'This weekend', 'All'];
+const categories = ['Music', 'Food & Drink', 'Talks', 'Sports', 'Arts', 'Networking', 'Other'];
+const dateFilters = ['All', 'Today', 'Tomorrow', 'This weekend'];
 
 function EventCardSkeleton() {
   return (
@@ -24,10 +24,10 @@ function EventCardSkeleton() {
       <CardHeader>
         <Skeleton className="h-4 w-1/4" />
         <Skeleton className="h-6 w-3/4 mt-2" />
-        <Skeleton className="h-4 w-1/2 mt-1" />
       </CardHeader>
       <CardContent>
-        <Skeleton className="h-4 w-1/3" />
+        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-4 w-1/3 mt-2" />
       </CardContent>
     </Card>
   );
@@ -36,10 +36,9 @@ function EventCardSkeleton() {
 function getPriceDisplay(event: Event) {
   if (event.priceType === 'free') return 'Free';
   if (event.priceType === 'donation') return 'Donation';
-  if (event.priceMin && event.priceMax && event.priceMin !== event.priceMax) {
-    return `$${event.priceMin} - $${event.priceMax}`;
+  if (event.priceMin) {
+    return `$${event.priceMin}${event.priceMax && event.priceMax > event.priceMin ? ` - $${event.priceMax}`: ''}`;
   }
-  if (event.priceMin) return `$${event.priceMin}`;
   return 'Paid';
 }
 
@@ -64,25 +63,26 @@ export default function EventsPage() {
         : [...prev, category]
     );
   };
-
+  
   const filteredEvents = eventsSnapshot?.docs
     .map((doc) => ({ id: doc.id, ...doc.data() } as Event))
     .filter((event) => {
+      if (!event.startTime) return false;
+      const eventDate = (event.startTime as Timestamp).toDate();
       const now = new Date();
-      const eventDate = event.startTime.toDate();
-      
+
       // Date filtering
-      if (activeDateFilter === 'Today' && format(eventDate, 'yyyy-MM-dd') !== format(now, 'yyyy-MM-dd')) return false;
-      if (activeDateFilter === 'Tomorrow') {
-        const tomorrow = new Date(now);
-        tomorrow.setDate(now.getDate() + 1);
-        if (format(eventDate, 'yyyy-MM-dd') !== format(tomorrow, 'yyyy-MM-dd')) return false;
-      }
-      // This Weekend logic can be more complex, this is a simplified version
+      if (activeDateFilter === 'Today' && !isToday(eventDate)) return false;
+      if (activeDateFilter === 'Tomorrow' && !isTomorrow(eventDate)) return false;
       if (activeDateFilter === 'This weekend') {
-        const day = now.getDay();
-        const isWeekend = day === 5 || day === 6 || day === 0; // Fri, Sat, Sun
-        if (!isWeekend) return false;
+        const start = startOfWeek(now, { weekStartsOn: 5 }); // Friday
+        const end = endOfWeek(now, { weekStartsOn: 5 }); // Next Thursday, but we are checking for Sat/Sun
+        if (!isWithinInterval(eventDate, { start, end }) || (eventDate.getDay() !== 6 && eventDate.getDay() !== 0)) {
+           // Simplified: Let's consider Fri, Sat, Sun of the current week
+            const currentDay = now.getDay();
+            const weekendDays = [5,6,0]; // Fri, Sat, Sun
+            if (!weekendDays.includes(eventDate.getDay())) return false;
+        }
       }
 
       // Category filtering
@@ -109,35 +109,36 @@ export default function EventsPage() {
         </Button>
       </div>
 
-      <div className="space-y-4 mb-6">
+      <div className="space-y-4 mb-8">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input placeholder="Search events..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
         <div className="flex flex-wrap gap-2">
-          {dateFilters.map((filter) => (
-            <Button
-              key={filter}
-              variant={activeDateFilter === filter ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setActiveDateFilter(filter)}
-            >
-              {filter}
-            </Button>
-          ))}
+            <p className="text-sm font-medium mr-2 self-center">Filters:</p>
+            {dateFilters.map((filter) => (
+                <Button
+                key={filter}
+                variant={activeDateFilter === filter ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setActiveDateFilter(filter)}
+                >
+                {filter}
+                </Button>
+            ))}
         </div>
-        <div className="flex flex-wrap gap-2">
-          {categories.map((category) => (
-            <Button
-              key={category}
-              variant={activeCategories.includes(category) ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => toggleCategory(category)}
-              className="border"
-            >
-              {category}
-            </Button>
-          ))}
+         <div className="flex flex-wrap gap-2">
+            {categories.map((category) => (
+                <Button
+                key={category}
+                variant={activeCategories.includes(category) ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => toggleCategory(category)}
+                className="border"
+                >
+                {category}
+                </Button>
+            ))}
         </div>
       </div>
 
@@ -147,7 +148,7 @@ export default function EventsPage() {
         </div>
       )}
 
-      {error && <p className="text-destructive text-center">Error loading events: {error.message}</p>}
+      {error && <p className="text-destructive text-center py-10">Error loading events: {error.message}</p>}
 
       {!loading && filteredEvents && filteredEvents.length > 0 && (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -168,7 +169,7 @@ export default function EventsPage() {
                   <CardTitle className="font-headline text-lg line-clamp-2">{event.title}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex-grow">
-                  <p className="font-semibold">{format(event.startTime.toDate(), "E, MMM d '·' h:mm a")}</p>
+                  <p className="font-semibold">{format((event.startTime as Timestamp).toDate(), "E, MMM d '·' h:mm a")}</p>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
                     <MapPin className="h-4 w-4" />
                     <span>{event.neighborhood || 'TBA'}</span>
@@ -183,7 +184,7 @@ export default function EventsPage() {
       {!loading && (!filteredEvents || filteredEvents.length === 0) && (
         <div className="text-center py-16 border border-dashed rounded-lg">
           <h3 className="text-xl font-semibold">No events found</h3>
-          <p className="text-muted-foreground mt-2">Try adjusting your filters or search term.</p>
+          <p className="text-muted-foreground mt-2">Try adjusting your filters or creating a new event.</p>
         </div>
       )}
     </div>
