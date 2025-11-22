@@ -1,16 +1,18 @@
 
 'use client';
 
-import { useAuth, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
+import { useAuth, useCollection, useMemoFirebase, useDoc } from '@/hooks/use-firebase-hooks';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Event, EventInteraction, Follow, CommonsThread } from '@/lib/types';
-import { collection, query, where, orderBy, limit } from 'firebase/firestore';
+import type { Event, EventInteraction, Follow, CommonsThread, Venue } from '@/lib/types';
+import { collection, query, where, orderBy, limit, doc } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/index';
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import { Building, BookText } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function MyEvents() {
     const { user } = useAuth();
@@ -60,6 +62,40 @@ function MyEvents() {
     )
 }
 
+function FollowedItem({ follow }: { follow: Follow }) {
+    const { targetId, targetType } = follow;
+    const collectionName = targetType === 'venue' ? 'venues' : 'topics'; // Assuming 'topic' might be a collection
+    const linkPath = targetType === 'venue' ? '/directory' : '/commons/topics';
+
+    // Note: This creates a separate query for each followed item.
+    // For a large number of follows, you might want to batch these reads.
+    const docRef = useMemoFirebase(() => doc(firestore, collectionName, targetId), [collectionName, targetId]);
+    const { data, loading } = useDoc<Venue | { name: string }>(docRef); // Use a generic shape for topics
+
+    if (loading) {
+        return <Skeleton className="h-14 w-full" />;
+    }
+    
+    if (!data) return null;
+
+    const name = (data as Venue).name || (data as { name: string }).name || 'Unknown';
+
+    return (
+        <Link href={`${linkPath}/${targetId}`}>
+            <Card className="hover:bg-muted/50">
+                <CardContent className="p-3 flex items-center gap-3">
+                    {targetType === 'venue' ? <Building className="h-5 w-5 text-muted-foreground"/> : <BookText className="h-5 w-5 text-muted-foreground"/>}
+                    <div>
+                        <p className="font-semibold">{name}</p>
+                        <p className="text-xs text-muted-foreground capitalize">{targetType}</p>
+                    </div>
+                </CardContent>
+            </Card>
+        </Link>
+    );
+}
+
+
 function MyFollows() {
     const { user } = useAuth();
     const followsQuery = useMemoFirebase(() =>
@@ -73,11 +109,7 @@ function MyFollows() {
     return (
         <div className="space-y-2">
             {follows.map(follow => (
-                <Card key={follow.id}>
-                    <CardContent className="p-3">
-                        <p>Following <strong>{follow.targetId}</strong> ({follow.targetType})</p>
-                    </CardContent>
-                </Card>
+                <FollowedItem key={follow.id} follow={follow} />
             ))}
         </div>
     );

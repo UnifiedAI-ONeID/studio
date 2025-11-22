@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -25,7 +25,7 @@ const topics = ["general", "neighborhoods", "buy-sell", "housing", "clubs", "eve
 export default function NewThreadPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -37,6 +37,13 @@ export default function NewThreadPage() {
   const [topic, setTopic] = useState(searchParams.get('topic') || '');
   
   const [errors, setErrors] = useState<{title?: string, body?: string, topic?: string}>({});
+  
+  useEffect(() => {
+    if (!authLoading && !user) {
+        const currentPath = `/commons/new?${searchParams.toString()}`;
+        router.push(`/login?continueUrl=${encodeURIComponent(currentPath)}`);
+    }
+  }, [user, authLoading, router, searchParams]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +89,22 @@ export default function NewThreadPage() {
       setIsLoading(false);
     }
   };
+
+  if (authLoading || !user) {
+      return (
+        <div className="container mx-auto max-w-2xl py-8">
+            <Card>
+                <CardHeader>
+                  <CardTitle className="font-headline text-3xl">Start a New Thread</CardTitle>
+                  <CardDescription>Share something with the community.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p>Authenticating...</p>
+                </CardContent>
+            </Card>
+        </div>
+      )
+  }
 
   return (
     <div className="container mx-auto max-w-2xl py-8">
