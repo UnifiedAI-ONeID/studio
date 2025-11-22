@@ -31,6 +31,8 @@ import {
   Database,
 } from 'lucide-react';
 import Link from 'next/link';
+import { AuthProvider } from '@/providers/auth-provider';
+import { Toaster } from '../ui/toaster';
 
 const topNavItems = [
   { href: '/home', icon: LayoutDashboard, label: 'Home' },
@@ -44,7 +46,7 @@ const bottomNavItems = [
   { href: '/settings', icon: Settings, label: 'Settings' },
 ];
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+function LayoutContent({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -99,7 +101,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
   
   if (!user) {
-      return null; // Don't render layout if not logged in and not on a public page
+      return null;
   }
 
   return (
@@ -134,6 +136,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarFooter>
            <SidebarMenu>
             <SidebarSeparator/>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname.startsWith('/seed')}>
+                  <Link href="/seed">
+                    <Database />
+                    <span>Seed Database</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             {bottomNavItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton asChild isActive={pathname.startsWith(item.href)}>
@@ -155,5 +165,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <BottomNav />
       </SidebarInset>
     </SidebarProvider>
+  );
+}
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthProvider>
+      <LayoutContent>{children}</LayoutContent>
+      <Toaster />
+    </AuthProvider>
   );
 }

@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
-import { Toaster } from '@/components/ui/toaster';
-import { AuthProvider } from '@/providers/auth-provider';
 import AppLayout from '@/components/layout/app-layout';
 import { Inter, Space_Grotesk } from 'next/font/google';
 
@@ -51,10 +49,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${spaceGrotesk.variable} font-body antialiased`}>
-        <AuthProvider>
-          <AppLayout>{children}</AppLayout>
-          <Toaster />
-        </AuthProvider>
+        <AppLayout>{children}</AppLayout>
       </body>
     </html>
   );
