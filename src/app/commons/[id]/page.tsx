@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -5,7 +6,7 @@ import { useParams } from 'next/navigation';
 import { useAuth, useDoc, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import { doc, collection, query, orderBy, Timestamp } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase';
-import { createComment, reportContent, addReaction, removeReaction, addCommentReaction, removeCommentReaction, getUserReactionsForThread } from '@/lib/firebase/firestore';
+import { createComment, reportContent, addReaction, removeReaction, getUserReactionsForThread } from '@/lib/firebase/firestore';
 import type { Thread, Comment, Event, Venue } from '@/lib/types';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -193,10 +194,10 @@ export default function ThreadDetailPage() {
 
         try {
             if (hasReacted) {
-                await removeReaction(user.uid, threadId, 'thread');
+                await removeReaction(user.uid, threadId, threadId, 'thread');
                 newReactions.delete(threadId);
             } else {
-                await addReaction(user.uid, threadId, 'thread');
+                await addReaction(user.uid, threadId, threadId, 'thread');
                 newReactions.add(threadId);
             }
             setUserReactions(newReactions);
@@ -212,10 +213,10 @@ export default function ThreadDetailPage() {
         const newReactions = new Set(userReactions);
         try {
             if (hasReacted) {
-                await removeCommentReaction(user.uid, threadId, commentId);
+                await removeReaction(user.uid, threadId, commentId, 'comment');
                 newReactions.delete(commentId);
             } else {
-                await addCommentReaction(user.uid, threadId, commentId);
+                await addReaction(user.uid, threadId, commentId, 'comment');
                 newReactions.add(commentId);
             }
             setUserReactions(newReactions);
@@ -326,3 +327,5 @@ export default function ThreadDetailPage() {
         </div>
     );
 }
+
+    
