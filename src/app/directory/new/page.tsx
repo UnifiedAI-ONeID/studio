@@ -41,19 +41,6 @@ export default function NewVenuePage() {
   
   const [errors, setErrors] = useState<{[key:string]: string}>({});
 
-  const validate = () => {
-    const newErrors: {[key:string]: string} = {};
-    if (name.length < 3) newErrors.name = 'Name must be at least 3 characters.';
-    if (!type) newErrors.type = 'Please select a type.';
-    if (description.length < 10) newErrors.description = 'Description must be at least 10 characters.';
-    if (address.length < 5) newErrors.address = 'Please enter a valid address.';
-    if (neighborhood.length < 3) newErrors.neighborhood = 'Please enter a neighborhood.';
-    if (!coverImage) newErrors.coverImage = 'Cover image is required.';
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }
-
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -68,14 +55,14 @@ export default function NewVenuePage() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if(!validate()) return;
-
     if (!user) {
       toast({ variant: 'destructive', title: 'You must be logged in to add a place.' });
       return;
     }
 
     setIsLoading(true);
+    setErrors({});
+    
     try {
       let coverImageUrl = '';
       if (coverImage) {
@@ -108,11 +95,19 @@ export default function NewVenuePage() {
       router.push(`/directory/${venueId}`);
     } catch (error: any) {
       console.error(error);
-      toast({
-        variant: 'destructive',
-        title: 'Failed to add place',
-        description: error.message || 'An unexpected error occurred.',
-      });
+      if (error.code === 'validation-error') {
+        setErrors(error.details);
+        toast({
+            variant: 'destructive',
+            title: 'Please fix the errors below',
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Failed to add place',
+          description: error.message || 'An unexpected error occurred.',
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -170,7 +165,7 @@ export default function NewVenuePage() {
                     <p className="text-xs text-muted-foreground">PNG, JPG up to 10MB</p>
                   </div>
                 </div>
-              {errors.coverImage && <p className="text-sm font-medium text-destructive">{errors.coverImage}</p>}
+              {errors.coverImageUrl && <p className="text-sm font-medium text-destructive">{errors.coverImageUrl}</p>}
             </div>
 
              <div className='space-y-2'>

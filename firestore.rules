@@ -27,7 +27,7 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if true;
+      allow read: if isSignedIn();
       allow create: if isOwner(userId) && request.resource.data.role == 'user'; // Users can't assign themselves admin
       allow update: if isOwner(userId) && request.resource.data.role == resource.data.role; // Prevent self-promotion
     }
@@ -60,11 +60,11 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isSignedIn() 
                     && isOwner(request.resource.data.createdBy) 
-                    && request.resource.data.title.size() < 100 
-                    && request.resource.data.body.size() < 10000;
+                    && request.resource.data.title.size() >= 5 
+                    && request.resource.data.body.size() >= 10;
       allow update: if (isOwner(resource.data.createdBy) || isAdmin()) 
-                    && request.resource.data.title.size() < 100 
-                    && request.resource.data.body.size() < 10000
+                    && request.resource.data.title.size() >= 5 
+                    && request.resource.data.body.size() >= 10
                     && protectedFieldsUnchanged(['createdBy', 'createdAt']);
       allow delete: if isOwner(resource.data.createdBy) || isAdmin();
 
@@ -79,9 +79,9 @@ service cloud.firestore {
         allow read: if true;
         allow create: if isSignedIn() 
                       && isOwner(request.resource.data.createdBy) 
-                      && request.resource.data.body.size() < 5000;
+                      && request.resource.data.body.size() > 0;
         allow update: if (isOwner(resource.data.createdBy) || isAdmin()) 
-                      && request.resource.data.body.size() < 5000
+                      && request.resource.data.body.size() > 0
                       && protectedFieldsUnchanged(['createdBy', 'createdAt', 'threadId']);
         allow delete: if isOwner(resource.data.createdBy) || isAdmin();
     }

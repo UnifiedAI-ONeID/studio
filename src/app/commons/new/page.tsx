@@ -37,28 +37,16 @@ export default function NewThreadPage() {
   
   const [errors, setErrors] = useState<{title?: string, body?: string, topic?: string}>({});
 
-  const validate = () => {
-    const newErrors: {title?: string, body?: string, topic?: string} = {};
-    if (title.length < 5) newErrors.title = 'Title must be at least 5 characters.';
-    if (title.length > 100) newErrors.title = 'Title is too long.';
-    if (body.length < 10) newErrors.body = 'Body must be at least 10 characters.';
-    if (body.length > 10000) newErrors.body = 'Body is too long.';
-    if (!topic) newErrors.topic = 'Please select a topic.';
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }
-
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
-    
     if (!user) {
       toast({ variant: 'destructive', title: 'You must be logged in to create a thread.' });
       return;
     }
-
+    
     setIsLoading(true);
+    setErrors({});
+    
     try {
       const threadData = {
         title,
@@ -67,7 +55,7 @@ export default function NewThreadPage() {
         createdBy: user.uid,
         relatedEventId: relatedEventId || undefined,
         relatedVenueId: relatedVenueId || undefined,
-        tags: [], // Tags can be added later
+        tags: [],
       };
       
       const threadId = await createThread(threadData, user);
@@ -76,11 +64,19 @@ export default function NewThreadPage() {
       router.push(`/commons/${threadId}`);
     } catch (error: any) {
       console.error(error);
-      toast({
-        variant: 'destructive',
-        title: 'Failed to create thread',
-        description: error.message,
-      });
+      if (error.code === 'validation-error') {
+        setErrors(error.details);
+        toast({
+            variant: 'destructive',
+            title: 'Please fix the errors below',
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Failed to create thread',
+          description: error.message,
+        });
+      }
     } finally {
       setIsLoading(false);
     }

@@ -22,6 +22,19 @@ import type { AppUser, Event, Venue, Thread, Comment, FollowTargetType, Reaction
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { placeholderEvents, placeholderVenues, placeholderThreads } from './placeholder-data';
 
+// Custom error for validation
+class ValidationError extends Error {
+    code: string;
+    details: {[key: string]: string};
+
+    constructor(message: string, details: {[key: string]: string}) {
+        super(message);
+        this.name = 'ValidationError';
+        this.code = 'validation-error';
+        this.details = details;
+    }
+}
+
 
 export const createUserProfile = async (user: User) => {
   const userRef = doc(firestore, 'users', user.uid);
@@ -63,14 +76,22 @@ export const uploadImage = async (
   return await getDownloadURL(snapshot.ref);
 };
 
-type CreateEventData = Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'approvalStatus' | 'createdBy' | 'startTime' | 'stats'> & {
-  startTime: Timestamp;
-};
+type CreateEventData = Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'approvalStatus' | 'createdBy' | 'stats'>;
 
 export const createEvent = async (
   eventData: CreateEventData,
   userId: string
 ): Promise<string> => {
+    const errors: {[key: string]: string} = {};
+    if (!eventData.title || eventData.title.length < 3) errors.title = 'Title must be at least 3 characters.';
+    if (!eventData.description || eventData.description.length < 10) errors.description = 'Description must be at least 10 characters.';
+    if (!eventData.category) errors.category = 'Please select a category.';
+    if (!eventData.startTime) errors.startTime = 'An event date and time is required.';
+    if (!eventData.coverImageUrl) errors.coverImageUrl = 'Cover image is required.';
+    if (Object.keys(errors).length > 0) {
+        throw new ValidationError('Validation failed', errors);
+    }
+
   const eventCollection = collection(firestore, 'events');
   
   let venueName: string | undefined;
@@ -102,12 +123,23 @@ export const createEvent = async (
   return docRef.id;
 };
 
-type CreateVenueData = Omit<Venue, 'id' | 'createdAt' | 'updatedAt' | 'verified' | 'createdBy'>;
+type CreateVenueData = Omit<Venue, 'id' | 'createdAt' | 'updatedAt' | 'verified' | 'createdBy' | 'isFeaturedOnLanding'>;
 
 export const createVenue = async (
   venueData: CreateVenueData,
   userId: string
 ): Promise<string> => {
+    const errors: {[key: string]: string} = {};
+    if (!venueData.name || venueData.name.length < 3) errors.name = 'Name must be at least 3 characters.';
+    if (!venueData.type) errors.type = 'Please select a type.';
+    if (!venueData.description || venueData.description.length < 10) errors.description = 'Description must be at least 10 characters.';
+    if (!venueData.address || venueData.address.length < 5) errors.address = 'Please enter a valid address.';
+    if (!venueData.neighborhood || venueData.neighborhood.length < 3) errors.neighborhood = 'Please enter a neighborhood.';
+    if (!venueData.coverImageUrl) errors.coverImageUrl = 'Cover image is required.';
+    if (Object.keys(errors).length > 0) {
+        throw new ValidationError('Validation failed', errors);
+    }
+
   const venueCollection = collection(firestore, 'venues');
   const newVenue = {
     ...venueData,
@@ -124,6 +156,14 @@ export const createVenue = async (
 type CreateThreadData = Omit<Thread, 'id' | 'createdAt' | 'updatedAt' | 'lastActivityAt' | 'replyCount' | 'authorInfo' | 'likeCount'>;
 
 export const createThread = async (threadData: CreateThreadData, user: AppUser): Promise<string> => {
+    const errors: {[key: string]: string} = {};
+    if (!threadData.title || threadData.title.length < 5) errors.title = 'Title must be at least 5 characters.';
+    if (!threadData.body || threadData.body.length < 10) errors.body = 'Body must be at least 10 characters.';
+    if (!threadData.topic) errors.topic = 'Please select a topic.';
+    if (Object.keys(errors).length > 0) {
+        throw new ValidationError('Validation failed', errors);
+    }
+
     const threadCollection = collection(firestore, 'threads');
     const now = Timestamp.now();
     const newThread = {
