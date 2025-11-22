@@ -1,3 +1,4 @@
+
 import AuthForm from '@/components/auth/auth-form';
 import type { Metadata } from 'next';
 
@@ -14,5 +15,7 @@ export default function LoginPage({
     ? searchParams.continueUrl[0]
     : searchParams.continueUrl;
 
-  return <AuthForm mode="login" continueUrl={continueUrl} />;
+  return (
+    <AuthForm mode="login" continueUrl={continueUrl} />
+  );
 }

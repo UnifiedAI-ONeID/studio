@@ -2,7 +2,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { collection, query, orderBy, where, limit } from 'firebase/firestore';
+import { collection, query, orderBy, where, limit, QueryConstraint } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/index';
 import { useCollection, useAuth, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import type { CommonsThread } from '@/lib/types';
@@ -44,13 +44,12 @@ export default function CommonsPage() {
   
   const threadsQuery = useMemoFirebase(() => {
     const baseQuery = collection(firestore, 'commonsThreads');
-    let constraints = [orderBy('lastActivityAt', 'desc'), limit(20)];
+    const constraints: QueryConstraint[] = [orderBy('lastActivityAt', 'desc'), limit(20)];
     
     if (activeTopic !== 'all') {
-      // @ts-ignore
       constraints.unshift(where('topic', '==', activeTopic));
     }
-    // @ts-ignore
+    
     return query(baseQuery, ...constraints);
   }, [activeTopic]);
 

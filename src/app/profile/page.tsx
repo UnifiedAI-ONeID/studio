@@ -37,7 +37,14 @@ function MyEvents() {
 
     const { data: events, loading: eventsLoading } = useCollection<Event>(eventsQuery);
 
-    if (interactionsLoading || eventsLoading) return <p>Loading events...</p>
+    if (interactionsLoading || eventsLoading) {
+        return (
+            <div className="space-y-4">
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+            </div>
+        );
+    }
     if (!events || events.length === 0) return <p>You haven't saved or RSVP'd to any events yet.</p>
 
     return (
@@ -103,7 +110,14 @@ function MyFollows() {
     , [user]);
     const { data: follows, loading } = useCollection<Follow>(followsQuery);
 
-    if (loading) return <p>Loading follows...</p>
+    if (loading) {
+        return (
+             <div className="space-y-2">
+                <Skeleton className="h-14 w-full" />
+                <Skeleton className="h-14 w-full" />
+            </div>
+        );
+    }
     if (!follows || follows.length === 0) return <p>You are not following anything yet.</p>
 
     return (
@@ -127,7 +141,14 @@ function MyThreads() {
     , [user]);
     const { data: threads, loading } = useCollection<CommonsThread>(threadsQuery);
 
-    if (loading) return <p>Loading your threads...</p>
+    if (loading) {
+        return (
+            <div className="space-y-3">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+            </div>
+        );
+    }
     if (!threads || threads.length === 0) return <p>You haven't posted any threads.</p>
 
     return (
