@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useDocument, useCollection } from 'react-firebase-hooks/firestore';
-import { doc, collection, query, where, limit, Timestamp } from 'firebase/firestore';
+import { doc, collection, query, where, limit, Timestamp, orderBy } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase';
 import type { Event, EventInteractionType } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -117,6 +117,8 @@ export default function EventDetailPage() {
       } else {
         // Switching interaction or setting a new one
         if (interaction) {
+          // In a real app, you might want to confirm if they want to switch (e.g. from 'going' to 'interested')
+          // For now, we just remove the old one and add the new one.
           await removeEventInteraction(user.uid, eventId, interaction);
         }
         await addEventInteraction(user.uid, eventId, type);
@@ -127,7 +129,7 @@ export default function EventDetailPage() {
       console.error(e);
       toast({ variant: 'destructive', title: 'Something went wrong' });
     } finally {
-        // The useDocument hook will update the UI with new stats
+        // The useDocument hook will update the UI with new stats, so we can just set loading to false.
         setInteractionLoading(false);
     }
   };

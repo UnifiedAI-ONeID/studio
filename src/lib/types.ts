@@ -39,10 +39,10 @@ export interface Event {
   neighborhood?: string;
   hostName?: string;
   venueName?: string;
-  stats?: {
-    interestedCount?: number;
-    goingCount?: number;
-    savedCount?: number;
+  stats: {
+    interestedCount: number;
+    goingCount: number;
+    savedCount: number;
   };
 }
 
