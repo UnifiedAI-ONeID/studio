@@ -87,7 +87,7 @@ export default function DirectoryPage() {
       </div>
 
       <div className="space-y-4 mb-8">
-        <div className="relative">
+        <div className="relative md:hidden">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input placeholder="Search venues, cafes, NGOs..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
