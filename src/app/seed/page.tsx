@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { seedDatabase } from '@/lib/firebase/placeholder-data';
+import { seedDatabase } from '@/lib/firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useFirebase } from '@/hooks/use-firebase-hooks';

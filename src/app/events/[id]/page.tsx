@@ -1,9 +1,10 @@
+
 'use client';
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { doc, collection, query, where, limit, Timestamp, orderBy } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase';
+import { firestore } from '@/lib/firebase/index';
 import { useAuth, useDoc, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import type { Event, EventInteractionType, EventInteraction } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';

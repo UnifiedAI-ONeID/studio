@@ -1,3 +1,4 @@
+
 import {
   doc,
   setDoc,
@@ -21,6 +22,7 @@ import type { AppUser, Event, Venue, CommonsThread, CommonsReply, FollowTargetTy
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { errorEmitter } from './error-emitter';
 import { FirestorePermissionError } from './errors';
+import { seedSampleData } from './placeholder-data';
 
 // Custom error for validation
 class ValidationError extends Error {
@@ -367,21 +369,43 @@ export const removeEventInteraction = async (userId: string, eventId: string, ty
 };
 
 
+export const setEventInteraction = async (
+  userId: string,
+  eventId: string,
+  type: EventInteractionType,
+): Promise<void> => {
+  const interactionId = `${userId}_${eventId}`;
+  const interactionRef = doc(firestore, 'eventInteractions', interactionId);
+
+  const interactionData = {
+    userId,
+    eventId,
+    type,
+    createdAt: serverTimestamp(),
+  };
+
+  await setDoc(interactionRef, interactionData, { merge: true });
+};
+
+
 export async function seedDatabase(db: typeof firestore): Promise<{ success: boolean; message: string }> {
   const sampleCheckQuery = query(collection(db, 'events'), where('isSampleData', '==', true), limit(1));
-  const sampleCheck = await getDocs(sampleCheckQuery);
-  if (!sampleCheck.empty) {
-    return { success: false, message: 'Sample data already exists. Seeding skipped.' };
-  }
   
   try {
-    // This function should be replaced with the actual seeding logic from `scripts/seedSampleData.ts`
-    // For now, it's a placeholder.
-    console.log("Seeding database with placeholder data...");
+    const sampleCheck = await getDocs(sampleCheckQuery);
+    if (!sampleCheck.empty) {
+      return { success: false, message: 'Sample data already exists. Seeding skipped.' };
+    }
     
+    // This is not an ideal way to call an admin script, but for this environment it's a workaround.
+    await seedSampleData();
+
     return { success: true, message: 'Database seeded successfully with placeholder data.' };
   } catch (error: any) {
     console.error("Error seeding database:", error);
+    if (error.code === 'permission-denied') {
+        return { success: false, message: 'Permission denied. Ensure you have the correct Firestore rules or are running with admin privileges.' };
+    }
     return { success: false, message: error.message };
   }
 }

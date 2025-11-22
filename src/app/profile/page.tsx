@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Event, EventInteraction, Follow, CommonsThread } from '@/lib/types';
 import { collection, query, where, orderBy, limit } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase';
+import { firestore } from '@/lib/firebase/index';
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';

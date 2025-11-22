@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth, useDoc, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import { doc, collection, query, orderBy, Timestamp } from 'firebase/firestore';
-import { firestore } from '@/lib/firebase';
+import { firestore } from '@/lib/firebase/index';
 import { createReply, reportContent } from '@/lib/firebase/firestore';
 import type { CommonsThread, CommonsReply, Event, Venue } from '@/lib/types';
 

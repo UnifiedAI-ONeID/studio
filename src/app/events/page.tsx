@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
@@ -37,8 +38,8 @@ function EventCardSkeleton() {
 function getPriceDisplay(event: Event) {
   if (event.priceType === 'free') return 'Free';
   if (event.priceType === 'donation') return 'Donation';
-  if (event.priceMin) {
-    return `$${event.priceMin}${event.priceMax && event.priceMax > event.priceMin ? ` - $${event.priceMax}`: ''}`;
+  if (event.minPrice) {
+    return `$${event.minPrice}${event.maxPrice && event.priceMax > event.minPrice ? ` - $${event.priceMax}`: ''}`;
   }
   return 'Paid';
 }
