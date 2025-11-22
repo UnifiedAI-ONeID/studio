@@ -61,7 +61,6 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // This is to allow cross-origin requests from the development environment (Cloud Workstations)
   experimental: {
     // No longer placing allowedDevOrigins here
   },
@@ -88,7 +87,7 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'httpshttps',
+        protocol: 'https',
         hostname: 'lh3.googleusercontent.com',
         port: '',
         pathname: '/**',
