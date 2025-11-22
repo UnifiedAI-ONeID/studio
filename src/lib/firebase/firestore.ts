@@ -73,7 +73,6 @@ export const createEvent = async (
 ): Promise<string> => {
   const eventCollection = collection(firestore, 'events');
   
-  // Fetch venue details if venueId is provided
   let venueName: string | undefined;
   let neighborhood: string | undefined;
   if (eventData.venueId) {
@@ -149,7 +148,6 @@ export const createComment = async (commentData: CreateCommentData, user: AppUse
     const batch = writeBatch(firestore);
     const now = Timestamp.now();
     
-    // 1. Create the new comment
     const commentCollection = collection(firestore, 'threads', commentData.threadId, 'comments');
     const newCommentRef = doc(commentCollection);
     batch.set(newCommentRef, {
@@ -163,7 +161,6 @@ export const createComment = async (commentData: CreateCommentData, user: AppUse
         updatedAt: now,
     });
 
-    // 2. Update the parent thread's metadata
     const threadRef = doc(firestore, 'threads', commentData.threadId);
     batch.update(threadRef, {
         replyCount: increment(1),
@@ -219,7 +216,6 @@ const getReactionCollection = (targetType: 'thread' | 'comment', targetId: strin
     if (targetType === 'thread') {
         return collection(firestore, 'threads', targetId, 'reactions');
     }
-    // For comments, we use a root-level collection for easier querying of user's reactions
     return collection(firestore, 'comments', targetId, 'reactions');
 };
 
@@ -257,7 +253,6 @@ export const addCommentReaction = async (
 ) => {
     const batch = writeBatch(firestore);
 
-    // Reaction doc in /comments/{commentId}/reactions/{userId}
     const reactionDocRef = doc(firestore, 'comments', commentId, 'reactions', userId);
      batch.set(reactionDocRef, {
         userId,
@@ -435,5 +430,3 @@ export const seedDatabase = async () => {
     return { success: false, message: `Error seeding database: ${error}` };
   }
 };
-
-    
