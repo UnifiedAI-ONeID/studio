@@ -28,12 +28,12 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow create: if isOwner(userId) && request.resource.data.role == 'user'; // Users can't assign themselves admin
-      allow update: if isOwner(userId) && request.resource.data.role == resource.data.role; // Prevent self-promotion
+      allow write: if isOwner(userId) && protectedFieldsUnchanged(['role', 'email', 'uid', 'createdAt']);
     }
 
     match /users/{userId}/follows/{followId} {
-      allow read, create, delete: if isOwner(userId);
+      allow read, delete: if isOwner(userId);
+      allow create: if isSignedIn() && isOwner(request.resource.data.userId);
     }
     
     match /events/{eventId} {
@@ -105,5 +105,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

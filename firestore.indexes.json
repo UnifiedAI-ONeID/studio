@@ -56,7 +56,7 @@
       "fields": [
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "visibility", "order": "ASCENDING" },
-        { "fieldPath": "venueId", "order": "IN" },
+        { "fieldPath": "venueId", "arrayConfig": "CONTAINS" },
         { "fieldPath": "startTime", "order": "ASCENDING" }
       ]
     },
