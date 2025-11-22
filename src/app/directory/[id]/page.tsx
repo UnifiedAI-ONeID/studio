@@ -15,7 +15,8 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { followTarget, unfollowTarget } from '@/lib/firebase/firestore';
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
+import PlaceHolderImages from '@/lib/placeholder-images';
 
 function UpcomingEvents({ venueId }: { venueId: string }) {
     const eventsQuery = useMemoFirebase(() => query(
@@ -81,12 +82,14 @@ export default function VenueDetailPage() {
   const followId = useMemo(() => user ? `${user.id}_venue_${venueId}` : null, [user, venueId]);
   const followRef = useMemoFirebase(() => followId ? doc(firestore, 'follows', followId) : null, [followId]);
   const { data: followDoc, loading: followLoading } = useDoc<Follow>(followRef);
+  const placeholder = PlaceHolderImages.find(p => p.id.includes('directory')) || PlaceHolderImages[0];
+
 
   const isFollowing = !!followDoc;
 
   const handleFollow = async () => {
     if (!user) {
-      setPrompted(true);
+      if (setPrompted) setPrompted(true);
       const continueUrl = `/directory/${venueId}`;
       router.push(`/login?continueUrl=${encodeURIComponent(continueUrl)}`);
       return;
@@ -136,11 +139,20 @@ export default function VenueDetailPage() {
   
   const discussionLink = `/commons/new?relatedVenueId=${venue.id}&title=${encodeURIComponent(`About: ${venue.name}`)}&topic=neighborhoods`;
 
+  const handleDiscussionClick = (e: React.MouseEvent) => {
+    if (!user) {
+      e.preventDefault();
+      if(setPrompted) setPrompted(true);
+      router.push(`/login?continueUrl=${encodeURIComponent(discussionLink)}`);
+    }
+  };
+
+
   return (
     <div className="bg-background">
       <div className="container mx-auto max-w-4xl pb-12">
         <div className="relative h-64 w-full md:h-80 rounded-b-lg overflow-hidden -mt-8 -mx-4">
-          {venue.coverImageUrl && <Image src={venue.coverImageUrl} alt={venue.name} fill className="object-cover" />}
+          <Image src={venue.coverImageUrl || placeholder.imageUrl} alt={venue.name} fill className="object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
         </div>
 
@@ -151,12 +163,12 @@ export default function VenueDetailPage() {
                 <div className="flex gap-2">
                     {venue.categories.map(c => <Badge key={c} className="capitalize">{c}</Badge>)}
                 </div>
-                {user && (
-                    <Button variant={isFollowing ? 'default' : 'outline'} onClick={handleFollow} disabled={followLoading}>
-                        <Plus className={`mr-2 h-4 w-4 ${isFollowing ? 'rotate-45' : ''} transition-transform`} />
-                        {isFollowing ? 'Following' : 'Follow'}
-                    </Button>
-                )}
+                
+                <Button variant={isFollowing ? 'default' : 'outline'} onClick={handleFollow} disabled={followLoading}>
+                    <Plus className={`mr-2 h-4 w-4 ${isFollowing ? 'rotate-45' : ''} transition-transform`} />
+                    {isFollowing ? 'Following' : 'Follow'}
+                </Button>
+                
               </div>
               <CardTitle className="text-3xl md:text-4xl font-headline mt-2">{venue.name}</CardTitle>
               <p className="text-lg text-muted-foreground">{venue.neighborhood}</p>
@@ -186,15 +198,15 @@ export default function VenueDetailPage() {
                   <p>{venue.description}</p>
               </div>
               
-              {user && (
+              
                  <div className="border-t pt-6">
                     <Button variant="outline" asChild>
-                      <Link href={discussionLink}>
+                      <Link href={discussionLink} onClick={handleDiscussionClick}>
                         <MessageSquare className="mr-2 h-4 w-4"/> Discuss this place
                       </Link>
                     </Button>
                 </div>
-              )}
+              
             </CardContent>
           </Card>
           

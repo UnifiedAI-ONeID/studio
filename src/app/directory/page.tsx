@@ -48,15 +48,13 @@ export default function DirectoryPage() {
 
 
   const venuesQuery = useMemoFirebase(() => {
-    let constraints = [
+    let constraints: any[] = [
         where('status', '==', 'approved'),
         orderBy('name', 'asc')
     ];
     if (activeCategory) {
-        // @ts-ignore
         constraints.unshift(where('categories', 'array-contains', activeCategory));
     }
-    // @ts-ignore
     return query(collection(firestore, 'venues'), ...constraints);
   }, [activeCategory]);
 
@@ -126,15 +124,15 @@ export default function DirectoryPage() {
             <Link href={`/directory/${venue.id}`} key={venue.id}>
               <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-lg hover:-translate-y-1">
                 <div className="relative h-32 w-full">
-                  {venue.coverImageUrl && (
+                  
                     <Image
-                        src={venue.coverImageUrl}
+                        src={venue.coverImageUrl || placeholder.imageUrl}
                         alt={venue.name}
                         fill
                         className="object-cover"
                         data-ai-hint={placeholder.imageHint}
                     />
-                  )}
+                  
                 </div>
                 <CardHeader>
                   <p className="text-sm font-medium text-primary capitalize">{venue.categories.join(', ')}</p>

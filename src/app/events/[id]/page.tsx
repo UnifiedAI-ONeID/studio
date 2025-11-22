@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { doc, collection, query, where, limit, Timestamp, orderBy } from 'firebase/firestore';
@@ -90,7 +90,7 @@ export default function EventDetailPage() {
 
   const handleInteraction = async (type: EventInteractionType) => {
     if (!user) {
-      setPrompted(true);
+      if(setPrompted) setPrompted(true);
       router.push(`/login?continueUrl=/events/${eventId}`);
       return;
     }
@@ -156,6 +156,15 @@ export default function EventDetailPage() {
   };
   
   const discussionLink = `/commons/new?relatedEventId=${event.id}&title=${encodeURIComponent(`Discuss: ${event.title}`)}&topic=general`;
+
+  const handleDiscussionClick = (e: React.MouseEvent) => {
+    if (!user) {
+      e.preventDefault();
+      if(setPrompted) setPrompted(true);
+      router.push(`/login?continueUrl=${encodeURIComponent(discussionLink)}`);
+    }
+  };
+
 
   return (
     <div className="bg-background">
@@ -248,13 +257,13 @@ export default function EventDetailPage() {
                           <p className="font-semibold text-foreground">{'Community Organizer'}</p>
                       </div>
                   </div>
-                  {user && (
+                  
                     <Button variant="outline" asChild>
-                      <Link href={discussionLink}>
+                      <Link href={discussionLink} onClick={handleDiscussionClick}>
                         <MessageSquare className="mr-2 h-4 w-4"/> Discuss in Commons
                       </Link>
                     </Button>
-                  )}
+                  
               </div>
               
             </CardContent>
