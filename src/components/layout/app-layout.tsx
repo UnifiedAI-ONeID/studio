@@ -60,14 +60,14 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
 
   useEffect(() => {
-    if (!loading) {
-      if (user && (isAuthPage || isLandingPage)) {
-        router.replace('/home');
-      } else if (!user && !isAuthPage && !isLandingPage && !isSeedPage) {
-        router.replace('/');
-      }
+    if (loading) return;
+
+    if (user && (isAuthPage || isLandingPage)) {
+      router.replace('/home');
+    } else if (!user && !isAuthPage && !isLandingPage && !isSeedPage) {
+      router.replace('/');
     }
-  }, [user, loading, router, isAuthPage, isLandingPage, isSeedPage, pathname]);
+  }, [user, loading, router, pathname, isAuthPage, isLandingPage, isSeedPage]);
 
 
   if (isLandingPage && !user) {
@@ -199,3 +199,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   );
 }
+
+    

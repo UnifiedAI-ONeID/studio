@@ -33,16 +33,33 @@ type SearchResult = {
 const searchCollections = async (searchTerm: string): Promise<SearchResult[]> => {
   if (!searchTerm) return [];
 
-  const results: SearchResult[] = [];
   const lowerCaseTerm = searchTerm.toLowerCase();
 
-  // Search Events
   const eventsQuery = query(
     collection(firestore, 'events'),
     where('status', '==', 'published'),
     orderBy('title')
   );
-  const eventSnap = await getDocs(eventsQuery);
+  
+  const venuesQuery = query(
+    collection(firestore, 'venues'),
+    where('verified', '==', true),
+    orderBy('name')
+  );
+
+  const threadsQuery = query(
+    collection(firestore, 'threads'),
+    orderBy('title')
+  );
+
+  const [eventSnap, venueSnap, threadSnap] = await Promise.all([
+      getDocs(eventsQuery),
+      getDocs(venuesQuery),
+      getDocs(threadsQuery),
+  ]);
+
+  const results: SearchResult[] = [];
+
   eventSnap.forEach(doc => {
     const event = doc.data() as Event;
     if (event.title.toLowerCase().includes(lowerCaseTerm)) {
@@ -55,13 +72,6 @@ const searchCollections = async (searchTerm: string): Promise<SearchResult[]> =>
     }
   });
 
-  // Search Venues
-  const venuesQuery = query(
-    collection(firestore, 'venues'),
-    where('verified', '==', true),
-    orderBy('name')
-  );
-  const venueSnap = await getDocs(venuesQuery);
   venueSnap.forEach(doc => {
     const venue = doc.data() as Venue;
     if (venue.name.toLowerCase().includes(lowerCaseTerm)) {
@@ -74,12 +84,6 @@ const searchCollections = async (searchTerm: string): Promise<SearchResult[]> =>
     }
   });
 
-  // Search Threads
-  const threadsQuery = query(
-    collection(firestore, 'threads'),
-    orderBy('title')
-  );
-  const threadSnap = await getDocs(threadsQuery);
   threadSnap.forEach(doc => {
     const thread = doc.data() as Thread;
     if (thread.title.toLowerCase().includes(lowerCaseTerm)) {
