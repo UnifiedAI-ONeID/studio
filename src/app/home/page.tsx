@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/hooks/use-auth';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, query, where, orderBy, Timestamp, limit } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase';
 import type { Event } from '@/lib/types';
 import Link from 'next/link';
