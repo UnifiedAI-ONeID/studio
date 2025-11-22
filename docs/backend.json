@@ -188,6 +188,10 @@
       "schema": { "$ref": "#/backend/entities/Reaction" },
       "description": "Stores reactions for a specific thread."
     },
+    "/threads/{threadId}/comments/{commentId}/reactions/{reactionId}": {
+      "schema": { "$ref": "#/backend/entities/Reaction" },
+      "description": "Stores reactions for a specific comment."
+    },
     "/comments/{commentId}/reactions/{reactionId}": {
       "schema": { "$ref": "#/backend/entities/Reaction" },
       "description": "Stores reactions for a specific comment."
@@ -202,5 +206,3 @@
     }
   }
 }
-
-    
