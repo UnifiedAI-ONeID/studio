@@ -111,7 +111,6 @@ export interface CommonsThread extends DocumentWithId {
   tags?: string[];
   authorId: string;
   authorInfo?: {
-    // Denormalized author data for performance
     displayName: string;
     photoURL?: string;
   };
@@ -134,7 +133,6 @@ export interface CommonsReply extends DocumentWithId {
   body: string;
   parentReplyId?: string;
   authorInfo?: {
-    // Denormalized author data for performance
     displayName: string;
     photoURL?: string;
   };

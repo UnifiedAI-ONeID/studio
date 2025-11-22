@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { Button } from '../ui/button';
 import { ArrowRight } from 'lucide-react';
 import EventCard from './event-card';
-import { startOfWeek } from 'date-fns';
+import { startOfWeek, endOfWeek } from 'date-fns';
 
 function SectionSkeleton() {
   return (
@@ -35,20 +35,19 @@ export default function ThisWeekendSection() {
 
   const eventsQuery = useMemo(() => {
     const now = new Date();
-    const startOfThisWeek = startOfWeek(now, { weekStartsOn: 1 }); // Monday
-    const friday = new Date(startOfThisWeek);
-    friday.setDate(startOfThisWeek.getDate() + 4);
-    friday.setHours(0, 0, 0, 0);
-
-    const sunday = new Date(startOfThisWeek);
-    sunday.setDate(startOfThisWeek.getDate() + 6);
-    sunday.setHours(23, 59, 59, 999);
+    // Get Friday of the current week
+    const start = startOfWeek(now, { weekStartsOn: 1 }); // Monday
+    const friday = new Date(start);
+    friday.setDate(start.getDate() + 4);
+    friday.setHours(0,0,0,0);
+    // Get Sunday of the current week
+    const sunday = endOfWeek(now, { weekStartsOn: 1 }); // Sunday
     
     return query(
       collection(firestore, 'events'),
       where('status', '==', 'published'),
       where('visibility', '==', 'public'),
-      where('city', '==', 'San Francisco'),
+      where('city', '==', 'Taipei'),
       where('startTime', '>=', Timestamp.fromDate(friday)),
       where('startTime', '<=', Timestamp.fromDate(sunday)),
       orderBy('startTime', 'asc'),
