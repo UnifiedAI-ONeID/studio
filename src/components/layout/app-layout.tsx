@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/hooks/use-auth';
@@ -27,8 +28,9 @@ import {
   Users2,
   UserCircle,
   Settings,
+  Database,
 } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import Link from 'next/link';
 
 const topNavItems = [
   { href: '/home', icon: LayoutDashboard, label: 'Home' },
@@ -43,7 +45,7 @@ const bottomNavItems = [
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, prompted } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -55,10 +57,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       if (user && (isAuthPage || isLandingPage)) {
         router.replace('/home');
       } else if (!user && !isAuthPage && !isLandingPage) {
-        router.replace('/');
+        // Allow access to /seed page even when not logged in
+        if (pathname !== '/seed') {
+          router.replace('/');
+        }
       }
     }
-  }, [user, loading, router, isAuthPage, isLandingPage]);
+  }, [user, loading, router, isAuthPage, isLandingPage, pathname]);
+
 
   if (isLandingPage && !user) {
     return (
@@ -77,7 +83,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (loading || !user) {
+  if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -88,7 +94,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
   
-  const userInitial = user?.displayName?.charAt(0).toUpperCase() || '?';
+  if (!user && pathname !== '/seed') {
+      return null; // Don't render layout if not logged in and not on a public page
+  }
 
   return (
     <SidebarProvider>
@@ -121,6 +129,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarContent>
         <SidebarFooter>
            <SidebarMenu>
+             <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname.startsWith('/seed')}>
+                  <Link href="/seed">
+                    <Database />
+                    <span>Seed Database</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            <SidebarSeparator/>
             {bottomNavItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton asChild isActive={pathname.startsWith(item.href)}>
@@ -144,5 +161,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
-
-    

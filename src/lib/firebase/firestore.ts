@@ -1,3 +1,4 @@
+
 import {
   doc,
   setDoc,
@@ -19,6 +20,8 @@ import { firestore } from './index';
 import type { User } from 'firebase/auth';
 import type { AppUser, Event, Venue, Thread, Comment, FollowTargetType, ReactionType, EventInteractionType } from '@/lib/types';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { placeholderEvents, placeholderVenues, placeholderThreads } from './placeholder-data';
+
 
 export const createUserProfile = async (user: User) => {
   const userRef = doc(firestore, 'users', user.uid);
@@ -383,4 +386,51 @@ export const getUserEventInteraction = async (userId: string, eventId: string): 
         return querySnapshot.docs[0].data().type as EventInteractionType;
     }
     return null;
+};
+
+// --- DATABASE SEEDING ---
+export const seedDatabase = async () => {
+  const batch = writeBatch(firestore);
+
+  // Seed Venues
+  placeholderVenues.forEach(venue => {
+    const docRef = doc(firestore, 'venues', venue.id);
+    batch.set(docRef, {
+        ...venue,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+    });
+  });
+
+  // Seed Events
+  placeholderEvents.forEach(event => {
+    const docRef = doc(firestore, 'events', event.id);
+    batch.set(docRef, {
+        ...event,
+        startTime: Timestamp.fromDate(new Date(event.startTime as unknown as string)),
+        endTime: event.endTime ? Timestamp.fromDate(new Date(event.endTime as unknown as string)) : undefined,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+    });
+  });
+  
+  // Seed Threads
+  placeholderThreads.forEach(thread => {
+      const docRef = doc(firestore, 'threads', thread.id);
+      batch.set(docRef, {
+          ...thread,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          lastActivityAt: serverTimestamp(),
+      });
+  });
+
+  try {
+    await batch.commit();
+    console.log('Database seeded successfully!');
+    return { success: true, message: 'Database seeded successfully!' };
+  } catch (error) {
+    console.error('Error seeding database:', error);
+    return { success: false, message: `Error seeding database: ${error}` };
+  }
 };
