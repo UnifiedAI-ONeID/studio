@@ -7,7 +7,7 @@ import {
   ReactNode,
   useContext
 } from 'react';
-import { User as FirebaseUser, onAuthStateChanged, Auth } from 'firebase/auth';
+import { User as FirebaseUser, Auth } from 'firebase/auth';
 import {
   doc,
   onSnapshot,
@@ -15,8 +15,9 @@ import {
 } from 'firebase/firestore';
 import {
   initializeFirebase,
+  auth as fAuth,
+  firestore as fs,
 } from '@/lib/firebase';
-import { firestore as fs, auth as fAuth } from '@/lib/firebase';
 import { useUser } from './auth/use-user';
 
 import type { AppUser } from '@/lib/types';
@@ -45,7 +46,7 @@ export const FirebaseContext = createContext<{
 } | null>(null);
 
 export function FirebaseProvider({ children }: { children: ReactNode }) {
-  const { auth, firestore } = initializeFirebase();
+  const { auth, firestore } = useMemo(() => initializeFirebase(), []);
 
   const value = useMemo(
     () => ({

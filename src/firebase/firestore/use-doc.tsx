@@ -2,8 +2,8 @@
 import { useState, useEffect } from 'react';
 import { onSnapshot, DocumentReference } from 'firebase/firestore';
 import type { DocumentWithId } from '@/lib/types';
-import { errorEmitter } from '../error-emitter';
-import { FirestorePermissionError } from '../errors';
+import { errorEmitter } from '@/lib/firebase/error-emitter';
+import { FirestorePermissionError } from '@/lib/firebase/errors';
 
 export function useDoc<T extends DocumentWithId>(ref: DocumentReference | null) {
   const [data, setData] = useState<T | null>(null);
@@ -46,5 +46,3 @@ export function useDoc<T extends DocumentWithId>(ref: DocumentReference | null) 
 
   return { data, loading, error };
 }
-
-    

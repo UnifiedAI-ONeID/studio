@@ -58,6 +58,9 @@ export default function FeaturedEventsGrid() {
     const unsubscribe = onSnapshot(eventsQuery, (snapshot) => {
       setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event)));
       setLoading(false);
+    }, (error) => {
+        console.error("Error fetching featured events:", error);
+        setLoading(false);
     });
     return () => unsubscribe();
   }, [eventsQuery]);

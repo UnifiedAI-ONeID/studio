@@ -30,6 +30,7 @@ import { createEvent, uploadImage } from '@/lib/firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { Venue } from '@/lib/types';
+import { useMemoFirebase } from '@/hooks/use-firebase-hooks';
 
 const categories = ['Music', 'Food & Drink', 'Talks', 'Sports', 'Arts', 'Networking', 'Other'];
 
@@ -40,7 +41,7 @@ export default function NewEventPage() {
   const [isLoading, setIsLoading] = useState(false);
   
   const [venues, setVenues] = useState<Venue[]>([]);
-  const venuesQuery = useMemo(() => query(collection(firestore, 'venues'), where('verified', '==', true), orderBy('name')), []);
+  const venuesQuery = useMemoFirebase(() => query(collection(firestore, 'venues'), where('verified', '==', true), orderBy('name')), []);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');

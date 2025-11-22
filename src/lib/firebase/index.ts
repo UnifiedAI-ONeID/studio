@@ -6,41 +6,26 @@ import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { firebaseConfig } from './config';
 
-import { FirebaseProvider, FirebaseClientProvider, useFirebase } from '@/firebase/provider';
-import { useUser } from '@/firebase/auth/use-user';
-import { useCollection } from '@/firebase/firestore/use-collection';
-import { useDoc } from '@/firebase/firestore/use-doc';
-import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
-import { useAuth as useFirebaseAuthHook } from '@/hooks/use-auth';
-
-
 // Initialize Firebase
 let app: FirebaseApp;
 let auth: Auth;
 let firestore: Firestore;
 let storage;
 
-const initializeFirebase = () => {
-  if (typeof window !== 'undefined') {
-    if (!getApps().length) {
-      app = initializeApp(firebaseConfig);
-    } else {
-      app = getApp();
-    }
-    auth = getAuth(app);
-    firestore = getFirestore(app);
-    storage = getStorage(app);
+function initializeFirebase() {
+  if (getApps().length === 0) {
+    app = initializeApp(firebaseConfig);
+  } else {
+    app = getApp();
   }
-  // For server-side rendering
+  auth = getAuth(app);
+  firestore = getFirestore(app);
+  storage = getStorage(app);
+  
   return { app, auth, firestore, storage };
 };
 
 initializeFirebase();
-
-const useAuth = useFirebaseAuthHook;
-const useFirebaseApp = useFirebase;
-const useFirestore = () => useFirebase().firestore;
-
 
 export { 
   app, 
@@ -48,14 +33,4 @@ export {
   firestore, 
   storage, 
   initializeFirebase,
-  FirebaseProvider,
-  FirebaseClientProvider,
-  useCollection,
-  useDoc,
-  useUser,
-  useFirebase,
-  useFirebaseApp,
-  useFirestore,
-  useAuth,
-  useMemoFirebase,
 };

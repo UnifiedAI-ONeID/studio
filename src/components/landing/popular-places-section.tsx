@@ -35,6 +35,9 @@ export default function PopularPlacesSection() {
     const unsubscribe = onSnapshot(venuesQuery, (snapshot) => {
       setVenues(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Venue)));
       setLoading(false);
+    }, (error) => {
+        console.error("Error fetching popular places:", error);
+        setLoading(false);
     });
     return () => unsubscribe();
   }, [venuesQuery]);

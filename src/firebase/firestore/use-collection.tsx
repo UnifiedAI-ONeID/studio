@@ -2,8 +2,8 @@
 import { useState, useEffect } from 'react';
 import { onSnapshot, Query, DocumentData } from 'firebase/firestore';
 import type { DocumentWithId } from '@/lib/types';
-import { errorEmitter } from '../error-emitter';
-import { FirestorePermissionError } from '../errors';
+import { errorEmitter } from '@/lib/firebase/error-emitter';
+import { FirestorePermissionError } from '@/lib/firebase/errors';
 
 export function useCollection<T extends DocumentWithId>(query: Query | null) {
   const [data, setData] = useState<T[] | undefined>(undefined);
@@ -42,5 +42,3 @@ export function useCollection<T extends DocumentWithId>(query: Query | null) {
 
   return { data, loading, error };
 }
-
-    

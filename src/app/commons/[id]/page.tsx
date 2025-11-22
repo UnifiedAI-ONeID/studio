@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { useAuth, useDoc, useCollection, useMemoFirebase } from '@/lib/firebase';
+import { useAuth } from '@/hooks/use-auth';
+import { useDoc, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import { doc, collection, query, orderBy, Timestamp } from 'firebase/firestore';
 import { firestore } from '@/lib/firebase/index';
 import { createComment, reportContent, addReaction, removeReaction, addCommentReaction, removeCommentReaction, getUserReactionsForThread } from '@/lib/firebase/firestore';

@@ -2,7 +2,8 @@
 
 import { useAuth } from '@/hooks/use-auth';
 import { collection, query, where, orderBy, Timestamp, limit } from 'firebase/firestore';
-import { firestore, useCollection } from '@/lib/firebase';
+import { firestore } from '@/lib/firebase/index';
+import { useCollection } from '@/hooks/use-firebase-hooks';
 import type { Event } from '@/lib/types';
 import Link from 'next/link';
 import Image from 'next/image';

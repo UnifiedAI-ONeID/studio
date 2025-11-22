@@ -2,7 +2,8 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { collection, query, orderBy, where } from 'firebase/firestore';
-import { firestore, useCollection, useAuth, useMemoFirebase } from '@/lib/firebase';
+import { firestore } from '@/lib/firebase/index';
+import { useCollection, useAuth, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import type { Thread } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

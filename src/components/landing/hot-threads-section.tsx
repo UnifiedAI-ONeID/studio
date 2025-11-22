@@ -55,6 +55,9 @@ export default function HotThreadsSection() {
     const unsubscribe = onSnapshot(threadsQuery, (snapshot) => {
       setThreads(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Thread)));
       setLoading(false);
+    }, (error) => {
+        console.error("Error fetching hot threads:", error);
+        setLoading(false);
     });
     return () => unsubscribe();
   }, [threadsQuery]);
