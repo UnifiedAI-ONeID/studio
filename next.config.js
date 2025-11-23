@@ -29,12 +29,12 @@ const pwaConfig = {
       },
     },
      {
-      urlPattern: ({ url }) => url.origin === self.location.origin && url.pathname.startsWith('/icons/'),
+      urlPattern: ({ url }) => url.origin === self.location.origin && (url.pathname.startsWith('/icons/') || url.pathname.startsWith('/manifest.json')),
       handler: 'CacheFirst',
       options: {
-        cacheName: 'app-icons',
+        cacheName: 'app-icons-manifest',
         expiration: {
-          maxEntries: 10,
+          maxEntries: 20,
           maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
         },
       },
