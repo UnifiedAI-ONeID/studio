@@ -1,176 +1,77 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- Helper Functions ---
     function isSignedIn() {
       return request.auth != null;
     }
 
-    function isUser(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    function isAdmin() {
-      // In a real app, this would be more secure, e.g., checking a custom claim.
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-    
-    function isOwner(ownerId) {
-      return isSignedIn() && request.auth.uid == ownerId;
-    }
-    
-    // --- Request Operation Helpers ---
-    function isCreating() {
-      return request.method == 'create';
-    }
-    function isUpdating() {
-      return request.method == 'update';
-    }
-    function isDeleting() {
-      return request.method == 'delete';
-    }
-
-    // --- Data & Schema Helpers ---
-    function incomingData() {
-      return request.resource.data;
-    }
-
-    function existingData() {
-      return resource.data;
-    }
-    
-    function isUnchanged(field) {
-      return incomingData()[field] == existingData()[field];
-    }
-    
-    // --- Schema Validation Functions ---
-
-    function isValidUserProfile() {
-      let data = incomingData();
-      let isNewUser = isCreating();
-
-      return data.uid == request.auth.uid
-          && data.email is string
-          && (data.displayName == null || (data.displayName is string && data.displayName.size() > 0 && data.displayName.size() < 50))
-          // photoURL and homeCity are optional and can be set later.
-          && (data.photoURL == null || (data.photoURL is string && data.photoURL.matches('^https?://.*')))
-          && (data.homeCity == null || data.homeCity is string)
-          // Role can only be 'user' at creation and cannot be changed by the user.
-          && (isNewUser ? data.role == 'user' : isUnchanged('role'));
-    }
-
-    function isValidEvent() {
-      let data = incomingData();
-      return data.title is string && data.title.size() >= 5 && data.title.size() < 100
-          && data.description is string && data.description.size() >= 10 && data.description.size() < 5000
-          && data.category is string && data.category.size() > 0
-          && data.startTime is timestamp
-          // Server-set fields are checked separately. This function validates client-sent data.
-          && (isCreating() || isUpdating());
-    }
-    
-    function isSecureEventWrite() {
-        return isOwner(incomingData().createdBy) && incomingData().hostId == request.auth.uid;
-    }
-
-    function isValidVenue() {
-        let data = incomingData();
-        return data.name is string && data.name.size() >= 3 && data.name.size() < 100
-            && data.categories is list && data.categories.size() > 0
-            && data.address is string && data.address.size() >= 5 && data.address.size() < 200
-            && data.neighborhood is string
-            && (data.description == null || (data.description is string && data.description.size() < 5000))
-            && (isCreating() || isUpdating());
-    }
-
-    function isSecureVenueWrite() {
-        return isOwner(incomingData().createdBy);
-    }
-
-    function isValidThread() {
-        let data = incomingData();
-        return data.title is string && data.title.size() >= 5 && data.title.size() < 150
-            && data.body is string && data.body.size() >= 10 && data.body.size() < 10000
-            && data.topic is string && data.topic.size() > 0
-            && (isCreating() || isUpdating());
-    }
-    
-    function isSecureThreadWrite() {
-        return isOwner(incomingData().authorId) && incomingData().city == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.homeCity;
-    }
-
-    function isValidComment() {
-        let data = incomingData();
-        return data.threadId is string
-            && data.body is string && data.body.size() > 0 && data.body.size() < 5000
-             && (isCreating() || isUpdating());
-    }
-    
-    function isSecureCommentWrite() {
-        return isOwner(incomingData().createdBy);
-    }
-
-
-    // --- Rules ---
-
-    match /users/{userId} {
-      allow read: if isSignedIn();
-      allow create: if request.auth.uid == userId && isValidUserProfile();
-      allow update: if (isUser(userId) && isValidUserProfile()) || isAdmin();
-      allow delete: if isUser(userId) || isAdmin();
-    }
-    
+    // EVENTS
+    // - Public reads only for published + public events
+    // - Any signed-in user can create (you can tighten later)
+    // - Only owner can update/delete
     match /events/{eventId} {
-      allow read: if resource.data.visibility == 'public' && resource.data.status == 'published';
-      allow create: if isSignedIn() && isValidEvent() && isSecureEventWrite();
-      allow update: if (isOwner(existingData().createdBy) || isAdmin()) && isValidEvent() && isUnchanged('createdAt') && isUnchanged('createdBy') && isSecureEventWrite();
-      allow delete: if isOwner(existingData().createdBy) || isAdmin();
+      allow read: if resource.data.status == "published"
+                  && resource.data.visibility == "public";
+
+      allow create: if isSignedIn();
+
+      allow update, delete: if isSignedIn()
+                            && request.auth.uid == resource.data.ownerId;
     }
-    
+
+    // VENUES
+    // - Public readable (for directory / landing)
+    // - Only signed-in user who owns the venue can write
     match /venues/{venueId} {
       allow read: if true;
-      allow create: if isSignedIn() && isValidVenue() && isSecureVenueWrite();
-      allow update: if (isOwner(existingData().createdBy) || isAdmin()) && isValidVenue() && isUnchanged('createdAt') && isUnchanged('createdBy') && isSecureVenueWrite();
-      allow delete: if isOwner(existingData().createdBy) || isAdmin();
+
+      allow create: if isSignedIn();
+
+      allow update, delete: if isSignedIn()
+                            && request.auth.uid == resource.data.ownerId;
     }
-    
+
+    // THREADS (Commons)
+    // - Public readable
+    // - Any signed-in user can create
+    // - Only author can update/delete
     match /threads/{threadId} {
       allow read: if true;
-      allow create: if isSignedIn() && isValidThread() && isSecureThreadWrite();
-      allow update: if (isOwner(existingData().authorId) || isAdmin()) && isValidThread() && isUnchanged('createdAt') && isUnchanged('authorId') && isSecureThreadWrite();
-      allow delete: if isOwner(existingData().authorId) || isAdmin();
 
-      match /comments/{commentId} {
-        allow read: if true;
-        allow create: if isSignedIn() && isValidComment() && isSecureCommentWrite();
-        allow update: if (isOwner(existingData().createdBy) || isAdmin()) && isValidComment() && isUnchanged('createdAt') && isUnchanged('createdBy') && isSecureCommentWrite();
-        allow delete: if isOwner(existingData().createdBy) || isAdmin();
-      }
+      allow create: if isSignedIn();
+
+      allow update, delete: if isSignedIn()
+                            && request.auth.uid == resource.data.authorId;
     }
 
-    match /eventInteractions/{interactionId} {
-      allow read, delete: if isOwner(resource.data.userId);
-      allow create, update: if isOwner(incomingData().userId);
+    // THREAD REPLIES
+    // - Public readable
+    // - Any signed-in user can create
+    // - Only author can update/delete
+    match /threads/{threadId}/replies/{replyId} {
+      allow read: if true;
+
+      allow create: if isSignedIn();
+
+      allow update, delete: if isSignedIn()
+                            && request.auth.uid == resource.data.authorId;
     }
-    
-    match /follows/{followId} {
-        allow read, delete: if isOwner(resource.data.userId);
-        allow create: if isOwner(incomingData().userId);
+
+    // USERS / PROFILES
+    // - Everyone can read basic profiles
+    // - Only the user can write their own document
+    match /users/{userId} {
+      allow read: if true;
+
+      allow create, update, delete: if isSignedIn()
+                                    && request.auth.uid == userId;
     }
-    
-    match /reports/{reportId} {
-        allow create: if isSignedIn() && isOwner(incomingData().createdBy);
-        allow read, update, delete: if isAdmin();
-    }
-    
-    match /newsletterSubscribers/{subscriberId} {
-        allow create: if true;
-        allow read, update, delete: if isAdmin();
+
+    // Fallback: deny everything else by default
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
-
-    

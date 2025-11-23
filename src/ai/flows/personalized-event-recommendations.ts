@@ -9,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 import { findEvents } from '../tools/event-finder';
 
 const PersonalizedEventRecommendationsInputSchema = z.object({
@@ -31,12 +31,6 @@ const PersonalizedEventRecommendationsOutputSchema = z.object({
   })).describe('A list of personalized event recommendations'),
 });
 export type PersonalizedEventRecommendationsOutput = z.infer<typeof PersonalizedEventRecommendationsOutputSchema>;
-
-export async function getPersonalizedEventRecommendations(
-    input: PersonalizedEventRecommendationsInput
-): Promise<PersonalizedEventRecommendationsOutput> {
-  return personalizedEventRecommendationsFlow(input);
-}
 
 const eventRecommendationPrompt = ai.definePrompt({
   name: 'eventRecommendationPrompt',
@@ -62,7 +56,7 @@ const eventRecommendationPrompt = ai.definePrompt({
   `,
 });
 
-const personalizedEventRecommendationsFlow = ai.defineFlow(
+export const getPersonalizedEventRecommendations = ai.defineFlow(
     {
       name: 'personalizedEventRecommendationsFlow',
       inputSchema: PersonalizedEventRecommendationsInputSchema,

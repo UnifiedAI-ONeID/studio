@@ -9,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 import { findVenues } from '../tools/venue-finder';
 
 const PersonalizedDirectoryRecommendationsInputSchema = z.object({
@@ -37,12 +37,6 @@ export type PersonalizedDirectoryRecommendationsOutput = z.infer<
   typeof PersonalizedDirectoryRecommendationsOutputSchema
 >;
 
-export async function getPersonalizedDirectoryRecommendations(
-  input: PersonalizedDirectoryRecommendationsInput
-): Promise<PersonalizedDirectoryRecommendationsOutput> {
-  return personalizedDirectoryRecommendationsFlow(input);
-}
-
 const prompt = ai.definePrompt({
   name: 'personalizedDirectoryRecommendationsPrompt',
   input: {
@@ -69,7 +63,7 @@ const prompt = ai.definePrompt({
   `,
 });
 
-const personalizedDirectoryRecommendationsFlow = ai.defineFlow(
+export const getPersonalizedDirectoryRecommendations = ai.defineFlow(
   {
     name: 'personalizedDirectoryRecommendationsFlow',
     inputSchema: PersonalizedDirectoryRecommendationsInputSchema,
