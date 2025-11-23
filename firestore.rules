@@ -13,15 +13,25 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // In a real app, you would have a more robust way to check for admins.
-      // This is a placeholder for demonstration purposes.
       return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
     
     function isOwner(ownerId) {
-        return request.auth.uid == ownerId;
+      return isSignedIn() && request.auth.uid == ownerId;
     }
     
+    // --- Request Operation Helpers ---
+    function isCreating() {
+      return request.method == 'create';
+    }
+    function isUpdating() {
+      return request.method == 'update';
+    }
+    function isDeleting() {
+      return request.method == 'delete';
+    }
+
+    // --- Data & Schema Helpers ---
     function incomingData() {
       return request.resource.data;
     }
@@ -29,60 +39,105 @@ service cloud.firestore {
     function existingData() {
       return resource.data;
     }
+    
+    function isUnchanged(field) {
+      return incomingData()[field] == existingData()[field];
+    }
+    
+    // --- Schema Validation Functions ---
+
+    function isValidUserProfile() {
+      let data = incomingData();
+      return data.uid == request.auth.uid
+          && data.email is string
+          && (data.displayName == null || data.displayName is string)
+          && (data.photoURL == null || data.photoURL is string)
+          && (data.role == 'user' || data.role == 'admin');
+    }
+
+    function isValidEvent() {
+      let data = incomingData();
+      return data.title is string && data.title.size() > 0
+          && data.category is string
+          && data.startTime is timestamp
+          && data.hostId is string
+          && data.status is string
+          && data.visibility is string
+          && data.approvalStatus is string
+          && data.createdBy is string;
+    }
+
+    function isValidVenue() {
+        let data = incomingData();
+        return data.name is string && data.name.size() > 0
+            && data.type is string
+            && data.address is string
+            && data.neighborhood is string
+            && data.createdBy is string
+            && data.verified is bool;
+    }
+
+    function isValidThread() {
+        let data = incomingData();
+        return data.title is string && data.title.size() > 0
+            && data.body is string && data.body.size() > 0
+            && data.topic is string
+            && data.createdBy is string;
+    }
+
+    function isValidComment() {
+        let data = incomingData();
+        return data.threadId is string
+            && data.body is string && data.body.size() > 0
+            && data.createdBy is string;
+    }
+
 
     // --- Rules ---
 
-    // Users can only read their own profile, but can see basic info of others
+    // Users can read profiles, but only owners can create/update their own.
     match /users/{userId} {
-      allow read: if true;
-      allow create: if isUser(userId);
-      allow update: if isUser(userId);
+      allow read: if isSignedIn();
+      allow create: if isUser(userId) && isValidUserProfile();
+      allow update: if isUser(userId) && isValidUserProfile();
       allow delete: if isUser(userId) || isAdmin();
     }
     
-    // Events are public to read
     match /events/{eventId} {
       allow read: if true;
-      allow create: if isSignedIn();
-      allow update: if (isSignedIn() && isOwner(existingData().hostId)) || isAdmin();
-      allow delete: if (isSignedIn() && isOwner(existingData().hostId)) || isAdmin();
+      allow create: if isSignedIn() && isOwner(incomingData().hostId) && isValidEvent();
+      allow update: if (isOwner(existingData().hostId) || isAdmin()) && isValidEvent();
+      allow delete: if isOwner(existingData().hostId) || isAdmin();
     }
     
-    // Venues are public to read
     match /venues/{venueId} {
       allow read: if true;
-      allow create: if isSignedIn();
-      allow update, delete: if (isSignedIn() && isOwner(existingData().createdBy)) || isAdmin();
+      allow create: if isSignedIn() && isOwner(incomingData().createdBy) && isValidVenue();
+      allow update, delete: if (isOwner(existingData().createdBy) || isAdmin());
     }
     
-    // Commons threads are public to read
-    match /commonsThreads/{threadId} {
+    match /threads/{threadId} {
       allow read: if true;
-      allow create: if isSignedIn() && isOwner(incomingData().authorId);
-      allow update: if (isOwner(existingData().authorId) || isAdmin()) && incomingData().createdAt == existingData().createdAt;
-      allow delete: if isOwner(existingData().authorId) || isAdmin();
-    }
+      allow create: if isSignedIn() && isOwner(incomingData().createdBy) && isValidThread();
+      allow update: if (isOwner(existingData().createdBy) || isAdmin()) && isUnchanged('createdAt');
+      allow delete: if isOwner(existingData().createdBy) || isAdmin();
 
-    // Replies are public to read
-    match /commonsReplies/{replyId} {
+      match /comments/{commentId} {
         allow read: if true;
-        allow create: if isSignedIn() && isOwner(incomingData().authorId);
-        allow update: if (isOwner(existingData().authorId) || isAdmin()) && incomingData().createdAt == existingData().createdAt;
-        allow delete: if isOwner(existingData().authorId) || isAdmin();
+        allow create: if isSignedIn() && isOwner(incomingData().createdBy) && isValidComment();
+        allow update: if (isOwner(existingData().createdBy) || isAdmin()) && isUnchanged('createdAt');
+        allow delete: if isOwner(existingData().createdBy) || isAdmin();
+      }
     }
 
-    // Interactions require a user to be logged in
     match /eventInteractions/{interactionId} {
-      allow read: if isSignedIn() && isUser(resource.data.userId);
-      allow create, update: if isSignedIn() && isUser(incomingData().userId);
-      allow delete: if isSignedIn() && isUser(resource.data.userId);
+      allow read, delete: if isOwner(existingData().userId);
+      allow create, update: if isOwner(incomingData().userId);
     }
     
-    // Follows require a user to be logged in
     match /follows/{followId} {
-        allow read: if isSignedIn() && isUser(resource.data.followerUserId);
-        allow create: if isSignedIn() && isUser(incomingData().followerUserId);
-        allow delete: if isSignedIn() && isUser(resource.data.followerUserId);
+        allow read, delete: if isOwner(existingData().userId);
+        allow create: if isOwner(incomingData().userId);
     }
     
     match /reports/{reportId} {
@@ -90,7 +145,6 @@ service cloud.firestore {
         allow read, update, delete: if isAdmin();
     }
     
-    // Newsletter subscribers can be created by anyone
     match /newsletterSubscribers/{subscriberId} {
         allow create: if true;
         allow read, update, delete: if isAdmin();
