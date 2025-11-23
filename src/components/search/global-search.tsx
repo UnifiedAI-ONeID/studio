@@ -164,7 +164,7 @@ export default function GlobalSearch({
             {!loading && results.length > 0 && (
                  <div className="divide-y">
                     {results.map(result => (
-                        <Link href={result.path} key={result.id} onClick={() => onOpenChange(false)} className="block">
+                        <Link href={result.path} key={result.id} onClick={() => onOpenChange(false)}>
                             <div className="flex items-center gap-4 p-3 hover:bg-muted/50 rounded-md">
                                 {getIcon(result.type)}
                                 <span className="flex-1 font-medium truncate">{result.title}</span>

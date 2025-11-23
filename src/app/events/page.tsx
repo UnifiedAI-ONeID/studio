@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
@@ -48,7 +48,13 @@ export default function EventsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   const [activeDateFilter, setActiveDateFilter] = useState('All');
+  const [clientNow, setClientNow] = useState<Date | null>(null);
   const placeholder = PlaceHolderImages.find(p => p.id.includes('event')) || PlaceHolderImages[0];
+
+  useEffect(() => {
+    // Set the current date on the client after hydration
+    setClientNow(new Date());
+  }, []);
 
   const eventsQuery = useMemoFirebase(() => query(
     collection(firestore, 'events'),
@@ -69,19 +75,22 @@ export default function EventsPage() {
   };
   
   const filteredEvents = useMemo(() => {
-    if (!events) return [];
+    // Do not filter until the client-side "now" is established
+    if (!events || !clientNow) return [];
+    
     return events.filter((event) => {
         if (!event.startTime) return false;
         const eventDate = (event.startTime as Timestamp).toDate();
-        const now = new Date();
-        if (eventDate < now && !isToday(eventDate)) return false; // Filter out past events
+        
+        // Use client-side "now" for filtering past events
+        if (eventDate < clientNow && !isToday(eventDate)) return false;
 
         // Date filtering
         if (activeDateFilter === 'Today' && !isToday(eventDate)) return false;
         if (activeDateFilter === 'Tomorrow' && !isTomorrow(eventDate)) return false;
         if (activeDateFilter === 'This weekend') {
-          const startOfThisWeek = startOfWeek(now);
-          const endOfThisWeek = endOfWeek(now);
+          // Use client-side "now" for calculating the weekend
+          const startOfThisWeek = startOfWeek(clientNow);
           const weekendStart = new Date(startOfThisWeek.setDate(startOfThisWeek.getDate() + (5 - startOfThisWeek.getDay() + 7) % 7)); // Friday
           const weekendEnd = new Date(new Date(weekendStart).setDate(weekendStart.getDate() + 2)); // Sunday
           if (!isWithinInterval(eventDate, { start: weekendStart, end: weekendEnd })) {
@@ -101,7 +110,9 @@ export default function EventsPage() {
         
         return true;
       });
-  }, [events, activeDateFilter, activeCategories, searchTerm]);
+  }, [events, activeDateFilter, activeCategories, searchTerm, clientNow]);
+
+  const displayLoading = loading || !clientNow;
 
   return (
     <div className="container mx-auto">
@@ -147,7 +158,7 @@ export default function EventsPage() {
         </div>
       </div>
 
-      {loading && (
+      {displayLoading && (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {[...Array(8)].map((_, i) => <EventCardSkeleton key={i} />)}
         </div>
@@ -155,7 +166,7 @@ export default function EventsPage() {
 
       {error && <p className="text-destructive text-center py-10">Error loading events: {error.message}</p>}
 
-      {!loading && filteredEvents && filteredEvents.length > 0 && (
+      {!displayLoading && filteredEvents && filteredEvents.length > 0 && (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredEvents.map((event) => (
             <Link href={`/events/${event.id}`} key={event.id}>
@@ -187,7 +198,12 @@ export default function EventsPage() {
         </div>
       )}
       
-      {!loading && (!filteredEvents || filteredEvents.length === 0) && (
+      {!displayLoading && (!filteredEvents || filteredEvents.length === 0) && (
         <div className="text-center py-16 border border-dashed rounded-lg">
           <h3 className="text-xl font-semibold">No events found</h3>
-          <p className="text-muted-foreground mt-2">Try adjusting your filters or
+          <p className="text-muted-foreground mt-2">Try adjusting your filters or search term.</p>
+        </div>
+      )}
+    </div>
+  );
+}

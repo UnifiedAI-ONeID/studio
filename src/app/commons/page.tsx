@@ -1,5 +1,6 @@
+
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { collection, query, orderBy, where, limit, QueryConstraint } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';
@@ -54,7 +55,7 @@ export default function CommonsPage() {
 
   const { data: threads, loading, error } = useCollection<CommonsThread>(threadsQuery);
 
-  const filteredThreads = useMemoFirebase(() => {
+  const filteredThreads = useMemo(() => {
     if (!threads) return [];
     if (!searchTerm) return threads;
     return threads.filter(thread => 
