@@ -52,7 +52,7 @@ export default function EventsPage() {
   const placeholder = PlaceHolderImages.find(p => p.id.includes('event')) || PlaceHolderImages[0];
 
   useEffect(() => {
-    // Set the current date on the client after hydration
+    // Set the current date on the client after hydration to avoid mismatch
     setClientNow(new Date());
   }, []);
 
@@ -75,7 +75,7 @@ export default function EventsPage() {
   };
   
   const filteredEvents = useMemo(() => {
-    // Do not filter until the client-side "now" is established
+    // Do not filter until the client-side "now" is established to prevent hydration mismatch
     if (!events || !clientNow) return [];
     
     return events.filter((event) => {
@@ -93,6 +93,8 @@ export default function EventsPage() {
           const startOfThisWeek = startOfWeek(clientNow);
           const weekendStart = new Date(startOfThisWeek.setDate(startOfThisWeek.getDate() + (5 - startOfThisWeek.getDay() + 7) % 7)); // Friday
           const weekendEnd = new Date(new Date(weekendStart).setDate(weekendStart.getDate() + 2)); // Sunday
+          weekendStart.setHours(0,0,0,0);
+          weekendEnd.setHours(23,59,59,999);
           if (!isWithinInterval(eventDate, { start: weekendStart, end: weekendEnd })) {
               return false;
           }

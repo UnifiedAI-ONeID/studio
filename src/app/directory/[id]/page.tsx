@@ -152,7 +152,7 @@ export default function VenueDetailPage() {
     <div className="bg-background">
       <div className="container mx-auto max-w-4xl pb-12">
         <div className="relative h-64 w-full md:h-80 rounded-b-lg overflow-hidden -mt-8 -mx-4">
-          <Image src={venue.coverImageUrl || placeholder.imageUrl} alt={venue.name} fill className="object-cover" />
+          <Image src={venue.coverImageUrl || placeholder.imageUrl} alt={venue.name} fill className="object-cover" data-ai-hint={placeholder.imageHint} />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
         </div>
 
