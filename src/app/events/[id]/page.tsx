@@ -298,5 +298,4 @@ export default function EventDetailPage() {
     </div>
   );
 }
-
     
