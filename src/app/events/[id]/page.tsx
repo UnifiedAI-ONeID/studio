@@ -147,7 +147,7 @@ export default function EventDetailPage() {
     }
   };
   
-  const discussionLink = `/commons/new?relatedEventId=${eventId}&title=${encodeURIComponent(`Discuss: ${event?.title}`)}&topic=general`;
+  const discussionLink = `/commons/new?relatedEventId=${eventId}&title=${encodeURIComponent(`Discuss: ${event?.title}`)}&topic=events`;
 
   const handleDiscussionClick = (e: React.MouseEvent) => {
     if (!user) {

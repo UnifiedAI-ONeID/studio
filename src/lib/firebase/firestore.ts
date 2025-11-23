@@ -143,7 +143,16 @@ export const createVenue = async (
 };
 
 
-type CreateThreadData = Partial<Omit<CommonsThread, 'id' | 'createdAt' | 'updatedAt' | 'lastActivityAt' | 'stats' | 'authorId' | 'authorInfo'>>;
+type CreateThreadData = {
+  title: string;
+  body: string;
+  topic: string;
+  tags?: string[];
+  city?: string;
+  relatedEventId?: string;
+  relatedVenueId?: string;
+};
+
 
 export const createThread = async (threadData: CreateThreadData, user: AppUser): Promise<string> => {
     const threadCollection = collection(firestore, 'threads');
@@ -179,7 +188,7 @@ export const createThread = async (threadData: CreateThreadData, user: AppUser):
     }
 };
 
-type CreateReplyData = Partial<Omit<CommonsReply, 'id' | 'createdAt' | 'updatedAt' | 'likeCount' | 'authorId' | 'authorInfo' | 'createdBy'>>;
+type CreateReplyData = Partial<Omit<CommonsReply, 'id' | 'createdAt' | 'updatedAt' | 'likeCount' | 'authorId' | 'authorInfo'>>;
 
 export const createReply = async (replyData: CreateReplyData, user: AppUser): Promise<string> => {
     const batch = writeBatch(firestore);
