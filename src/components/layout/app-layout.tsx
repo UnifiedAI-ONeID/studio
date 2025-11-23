@@ -31,7 +31,6 @@ import {
   MessageSquare,
   User,
   Settings,
-  Database,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -129,14 +128,6 @@ const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => {
         <SidebarFooter>
            <SidebarMenu>
             <SidebarSeparator/>
-            <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith('/seed')}>
-                  <Link href="/seed">
-                    <Database />
-                    <span>Seed Database</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             {bottomNavItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton asChild isActive={pathname.startsWith(item.href)}>
