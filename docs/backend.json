@@ -171,47 +171,47 @@
   },
   "firestore": {
     "/users/{userId}": {
-      "schema": { "$ref": "#/backend/entities/UserProfile" },
+      "schema": { "$ref": "#/entities/UserProfile" },
       "description": "Stores public-facing user profile information."
     },
     "/users/{userId}/follows/{followId}": {
-        "schema": { "$ref": "#/backend/entities/Follow" },
+        "schema": { "$ref": "#/entities/Follow" },
         "description": "Stores a user's follow relationships."
     },
     "/events/{eventId}": {
-      "schema": { "$ref": "#/backend/entities/Event" },
+      "schema": { "$ref": "#/entities/Event" },
       "description": "Stores all event data."
     },
     "/venues/{venueId}": {
-      "schema": { "$ref": "#/backend/entities/Venue" },
+      "schema": { "$ref": "#/entities/Venue" },
       "description": "Stores data for physical venues."
     },
     "/threads/{threadId}": {
-      "schema": { "$ref": "#/backend/entities/Thread" },
+      "schema": { "$ref": "#/entities/Thread" },
       "description": "Stores discussion threads for the Commons."
     },
     "/threads/{threadId}/comments/{commentId}": {
-      "schema": { "$ref": "#/backend/entities/Comment" },
+      "schema": { "$ref": "#/entities/Comment" },
       "description": "Stores comments for a specific thread."
     },
     "/threads/{threadId}/reactions/{reactionId}": {
-      "schema": { "$ref": "#/backend/entities/Reaction" },
+      "schema": { "$ref": "#/entities/Reaction" },
       "description": "Stores reactions for a specific thread."
     },
     "/threads/{threadId}/comments/{commentId}/reactions/{reactionId}": {
-      "schema": { "$ref": "#/backend/entities/Reaction" },
+      "schema": { "$ref": "#/entities/Reaction" },
       "description": "Stores reactions for a specific comment."
     },
     "/comments/{commentId}/reactions/{reactionId}": {
-      "schema": { "$ref": "#/backend/entities/Reaction" },
+      "schema": { "$ref": "#/entities/Reaction" },
       "description": "Stores reactions for a specific comment."
     },
     "/reports/{reportId}": {
-      "schema": { "$ref": "#/backend/entities/Report" },
+      "schema": { "$ref": "#/entities/Report" },
       "description": "Stores user-submitted reports for moderation."
     },
     "/eventInteractions/{interactionId}": {
-      "schema": { "$ref": "#/backend/entities/EventInteraction" },
+      "schema": { "$ref": "#/entities/EventInteraction" },
       "description": "Tracks user interactions with events."
     }
   }

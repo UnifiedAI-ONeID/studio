@@ -1,3 +1,4 @@
+
 import {
   doc,
   setDoc,
@@ -39,24 +40,29 @@ class ValidationError extends Error {
 
 export const createUserProfile = async (user: User) => {
   const userRef = doc(firestore, 'users', user.uid);
-  
   try {
     const userDoc = await getDoc(userRef);
     if (!userDoc.exists()) {
       const { uid, email, displayName, photoURL } = user;
       const profileData: Omit<AppUser, 'id'> = {
+        uid: uid,
         displayName: displayName || 'New User',
         photoURL: photoURL || `https://i.pravatar.cc/150?u=${uid}`,
         email: email,
-        bio: '',
+        role: 'user',
         interests: ['Technology', 'Music', 'Art'],
-        skills: [],
-        locationPreferences: [],
         createdAt: serverTimestamp() as Timestamp,
         updatedAt: serverTimestamp() as Timestamp,
-        isSampleData: false,
       };
-      await setDoc(userRef, profileData);
+      try {
+        await setDoc(userRef, profileData);
+      } catch (e) {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: userRef.path,
+              operation: 'create',
+              requestResourceData: profileData
+          }));
+      }
     }
   } catch(serverError) {
     errorEmitter.emit('permission-error', new FirestorePermissionError({

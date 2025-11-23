@@ -6,6 +6,8 @@ export interface DocumentWithId {
 }
 
 export interface AppUser extends DocumentWithId {
+  uid: string;
+  role: 'user' | 'admin';
   displayName: string;
   photoURL?: string;
   email?: string;
@@ -42,8 +44,8 @@ export interface Event extends DocumentWithId {
     lng?: number;
   };
   priceType: PriceType;
-  minPrice?: number;
-  maxPrice?: number;
+  priceMin?: number;
+  priceMax?: number;
   coverImageUrl?: string;
   ticketUrl?: string;
   hostId: string;
@@ -215,5 +217,3 @@ export interface Reaction {
     type: 'like';
     createdAt: Timestamp;
 }
-
-    
