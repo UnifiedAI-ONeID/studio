@@ -60,7 +60,7 @@ export default function CommonsPage() {
     if (!searchTerm) return threads;
     return threads.filter(thread => 
         thread.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        thread.body.toLowerCase().includes(searchTerm.toLowerCase())
+        (thread.bodyPreview && thread.bodyPreview.toLowerCase().includes(searchTerm.toLowerCase()))
       );
   }, [threads, searchTerm]);
 
@@ -113,7 +113,7 @@ export default function CommonsPage() {
                   <CardTitle className="font-headline text-lg">{thread.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{thread.body}</p>
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{thread.bodyPreview}</p>
                    <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                        <Avatar className="h-6 w-6">

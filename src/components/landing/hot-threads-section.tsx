@@ -20,7 +20,7 @@ function ThreadRow({ thread }: { thread: CommonsThread }) {
             <h4 className="font-headline font-semibold text-slate-800">{thread.title}</h4>
             <Badge variant="outline" className="hidden sm:block capitalize border-slate-200 text-slate-600">{thread.topic}</Badge>
         </div>
-        <p className="mt-1 text-sm text-slate-500 line-clamp-2">{thread.body}</p>
+        <p className="mt-1 text-sm text-slate-500 line-clamp-2">{thread.bodyPreview}</p>
         <div className="mt-2 flex items-center gap-4 text-xs text-slate-500">
             <span>By {thread.authorInfo?.displayName || 'User'}</span>
             <span className="flex items-center gap-1.5"><MessageSquare className="h-3 w-3" /> {thread.stats.replyCount} replies</span>

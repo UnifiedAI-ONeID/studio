@@ -113,6 +113,7 @@ export interface Organization extends DocumentWithId {
 export interface CommonsThread extends DocumentWithId {
   title: string;
   body: string;
+  bodyPreview?: string;
   topic: string;
   city?: string;
   tags?: string[];

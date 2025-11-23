@@ -28,21 +28,19 @@ const venues = [
     name: "Midnight Alley Jazz Bar",
     city: "Taipei",
     neighborhood: "Zhongshan",
-    shortDescription: "Intimate live jazz bar with local bands every weekend.",
-    longDescription:
+    homepageTagline: "Intimate live jazz bar with local bands every weekend.",
+    description:
       "A cozy basement venue in the heart of Zhongshan. Expect small-batch cocktails, local jazz bands, and late-night conversations.",
-    type: "bar",
+    categories: ["bar", "live music"],
     capacity: 80,
     tags: ["live music", "jazz", "nightlife"],
     isFeaturedOnLanding: true,
     homepageOrder: 1,
     coverImageUrl:
       "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=1200&q=80",
-    logoUrl: "https://placehold.co/160x160?text=Midnight+Alley",
-    websiteUrl: "https://example.com/midnight-alley",
-    socials: {
-      instagram: "https://instagram.com/midnightalley",
-    },
+    isSampleData: true,
+    status: 'approved',
+    createdBy: 'system',
     createdAt: now,
     updatedAt: now,
   },
@@ -51,22 +49,20 @@ const venues = [
     name: "Rooftop Lab",
     city: "Taipei",
     neighborhood: "Xinyi",
-    shortDescription:
+    homepageTagline:
       "Experimental rooftop space for salons, screenings, and pop-ups.",
-    longDescription:
+    description:
       "An open-air rooftop with modular seating and a small indoor lab. Great for founders’ meetups, screenings, and design sprints.",
-    type: "rooftop",
+    categories: ["rooftop", "founders"],
     capacity: 120,
     tags: ["founders", "startups", "screenings"],
     isFeaturedOnLanding: true,
     homepageOrder: 2,
     coverImageUrl:
       "https://images.unsplash.com/photo-1486946255434-2466348c2166?auto=format&fit=crop&w=1200&q=80",
-    logoUrl: "https://placehold.co/160x160?text=Rooftop+Lab",
-    websiteUrl: "https://example.com/rooftop-lab",
-    socials: {
-      instagram: "https://instagram.com/rooftoplab",
-    },
+    isSampleData: true,
+    status: 'approved',
+    createdBy: 'system',
     createdAt: now,
     updatedAt: now,
   },
@@ -75,22 +71,20 @@ const venues = [
     name: "Impact House",
     city: "Taipei",
     neighborhood: "Daan",
-    shortDescription:
+    homepageTagline:
       "Daytime hub for climate, civic tech, and social impact projects.",
-    longDescription:
+    description:
       "A bright townhouse with meeting rooms, a prototyping lab, and a café-style ground floor. Home for climate and civic-tech operators.",
-    type: "hub",
+    categories: ["hub", "co-working"],
     capacity: 60,
     tags: ["climate", "civic tech", "co-working"],
-    isFeaturedOnLanding: false,
+    isFeaturedOnLanding: true,
     homepageOrder: 3,
     coverImageUrl:
       "https://images.unsplash.com/photo-1522204502588-1b53c5df83ef?auto=format&fit=crop&w=1200&q=80",
-    logoUrl: "https://placehold.co/160x160?text=Impact+House",
-    websiteUrl: "https://example.com/impact-house",
-    socials: {
-      instagram: "https://instagram.com/impacthouse",
-    },
+    isSampleData: true,
+    status: 'approved',
+    createdBy: 'system',
     createdAt: now,
     updatedAt: now,
   },
@@ -99,19 +93,19 @@ const venues = [
     name: "Sea View Hub",
     city: "Kaohsiung",
     neighborhood: "Gushan",
-    shortDescription: "Harbor-side space for retreats and design offsites.",
-    longDescription:
+    homepageTagline: "Harbor-side space for retreats and design offsites.",
+    description:
       "A waterfront venue with a panoramic view of the harbor. Ideal for offsites, design sprints, and small retreats.",
-    type: "hub",
+    categories: ["hub", "retreat"],
     capacity: 40,
     tags: ["offsite", "retreat", "harbor"],
     isFeaturedOnLanding: true,
     homepageOrder: 4,
     coverImageUrl:
       "https://images.unsplash.com/photo-1470219954231-ff19a730a3a1?auto=format&fit=crop&w=1200&q=80",
-    logoUrl: "https://placehold.co/160x160?text=Sea+View+Hub",
-    websiteUrl: "https://example.com/sea-view-hub",
-    socials: {},
+    isSampleData: true,
+    status: 'approved',
+    createdBy: 'system',
     createdAt: now,
     updatedAt: now,
   },
@@ -120,13 +114,6 @@ const venues = [
 /**
  * EVENTS
  * Used by: landing lists, city filters, calendar sections
- * Important fields for your indexes:
- * - city
- * - isFeaturedOnLanding
- * - status
- * - visibility
- * - priorityScore
- * - startTime
  */
 const events = [
   {
@@ -145,16 +132,19 @@ const events = [
     endTime: admin.firestore.Timestamp.fromDate(
       new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000)
     ),
-    shortDescription:
-      "Brunch for founders and operators building in climate, civic tech, and education.",
-    longDescription:
-      "A lightly curated brunch where 8–12 founders and operators share what they’re building, what’s stuck, and where they could use help.",
+    description:
+      "A lightly curated brunch where 8–12 founders and operators share what they’re building, what’s stuck, and where they could use help. Brunch for founders and operators building in climate, civic tech, and education.",
     tags: ["founders", "climate", "edtech"],
-    priceType: "ticketed",
-    priceFrom: 450,
+    priceType: "paid",
+    priceMin: 450,
+    stats: { interestedCount: 15, goingCount: 22, savedCount: 8, viewCount: 250 },
     maxAttendees: 30,
     coverImageUrl:
       "https://images.unsplash.com/photo-1459682687441-7761439a7090?auto=format&fit=crop&w=1200&q=80",
+    isSampleData: true,
+    hostId: 'system',
+    createdBy: 'system',
+    approvalStatus: 'approved',
     createdAt: now,
     updatedAt: now,
   },
@@ -174,16 +164,18 @@ const events = [
     endTime: admin.firestore.Timestamp.fromDate(
       new Date(Date.now() + 5 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000)
     ),
-    shortDescription:
-      "Live jazz, side project demos, and very lightweight pitches.",
-    longDescription:
-      "Bring your side project, ship something small, and end the night with live jazz sets and casual intros.",
+    description:
+      "Bring your side project, ship something small, and end the night with live jazz sets and casual intros. Live jazz, side project demos, and very lightweight pitches.",
     tags: ["live music", "side projects"],
     priceType: "free",
-    priceFrom: 0,
+    stats: { interestedCount: 45, goingCount: 30, savedCount: 12, viewCount: 450 },
     maxAttendees: 60,
     coverImageUrl:
       "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=1200&q=80",
+    isSampleData: true,
+    hostId: 'system',
+    createdBy: 'system',
+    approvalStatus: 'approved',
     createdAt: now,
     updatedAt: now,
   },
@@ -203,16 +195,19 @@ const events = [
     endTime: admin.firestore.Timestamp.fromDate(
       new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000)
     ),
-    shortDescription:
-      "Short film program and discussion about livable, resilient cities.",
-    longDescription:
-      "A curated set of short films about urban resilience, followed by moderated discussion circles.",
+    description:
+      "A curated set of short films about urban resilience, followed by moderated discussion circles. Short film program and discussion about livable, resilient cities.",
     tags: ["cities", "resilience", "screening"],
-    priceType: "ticketed",
-    priceFrom: 350,
+    priceType: "paid",
+    priceMin: 350,
+    stats: { interestedCount: 50, goingCount: 41, savedCount: 25, viewCount: 600 },
     maxAttendees: 80,
     coverImageUrl:
       "https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1200&q=80",
+    isSampleData: true,
+    hostId: 'system',
+    createdBy: 'system',
+    approvalStatus: 'approved',
     createdAt: now,
     updatedAt: now,
   },
@@ -232,73 +227,19 @@ const events = [
     endTime: admin.firestore.Timestamp.fromDate(
       new Date(Date.now() + 10 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000)
     ),
-    shortDescription:
-      "One-day design sprint on coastal resilience and harbor systems.",
-    longDescription:
-      "Multi-disciplinary teams explore real challenges with mentors from climate, logistics, and public policy.",
+    description:
+      "Multi-disciplinary teams explore real challenges with mentors from climate, logistics, and public policy. One-day design sprint on coastal resilience and harbor systems.",
     tags: ["climate", "sprint", "harbor"],
-    priceType: "ticketed",
-    priceFrom: 800,
+    priceType: "paid",
+    priceMin: 800,
+    stats: { interestedCount: 18, goingCount: 12, savedCount: 9, viewCount: 320 },
     maxAttendees: 40,
     coverImageUrl:
       "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80",
-    createdAt: now,
-    updatedAt: now,
-  },
-  {
-    id: "event_operator_clinic",
-    title: "Operator Clinic: Trust & Safety Patterns",
-    venueId: "venue_impact_house",
-    city: "Taipei",
-    category: "ops",
-    status: "published",
-    visibility: "public",
-    isFeaturedOnLanding: false,
-    priorityScore: 70,
-    startTime: admin.firestore.Timestamp.fromDate(
-      new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
-    ),
-    endTime: admin.firestore.Timestamp.fromDate(
-      new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000)
-    ),
-    shortDescription:
-      "Clinic for PMs and operators building high-trust communities and products.",
-    longDescription:
-      "A small-circle clinic with case studies, debugging sessions, and pattern-sharing on building and maintaining user trust.",
-    tags: ["ops", "trust", "community"],
-    priceType: "free",
-    priceFrom: 0,
-    maxAttendees: 20,
-    coverImageUrl:
-      "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80",
-    createdAt: now,
-    updatedAt: now,
-  },
-  {
-    id: "event_internal_draft",
-    title: "Internal Planning Session (Draft)",
-    venueId: "venue_impact_house",
-    city: "Taipei",
-    category: "internal",
-    status: "draft",
-    visibility: "private",
-    isFeaturedOnLanding: false,
-    priorityScore: 10,
-    startTime: admin.firestore.Timestamp.fromDate(
-      new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-    ),
-    endTime: admin.firestore.Timestamp.fromDate(
-      new Date(Date.now() + 14 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000)
-    ),
-    shortDescription: "Draft event to test permissions and rules.",
-    longDescription:
-      "This should not show up in public lists if your Firestore rules filter by status/visibility.",
-    tags: ["internal", "test"],
-    priceType: "free",
-    priceFrom: 0,
-    maxAttendees: 10,
-    coverImageUrl:
-      "https://images.unsplash.com/photo-1553877522-43269d4ea984?auto=format&fit=crop&w=1200&q=80",
+    isSampleData: true,
+    hostId: 'system',
+    createdBy: 'system',
+    approvalStatus: 'approved',
     createdAt: now,
     updatedAt: now,
   },
@@ -312,65 +253,53 @@ const threads = [
   {
     id: "thread_taipei_weekly",
     title: "What’s on in Taipei this week?",
-    category: "city-feed",
+    topic: "general",
     city: "Taipei",
-    kind: "open-question",
     authorId: "user_simon",
-    authorDisplayName: "Simon (host)",
-    pinnedOnLanding: true,
-    venueId: null,
-    eventId: null,
-    bodyPreview:
+    authorInfo: {
+        displayName: "Simon (host)",
+        photoURL: 'https://i.pravatar.cc/150?u=simon',
+    },
+    body:
       "Share last-minute events, open slots, and quiet corners for deep work this week.",
+    bodyPreview: "Share last-minute events, open slots, and quiet corners for deep work this week.",
     stats: {
       replyCount: 3,
-      followerCount: 12,
+      likeCount: 12,
       lastReplyAt: now,
+      viewCount: 128,
     },
+    isSampleData: true,
     createdAt: now,
     updatedAt: now,
+    lastActivityAt: now,
   },
   {
     id: "thread_climate_sprint_ideas",
     title: "Ideas for the Harbor Climate Sprint?",
-    category: "climate",
+    topic: "events",
     city: "Kaohsiung",
-    kind: "idea-thread",
     authorId: "user_guest_1",
-    authorDisplayName: "Avery",
-    pinnedOnLanding: true,
+    authorInfo: {
+        displayName: "Avery",
+        photoURL: 'https://i.pravatar.cc/150?u=avery',
+    },
     venueId: "venue_sea_view_hub",
     eventId: "event_climate_sprint",
+    body:
+      "I'm attending the Climate Sprint next month and wanted to brainstorm some ideas beforehand. What are useful prompts, datasets, or field visits we should line up for the sprint? Anyone else going?",
     bodyPreview:
       "What are useful prompts, datasets, or field visits we should line up for the sprint?",
     stats: {
       replyCount: 2,
-      followerCount: 7,
+      likeCount: 7,
       lastReplyAt: now,
+      viewCount: 98,
     },
+    isSampleData: true,
     createdAt: now,
     updatedAt: now,
-  },
-  {
-    id: "thread_venue_feedback_midnight_alley",
-    title: "Feedback on Midnight Alley as a venue?",
-    category: "venue-feedback",
-    city: "Taipei",
-    kind: "review-thread",
-    authorId: "user_simon",
-    authorDisplayName: "Simon (host)",
-    pinnedOnLanding: false,
-    venueId: "venue_midnight_alley",
-    eventId: null,
-    bodyPreview:
-      "How have your events gone here? Anything we should tweak (lighting, seating, food)?",
-    stats: {
-      replyCount: 1,
-      followerCount: 3,
-      lastReplyAt: now,
-    },
-    createdAt: now,
-    updatedAt: now,
+    lastActivityAt: now,
   },
 ];
 
@@ -378,116 +307,123 @@ const threadReplies: {
   threadId: string;
   id: string;
   authorId: string;
-  authorDisplayName: string;
+  authorInfo: { displayName: string; photoURL: string; };
   body: string;
   createdAt: admin.firestore.Timestamp;
+  isSampleData: boolean;
 }[] = [
   {
     threadId: "thread_taipei_weekly",
     id: "reply_tw_1",
     authorId: "user_guest_1",
-    authorDisplayName: "Avery",
+    authorInfo: {
+        displayName: "Avery",
+        photoURL: 'https://i.pravatar.cc/150?u=avery',
+    },
     body:
       "There’s a small founders’ coffee happening at Impact House on Thursday 10–12. Also Rooftop Lab has a free slot Friday night.",
+    isSampleData: true,
     createdAt: now,
   },
   {
     threadId: "thread_taipei_weekly",
     id: "reply_tw_2",
     authorId: "user_guest_2",
-    authorDisplayName: "Ken",
+    authorInfo: {
+        displayName: "Ken",
+        photoURL: 'https://i.pravatar.cc/150?u=ken',
+    },
     body:
       "Looking for a quiet corner on Sunday afternoon to write. Any suggestions near Da’an?",
+    isSampleData: true,
     createdAt: now,
   },
   {
     threadId: "thread_taipei_weekly",
     id: "reply_tw_3",
     authorId: "user_simon",
-    authorDisplayName: "Simon (host)",
+    authorInfo: {
+        displayName: "Simon (host)",
+        photoURL: 'https://i.pravatar.cc/150?u=simon',
+    },
     body:
       "Impact House ground floor is usually quiet after 3pm on Sundays. Book in the directory and we’ll keep a table for you.",
+    isSampleData: true,
     createdAt: now,
   },
   {
     threadId: "thread_climate_sprint_ideas",
     id: "reply_cs_1",
     authorId: "user_guest_3",
-    authorDisplayName: "Mira",
+    authorInfo: {
+        displayName: "Mira",
+        photoURL: 'https://i.pravatar.cc/150?u=mira',
+    },
     body:
       "It’d be great to get a short briefing from harbor operations before we jump into ideas.",
+    isSampleData: true,
     createdAt: now,
   },
   {
     threadId: "thread_climate_sprint_ideas",
     id: "reply_cs_2",
     authorId: "user_simon",
-    authorDisplayName: "Simon (host)",
+    authorInfo: {
+        displayName: "Simon (host)",
+        photoURL: 'https://i.pravatar.cc/150?u=simon',
+    },
     body:
       "Love this. We’re lining up a short morning walkthrough with the port team.",
-    createdAt: now,
-  },
-  {
-    threadId: "thread_venue_feedback_midnight_alley",
-    id: "reply_va_1",
-    authorId: "user_guest_4",
-    authorDisplayName: "June",
-    body:
-      "Lighting is great, but the projector could be brighter for slides. Sound was excellent.",
+    isSampleData: true,
     createdAt: now,
   },
 ];
 
-async function seedVenues() {
-  console.log("Seeding venues...");
-  for (const venue of venues) {
-    await db.collection("venues").doc(venue.id).set(venue, { merge: true });
-    console.log(`  ✓ venue: ${venue.name}`);
+async function seedCollection(collectionName: string, data: any[], idField = 'id') {
+  console.log(`\nSeeding ${collectionName}...`);
+  const collectionRef = db.collection(collectionName);
+  for (const item of data) {
+    const docId = item[idField];
+    await collectionRef.doc(docId).set(item, { merge: true });
+    process.stdout.write('✓');
   }
+  console.log(`\nSeeded ${data.length} documents in ${collectionName}.`);
 }
 
-async function seedEvents() {
-  console.log("Seeding events...");
-  for (const event of events) {
-    await db.collection("events").doc(event.id).set(event, { merge: true });
-    console.log(`  ✓ event: ${event.title}`);
-  }
-}
-
-async function seedThreads() {
-  console.log("Seeding threads...");
-  for (const thread of threads) {
-    await db.collection("threads").doc(thread.id).set(thread, { merge: true });
-    console.log(`  ✓ thread: ${thread.title}`);
-  }
-
-  console.log("Seeding thread replies...");
-  for (const reply of threadReplies) {
-    await db
-      .collection("threads")
-      .doc(reply.threadId)
-      .collection("comments")
-      .doc(reply.id)
-      .set(reply, { merge: true });
-
-    console.log(
-      `  ↳ reply on ${reply.threadId} from ${reply.authorDisplayName}`
-    );
-  }
-}
 
 async function seedAll() {
-  await seedVenues();
-  await seedEvents();
-  await seedThreads();
+    const sampleDataCheck = await db.collection('venues').where('isSampleData', '==', true).limit(1).get();
+    if (!sampleDataCheck.empty) {
+        console.log("❌ Sample data already exists. Run `npm run clear-sample-data` first if you want to re-seed.");
+        return;
+    }
+  
+    console.log("Starting to seed database...");
+    
+    await seedCollection("venues", venues);
+    await seedCollection("events", events);
+    await seedCollection("threads", threads);
+
+    console.log("\nSeeding thread comments...");
+    for (const reply of threadReplies) {
+        await db
+        .collection("threads")
+        .doc(reply.threadId)
+        .collection("comments")
+        .doc(reply.id)
+        .set(reply, { merge: true });
+        process.stdout.write('✓');
+    }
+    console.log(`\nSeeded ${threadReplies.length} documents in comments subcollections.`);
+
 }
 
 seedAll()
   .then(() => {
-    console.log("✅ Seeding completed successfully.");
+    console.log("\n✅ Seeding completed successfully.");
     process.exit(0);
   })
   .catch((err) => {
-    console.error("❌ Seeding failed:", err);
+    console.error("\n❌ Seeding failed:", err);
     process.exit(1);
   });
