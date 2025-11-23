@@ -2,7 +2,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import type { AppUser } from '@/lib/types';
 import { createUserProfile } from '@/lib/firebase/firestore';
@@ -16,16 +16,30 @@ export const useUser = () => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
       if (fbUser) {
-        // When auth state changes to logged in, ensure profile exists before setting up listener.
-        await createUserProfile(fbUser);
-        
         const userRef = doc(db, 'users', fbUser.uid);
+        
+        // Check if the user document exists.
+        const userDoc = await getDoc(userRef).catch(err => {
+            console.error("Error fetching user document:", err);
+            return null;
+        });
+
+        // If it doesn't exist, create it.
+        if (userDoc && !userDoc.exists()) {
+          try {
+            await createUserProfile(fbUser);
+          } catch(err) {
+            console.error("Failed to create user profile:", err);
+            setLoading(false);
+            setUser(null);
+            return; // Stop execution if profile creation fails
+          }
+        }
+        
         const unsubscribeSnapshot = onSnapshot(userRef, (doc) => {
           if (doc.exists()) {
             setUser({ id: doc.id, ...doc.data() } as AppUser);
           } else {
-            // Profile doesn't exist yet, it might be in the process of being created.
-            // createUserProfile should handle this, but we set user to null temporarily.
             setUser(null);
           }
           setLoading(false);
