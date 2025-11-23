@@ -20,7 +20,7 @@ import {
   startAt,
   endAt,
 } from 'firebase/firestore';
-import { db as firestore } from '@/src/lib/firebase';
+import { db as firestore } from '@/lib/firebase';
 import type { Event, Venue, CommonsThread } from '@/lib/types';
 import Link from 'next/link';
 import { Skeleton } from '../ui/skeleton';
