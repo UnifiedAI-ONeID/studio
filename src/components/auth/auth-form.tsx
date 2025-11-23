@@ -23,17 +23,10 @@ export default function AuthForm({ mode, continueUrl }: AuthFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const { setPrompted } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-
-  const handleSuccess = () => {
-    if (setPrompted) setPrompted(false);
-    // The main app layout will handle the redirect, ensuring consistency.
-    router.push(continueUrl || '/home');
-  }
 
   const validate = () => {
       if (!email.includes('@')) {

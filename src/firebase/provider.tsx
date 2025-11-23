@@ -65,7 +65,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
     
     const authContextValue = useMemo(
         () => ({ user, firebaseUser, loading, prompted, setPrompted }),
-        [user, firebaseUser, loading, prompted]
+        [user, firebaseUser, loading, prompted, setPrompted]
     );
 
     return (
