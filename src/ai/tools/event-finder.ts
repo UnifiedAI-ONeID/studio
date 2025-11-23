@@ -7,16 +7,18 @@ import { collection, query, where, getDocs, limit, orderBy, QueryConstraint } fr
 import { db as firestore } from '@/lib/firebase';
 import type { Event } from '@/lib/types';
 
-export const findEvents = ai.defineTool(
+const findEventsSchema = z.object({
+    queryText: z.string().optional().describe('A general search query to match against event titles or descriptions.'),
+    category: z.string().optional().describe('The category of the event (e.g., Music, Arts, Networking).'),
+    city: z.string().optional().describe('The city where the event is located.'),
+    count: z.number().int().min(1).max(10).default(5).describe('The maximum number of events to return.'),
+  });
+
+export const findEventsTool = ai.defineTool(
     {
       name: 'findEvents',
       description: 'Finds events from the database based on various criteria like interests, category, or location.',
-      inputSchema: z.object({
-        queryText: z.string().optional().describe('A general search query to match against event titles or descriptions.'),
-        category: z.string().optional().describe('The category of the event (e.g., Music, Arts, Networking).'),
-        city: z.string().optional().describe('The city where the event is located.'),
-        count: z.number().int().min(1).max(10).default(5).describe('The maximum number of events to return.'),
-      }),
+      inputSchema: findEventsSchema,
       outputSchema: z.array(z.object({
           id: z.string(),
           title: z.string(),
@@ -80,3 +82,8 @@ export const findEvents = ai.defineTool(
       return events;
     }
   );
+
+
+export async function findEvents(input: z.infer<typeof findEventsSchema>) {
+    return findEventsTool(input);
+}

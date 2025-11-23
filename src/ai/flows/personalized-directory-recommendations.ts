@@ -10,7 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
-import { findVenues } from '../tools/venue-finder';
+import { findVenuesTool } from '../tools/venue-finder';
 
 const PersonalizedDirectoryRecommendationsInputSchema = z.object({
   userProfile: z.object({
@@ -45,7 +45,7 @@ const prompt = ai.definePrompt({
   output: {
     schema: PersonalizedDirectoryRecommendationsOutputSchema,
   },
-  tools: [findVenues],
+  tools: [findVenuesTool],
   prompt: `You are an AI assistant that recommends places (venues) to users based on their profile.
   Your goal is to provide a list of venues that are most relevant to the user's interests.
 
@@ -63,7 +63,7 @@ const prompt = ai.definePrompt({
   `,
 });
 
-export const getPersonalizedDirectoryRecommendations = ai.defineFlow(
+const personalizedDirectoryRecommendationsFlow = ai.defineFlow(
   {
     name: 'personalizedDirectoryRecommendationsFlow',
     inputSchema: PersonalizedDirectoryRecommendationsInputSchema,
@@ -74,3 +74,7 @@ export const getPersonalizedDirectoryRecommendations = ai.defineFlow(
     return output!;
   }
 );
+
+export async function getPersonalizedDirectoryRecommendations(input: PersonalizedDirectoryRecommendationsInput): Promise<PersonalizedDirectoryRecommendationsOutput> {
+    return personalizedDirectoryRecommendationsFlow(input);
+}

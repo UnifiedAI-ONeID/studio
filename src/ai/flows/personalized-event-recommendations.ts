@@ -10,7 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
-import { findEvents } from '../tools/event-finder';
+import { findEventsTool } from '../tools/event-finder';
 
 const PersonalizedEventRecommendationsInputSchema = z.object({
   userProfile: z.object({
@@ -36,7 +36,7 @@ const eventRecommendationPrompt = ai.definePrompt({
   name: 'eventRecommendationPrompt',
   input: {schema: PersonalizedEventRecommendationsInputSchema},
   output: {schema: PersonalizedEventRecommendationsOutputSchema},
-  tools: [findEvents],
+  tools: [findEventsTool],
   prompt: `You are an expert at recommending relevant and interesting events to users.
   
   Your goal is to find events that align with the user's interests and location.
@@ -56,7 +56,7 @@ const eventRecommendationPrompt = ai.definePrompt({
   `,
 });
 
-export const getPersonalizedEventRecommendations = ai.defineFlow(
+const personalizedEventRecommendationsFlow = ai.defineFlow(
     {
       name: 'personalizedEventRecommendationsFlow',
       inputSchema: PersonalizedEventRecommendationsInputSchema,
@@ -67,3 +67,7 @@ export const getPersonalizedEventRecommendations = ai.defineFlow(
       return output!;
     }
 );
+
+export async function getPersonalizedEventRecommendations(input: PersonalizedEventRecommendationsInput): Promise<PersonalizedEventRecommendationsOutput> {
+    return personalizedEventRecommendationsFlow(input);
+}

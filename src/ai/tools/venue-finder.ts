@@ -7,16 +7,19 @@ import { collection, query, where, getDocs, limit, QueryConstraint } from 'fireb
 import { db as firestore } from '@/lib/firebase';
 import type { Venue } from '@/lib/types';
 
-export const findVenues = ai.defineTool(
+
+const findVenuesSchema = z.object({
+    keyword: z.string().optional().describe('A keyword to search for in the venue name or description.'),
+    category: z.string().optional().describe('The category of the venue (e.g., "Live music", "Cafe").'),
+    city: z.string().optional().describe('The city where the venue is located.'),
+    count: z.number().int().min(1).max(10).default(5).describe('The maximum number of venues to return.'),
+  });
+
+export const findVenuesTool = ai.defineTool(
     {
       name: 'findVenues',
       description: 'Finds venues (places) from the database based on criteria like category or name.',
-      inputSchema: z.object({
-        keyword: z.string().optional().describe('A keyword to search for in the venue name or description.'),
-        category: z.string().optional().describe('The category of the venue (e.g., "Live music", "Cafe").'),
-        city: z.string().optional().describe('The city where the venue is located.'),
-        count: z.number().int().min(1).max(10).default(5).describe('The maximum number of venues to return.'),
-      }),
+      inputSchema: findVenuesSchema,
       outputSchema: z.array(z.object({
           id: z.string(),
           name: z.string(),
@@ -68,3 +71,8 @@ export const findVenues = ai.defineTool(
         return venues;
     }
 );
+
+
+export async function findVenues(input: z.infer<typeof findVenuesSchema>) {
+    return findVenuesTool(input);
+}
