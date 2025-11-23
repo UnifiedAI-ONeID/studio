@@ -54,13 +54,13 @@ export const createUserProfile = async (user: User) => {
     const { uid, email, displayName, photoURL } = user;
     const profileData = {
       uid: uid,
-      displayName: displayName || email?.split('@')[0] || 'Anonymous',
+      displayName: displayName || 'New User',
       photoURL: photoURL || `https://i.pravatar.cc/150?u=${uid}`,
       email: email,
       bio: '',
       role: 'user',
       homeCity: 'Taipei',
-      interests: [],
+      interests: ['Technology', 'Music', 'Art'],
       skills: [],
       locationPreferences: [],
       createdAt: serverTimestamp(),
@@ -90,7 +90,7 @@ export const uploadImage = async (
 
 type CreateEventData = Partial<Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'hostId' | 'stats' | 'approvalStatus' | 'createdBy'>>;
 
-export const createEvent = async (
+export const createEvent = (
   eventData: CreateEventData,
   user: AppUser,
 ): Promise<string> => {
@@ -123,7 +123,8 @@ export const createEvent = async (
   };
 
   const eventCollection = collection(firestore, 'events');
-  const docRef = await addDoc(eventCollection, newEventData)
+  return addDoc(eventCollection, newEventData)
+    .then(docRef => docRef.id)
     .catch((serverError) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: eventCollection.path,
@@ -133,12 +134,11 @@ export const createEvent = async (
         throw serverError; // Re-throw to be caught by the calling UI
     });
 
-  return docRef.id;
 };
 
 type CreateVenueData = Partial<Omit<Venue, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'createdBy' | 'stats' | 'city'>>;
 
-export const createVenue = async (
+export const createVenue = (
   venueData: CreateVenueData,
   user: AppUser,
 ): Promise<string> => {
@@ -166,7 +166,8 @@ export const createVenue = async (
     updatedAt: serverTimestamp(),
   };
 
-  const docRef = await addDoc(venueCollection, newVenueData)
+  return addDoc(venueCollection, newVenueData)
+    .then(docRef => docRef.id)
     .catch((serverError) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: venueCollection.path,
@@ -175,14 +176,12 @@ export const createVenue = async (
         }));
         throw serverError;
     });
-
-  return docRef.id;
 };
 
 
 type CreateThreadData = Partial<Omit<CommonsThread, 'id' | 'createdAt' | 'updatedAt' | 'lastActivityAt' | 'stats' | 'authorId' | 'authorInfo'>>;
 
-export const createThread = async (threadData: CreateThreadData, user: AppUser): Promise<string> => {
+export const createThread = (threadData: CreateThreadData, user: AppUser): Promise<string> => {
     const errors: {[key: string]: string} = {};
     if (!threadData.title || threadData.title.length < 5) errors.title = 'Title must be at least 5 characters.';
     if (!threadData.body || threadData.body.length < 10) errors.body = 'Body must be at least 10 characters.';
@@ -211,7 +210,8 @@ export const createThread = async (threadData: CreateThreadData, user: AppUser):
         lastActivityAt: now,
     };
     
-    const docRef = await addDoc(threadCollection, newThreadData)
+    return addDoc(threadCollection, newThreadData)
+      .then(docRef => docRef.id)
       .catch((serverError) => {
           errorEmitter.emit('permission-error', new FirestorePermissionError({
               path: threadCollection.path,
@@ -220,8 +220,6 @@ export const createThread = async (threadData: CreateThreadData, user: AppUser):
           }));
           throw serverError;
       });
-
-    return docRef.id;
 };
 
 type CreateReplyData = Omit<CommonsReply, 'id' | 'createdAt' | 'updatedAt' | 'authorId' | 'authorInfo'>;

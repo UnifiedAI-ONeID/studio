@@ -2,7 +2,7 @@
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-const withPWA = require('next-pwa')({
+const pwaConfig = {
   dest: 'public',
   disable: !isProduction,
   runtimeCaching: [
@@ -41,7 +41,7 @@ const withPWA = require('next-pwa')({
     },
     {
       urlPattern: ({ request }) => request.mode === 'navigate',
-      handler: 'NetworkFirst',
+      handler: 'StaleWhileRevalidate',
       options: {
         cacheName: 'pages-cache',
         networkTimeoutSeconds: 4, // If network fails, fallback to cache in 4 seconds
@@ -66,7 +66,9 @@ const withPWA = require('next-pwa')({
   fallbacks: {
     document: '/offline', // Fallback for document requests
   },
-});
+};
+
+const withPWA = require('next-pwa')(pwaConfig);
 
 const nextConfig = {
   images: {
@@ -105,4 +107,4 @@ const nextConfig = {
   },
 };
 
-module.exports = withPWA(nextConfig);
+module.exports = isProduction ? withPWA(nextConfig) : nextConfig;

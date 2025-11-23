@@ -51,21 +51,19 @@ service cloud.firestore {
     function isValidUserProfile() {
       let data = incomingData();
       let isNewUser = isCreating();
-      let isOwnProfile = isUser(data.uid);
 
-      return isOwnProfile
-          && data.uid == request.auth.uid
+      return data.uid == request.auth.uid
           && data.email is string
-          && (data.displayName is string && data.displayName.size() > 0)
+          && (data.displayName is string && data.displayName.size() > 0 && data.displayName.size() < 50)
           && (data.photoURL is string && data.photoURL.matches('^https?://.*'))
-          && (isNewUser ? data.role == 'user' : isUnchanged('role'))
-          && (data.homeCity == null || data.homeCity is string);
+          && (isNewUser ? data.role == 'user' : isUnchanged('role')) // Can't change your own role
+          && (data.homeCity == null || (data.homeCity is string && data.homeCity.size() < 50));
     }
 
     function isValidEvent() {
       let data = incomingData();
-      return data.title is string && data.title.size() >= 5
-          && data.description is string && data.description.size() >= 10
+      return data.title is string && data.title.size() >= 5 && data.title.size() < 100
+          && data.description is string && data.description.size() >= 10 && data.description.size() < 5000
           && data.category is string && data.category.size() > 0
           && data.startTime is timestamp
           && data.hostId is string
@@ -77,18 +75,18 @@ service cloud.firestore {
 
     function isValidVenue() {
         let data = incomingData();
-        return data.name is string && data.name.size() >= 3
+        return data.name is string && data.name.size() >= 3 && data.name.size() < 100
             && data.categories is list && data.categories.size() > 0
-            && data.address is string && data.address.size() >= 5
+            && data.address is string && data.address.size() >= 5 && data.address.size() < 200
             && data.neighborhood is string
-            && (data.description == null || data.description is string)
+            && (data.description == null || (data.description is string && data.description.size() < 5000))
             && data.createdBy is string;
     }
 
     function isValidThread() {
         let data = incomingData();
-        return data.title is string && data.title.size() >= 5
-            && data.body is string && data.body.size() >= 10
+        return data.title is string && data.title.size() >= 5 && data.title.size() < 150
+            && data.body is string && data.body.size() >= 10 && data.body.size() < 10000
             && data.topic is string && data.topic.size() > 0
             && data.authorId is string;
     }
@@ -96,7 +94,7 @@ service cloud.firestore {
     function isValidComment() {
         let data = incomingData();
         return data.threadId is string
-            && data.body is string && data.body.size() > 0
+            && data.body is string && data.body.size() > 0 && data.body.size() < 5000
             && data.createdBy is string;
     }
 
@@ -105,7 +103,7 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow create: if isUser(userId) && isValidUserProfile();
+      allow create: if request.auth.uid == userId && isValidUserProfile();
       allow update: if (isUser(userId) && isValidUserProfile()) || isAdmin();
       allow delete: if isUser(userId) || isAdmin();
     }
