@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Upload } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
+import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -170,7 +171,9 @@ export default function NewEventPage() {
                 <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md">
                   <div className="space-y-1 text-center">
                     {coverImagePreview ? (
-                      <img src={coverImagePreview} alt="Cover preview" className="mx-auto h-48 w-auto rounded-md object-cover" />
+                      <div className="relative mx-auto h-48 w-auto">
+                        <Image src={coverImagePreview} alt="Cover preview" fill className="rounded-md object-cover" />
+                      </div>
                     ) : (
                       <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
                     )}
