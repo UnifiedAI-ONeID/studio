@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { auth, db as firestore } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import type { AppUser } from '@/lib/types';
 import { createUserProfile } from '@/lib/firebase/firestore';
 
@@ -19,7 +19,7 @@ export const useUser = () => {
         // When auth state changes to logged in, ensure profile exists before setting up listener.
         await createUserProfile(fbUser);
         
-        const userRef = doc(firestore, 'users', fbUser.uid);
+        const userRef = doc(db, 'users', fbUser.uid);
         const unsubscribeSnapshot = onSnapshot(userRef, (doc) => {
           if (doc.exists()) {
             setUser({ id: doc.id, ...doc.data() } as AppUser);

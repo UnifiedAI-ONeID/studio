@@ -24,17 +24,12 @@ if (getApps().length === 0) {
 }
 
 const auth: Auth = getAuth(app);
-const firestore: Firestore = getFirestore(app);
+const db: Firestore = getFirestore(app);
 const storage: FirebaseStorage = getStorage(app);
-
-function initializeFirebase() {
-  return { app, auth, firestore, storage };
-};
 
 export { 
   app, 
   auth, 
-  firestore, 
+  db, 
   storage, 
-  initializeFirebase,
 };
