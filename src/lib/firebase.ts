@@ -34,8 +34,8 @@ const storage: FirebaseStorage = getStorage(app);
 // 1. Set up the Firebase Emulators on your local machine (see Firebase documentation).
 // 2. Uncomment the block below.
 // 3. Run 'firebase emulators:start' in your terminal before starting the app.
-/*
-if (process.env.NODE_ENV === 'development') {
+
+if (typeof window !== 'undefined' && window.location.hostname === 'localhost' && process.env.NODE_ENV === 'development') {
   try {
     console.log("Connecting to Firebase Emulators...");
     // Make sure you have the emulators running.
@@ -47,7 +47,7 @@ if (process.env.NODE_ENV === 'development') {
     console.error("Error connecting to emulators. Make sure they are running.", e);
   }
 }
-*/
+
 
 export { 
   app, 
