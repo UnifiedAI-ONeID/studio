@@ -63,7 +63,7 @@ export default function NewThreadPage() {
         relatedEventId: relatedEventId || undefined,
         relatedVenueId: relatedVenueId || undefined,
         tags: [],
-        city: user.homeCity || 'San Francisco',
+        city: user.homeCity,
       };
       
       const threadId = await createThread(threadData, user);

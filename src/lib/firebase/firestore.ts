@@ -88,7 +88,7 @@ export const uploadImage = async (
   return await getDownloadURL(snapshot.ref);
 };
 
-type CreateEventData = Partial<Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'hostId' | 'stats' | 'city' | 'approvalStatus' | 'createdBy'>>;
+type CreateEventData = Partial<Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'hostId' | 'stats' | 'approvalStatus' | 'createdBy'>>;
 
 export const createEvent = async (
   eventData: CreateEventData,
