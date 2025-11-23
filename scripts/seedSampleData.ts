@@ -168,16 +168,17 @@ const seed = async () => {
     });
     console.log(`  - Staged ${sampleReplies.length} replies.`);
 
+    const defaultCity = 'Taipei';
     console.log("Seeding landing config...");
     const landingConfigRef = db.collection('landingConfig').doc('global');
     batch.set(landingConfigRef, {
-        defaultCity: 'Taipei',
+        defaultCity: defaultCity,
         featuredEventIds: sampleEvents.filter(e => e.isFeaturedOnLanding).map(e => e.id),
         featuredVenueIds: sampleVenues.filter(v => v.isFeaturedOnLanding).map(v => v.id),
         highlightedTopics: ['Events', 'Neighborhoods', 'Tips'],
         isSampleData: true,
     });
-    console.log("  - Staged landingConfig document.");
+    console.log(`  - Staged landingConfig document for ${defaultCity}.`);
 
     console.log("\nCommitting all staged data to Firestore...");
     await batch.commit();

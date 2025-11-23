@@ -4,7 +4,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { collection, query, where, getDocs, limit, orderBy, QueryConstraint } from 'firebase/firestore';
-import { db as firestore } from '@/src/lib/firebase';
+import { db as firestore } from '@/lib/firebase';
 import type { Event } from '@/lib/types';
 
 export const findEvents = ai.defineTool(
@@ -32,7 +32,6 @@ export const findEvents = ai.defineTool(
       const constraints: QueryConstraint[] = [
         where('status', '==', 'published'),
         where('visibility', '==', 'public'),
-        limit(input.count),
       ];
 
       if (input.category) {
@@ -41,11 +40,12 @@ export const findEvents = ai.defineTool(
       if (input.city) {
         constraints.push(where('city', '==', input.city));
       }
-      // Note: A full-text search on 'queryText' would require a more advanced setup
-      // (e.g., a third-party search service like Algolia).
-      // For now, we will query by category which is indexed.
-      if (!input.category && input.queryText) {
-         constraints.push(where('category', '==', input.queryText));
+
+      // If there's a queryText but no category, we will do a client-side filter
+      // as Firestore doesn't support case-insensitive or partial text search efficiently.
+      // For a production app, a dedicated search service like Algolia is recommended.
+      if (!input.queryText) {
+          constraints.push(limit(input.count));
       }
       
       const q = query(eventsRef, ...constraints);
@@ -55,7 +55,7 @@ export const findEvents = ai.defineTool(
         return [];
       }
       
-      const events = snapshot.docs.map(doc => {
+      let events = snapshot.docs.map(doc => {
           const data = doc.data() as Event;
           return {
               id: doc.id,
@@ -65,6 +65,15 @@ export const findEvents = ai.defineTool(
               city: data.city,
           }
       });
+
+      if (input.queryText) {
+        const lowercasedQuery = input.queryText.toLowerCase();
+        events = events.filter(event => 
+            event.title.toLowerCase().includes(lowercasedQuery) ||
+            event.description.toLowerCase().includes(lowercasedQuery)
+        ).slice(0, input.count);
+      }
+      
       console.log(`[findEvents tool] found ${events.length} events.`);
       return events;
     }

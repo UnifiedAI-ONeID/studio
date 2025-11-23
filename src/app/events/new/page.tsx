@@ -102,6 +102,7 @@ export default function NewEventPage() {
         startTime: startTime ? Timestamp.fromDate(startTime) : undefined,
         priceType,
         minPrice,
+        city: user.homeCity,
         coverImageUrl,
         location: {
             venueId: venueId,
@@ -297,4 +298,3 @@ export default function NewEventPage() {
     </div>
   );
 }
-

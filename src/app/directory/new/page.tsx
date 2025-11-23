@@ -78,6 +78,7 @@ export default function NewVenuePage() {
         description,
         address,
         neighborhood,
+        city: user.homeCity,
         priceLevel,
         coverImageUrl,
       };
