@@ -69,6 +69,16 @@ export default function NewEventPage() {
       reader.readAsDataURL(file);
     }
   };
+  
+  const validate = () => {
+    const newErrors: typeof errors = {};
+    if (!title || title.length < 5) newErrors.title = 'Title must be at least 5 characters.';
+    if (!description || description.length < 10) newErrors.description = 'Description must be at least 10 characters.';
+    if (!category) newErrors.category = 'Please select a category.';
+    if (!startTime) newErrors.startTime = 'An event date and time is required.';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,6 +86,11 @@ export default function NewEventPage() {
     if (!user) {
       toast({ variant: 'destructive', title: 'You must be logged in to create an event.' });
       return;
+    }
+    
+    if (!validate()) {
+        toast({ variant: 'destructive', title: 'Please fix the errors below' });
+        return;
     }
 
     setIsLoading(true);
@@ -118,19 +133,11 @@ export default function NewEventPage() {
       router.push(`/events/${eventId}`);
     } catch (error: any) {
       console.error(error);
-      if (error.code === 'validation-error') {
-        setErrors(error.details);
-        toast({
-            variant: 'destructive',
-            title: 'Please fix the errors below',
-        });
-      } else {
-        toast({
-            variant: 'destructive',
-            title: 'Failed to create event',
-            description: error.message || 'An unexpected error occurred.',
-        });
-      }
+      toast({
+          variant: 'destructive',
+          title: 'Failed to create event',
+          description: error.message || 'An unexpected error occurred.',
+      });
     } finally {
       setIsLoading(false);
     }

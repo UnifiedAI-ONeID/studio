@@ -86,6 +86,15 @@ export default function NewThreadPage() {
   const removeTag = (tag: string) => {
     setTags(tags.filter(t => t !== tag));
   }
+  
+  const validate = () => {
+    const newErrors: typeof errors = {};
+    if (!title || title.length < 5) newErrors.title = 'Title must be at least 5 characters.';
+    if (!body || body.length < 10) newErrors.body = 'Content must be at least 10 characters.';
+    if (!topic) newErrors.topic = 'Please select a topic.';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,8 +103,12 @@ export default function NewThreadPage() {
       return;
     }
     
+    if (!validate()) {
+        toast({ variant: 'destructive', title: 'Please fix the errors below' });
+        return;
+    }
+    
     setIsLoading(true);
-    setErrors({});
     
     try {
       const threadData = {
@@ -114,19 +127,11 @@ export default function NewThreadPage() {
       router.push(`/commons/${threadId}`);
     } catch (error: any) {
       console.error(error);
-      if (error.code === 'validation-error') {
-        setErrors(error.details);
-        toast({
-            variant: 'destructive',
-            title: 'Please fix the errors below',
-        });
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Failed to create thread',
-          description: error.message,
-        });
-      }
+      toast({
+        variant: 'destructive',
+        title: 'Failed to create thread',
+        description: error.message,
+      });
     } finally {
       setIsLoading(false);
     }

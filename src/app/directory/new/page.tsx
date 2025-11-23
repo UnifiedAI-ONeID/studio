@@ -54,12 +54,26 @@ export default function NewVenuePage() {
       reader.readAsDataURL(file);
     }
   };
+  
+  const validate = () => {
+    const newErrors: typeof errors = {};
+    if (!name || name.length < 3) newErrors.name = 'Name must be at least 3 characters.';
+    if (!categories || categories.length === 0) newErrors.categories = 'Please select at least one category.';
+    if (!address || address.length < 5) newErrors.address = 'Please enter a valid address.';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
       toast({ variant: 'destructive', title: 'You must be logged in to add a place.' });
       return;
+    }
+    
+    if (!validate()) {
+        toast({ variant: 'destructive', title: 'Please fix the errors below' });
+        return;
     }
 
     setIsLoading(true);
@@ -93,19 +107,11 @@ export default function NewVenuePage() {
       router.push(`/directory/${venueId}`);
     } catch (error: any) {
       console.error(error);
-      if (error.code === 'validation-error') {
-        setErrors(error.details);
-        toast({
-            variant: 'destructive',
-            title: 'Please fix the errors below',
-        });
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Failed to add place',
-          description: error.message || 'An unexpected error occurred.',
-        });
-      }
+      toast({
+        variant: 'destructive',
+        title: 'Failed to add place',
+        description: error.message || 'An unexpected error occurred.',
+      });
     } finally {
       setIsLoading(false);
     }

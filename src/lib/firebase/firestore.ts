@@ -24,20 +24,6 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { errorEmitter } from './error-emitter';
 import { FirestorePermissionError } from './errors';
 
-// Custom error for validation
-class ValidationError extends Error {
-    code: string;
-    details: {[key: string]: string};
-
-    constructor(message: string, details: {[key: string]: string}) {
-        super(message);
-        this.name = 'ValidationError';
-        this.code = 'validation-error';
-        this.details = details;
-    }
-}
-
-
 export const createUserProfile = async (user: User) => {
   const userRef = doc(firestore, 'users', user.uid);
   const userDoc = await getDoc(userRef).catch((serverError) => {
@@ -90,16 +76,6 @@ export const createEvent = async (
   eventData: CreateEventData,
   user: AppUser,
 ): Promise<string> => {
-    const errors: {[key: string]: string} = {};
-    if (!eventData.title || eventData.title.length < 5) errors.title = 'Title must be at least 5 characters.';
-    if (!eventData.description || eventData.description.length < 10) errors.description = 'Description must be at least 10 characters.';
-    if (!eventData.category) errors.category = 'Please select a category.';
-    if (!eventData.startTime) errors.startTime = 'An event date and time is required.';
-    
-    if (Object.keys(errors).length > 0) {
-        throw new ValidationError('Validation failed', errors);
-    }
-
   const newEventData = {
     ...eventData,
     hostId: user.id,
@@ -138,15 +114,6 @@ export const createVenue = async (
   venueData: CreateVenueData,
   user: AppUser,
 ): Promise<string> => {
-    const errors: {[key: string]: string} = {};
-    if (!venueData.name || venueData.name.length < 3) errors.name = 'Name must be at least 3 characters.';
-    if (!venueData.categories || venueData.categories.length === 0) errors.categories = 'Please select at least one category.';
-    if (!venueData.address || venueData.address.length < 5) errors.address = 'Please enter a valid address.';
-    
-    if (Object.keys(errors).length > 0) {
-        throw new ValidationError('Validation failed', errors);
-    }
-
   const venueCollection = collection(firestore, 'venues');
   const newVenueData = {
     ...venueData,
@@ -179,14 +146,6 @@ export const createVenue = async (
 type CreateThreadData = Partial<Omit<CommonsThread, 'id' | 'createdAt' | 'updatedAt' | 'lastActivityAt' | 'stats' | 'authorId' | 'authorInfo'>>;
 
 export const createThread = async (threadData: CreateThreadData, user: AppUser): Promise<string> => {
-    const errors: {[key: string]: string} = {};
-    if (!threadData.title || threadData.title.length < 5) errors.title = 'Title must be at least 5 characters.';
-    if (!threadData.body || threadData.body.length < 10) errors.body = 'Body must be at least 10 characters.';
-    if (!threadData.topic) errors.topic = 'Please select a topic.';
-    if (Object.keys(errors).length > 0) {
-        throw new ValidationError('Validation failed', errors);
-    }
-
     const threadCollection = collection(firestore, 'threads');
     const now = Timestamp.now();
     const newThreadData = {
@@ -220,7 +179,7 @@ export const createThread = async (threadData: CreateThreadData, user: AppUser):
     }
 };
 
-type CreateReplyData = Pick<CommonsReply, 'threadId' | 'body'>;
+type CreateReplyData = Partial<Omit<CommonsReply, 'id' | 'createdAt' | 'updatedAt' | 'likeCount' | 'authorId' | 'authorInfo' | 'createdBy'>>;
 
 export const createReply = async (replyData: CreateReplyData, user: AppUser): Promise<string> => {
     const batch = writeBatch(firestore);
@@ -243,7 +202,7 @@ export const createReply = async (replyData: CreateReplyData, user: AppUser): Pr
     };
     batch.set(newReplyRef, newReplyData);
 
-    const threadRef = doc(firestore, 'threads', replyData.threadId);
+    const threadRef = doc(firestore, 'threads', replyData.threadId!);
     batch.update(threadRef, {
         'stats.replyCount': increment(1),
         lastActivityAt: now,
