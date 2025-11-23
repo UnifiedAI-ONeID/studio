@@ -1,3 +1,4 @@
+
 // scripts/seedSampleData.ts
 import * as admin from "firebase-admin";
 
@@ -104,6 +105,7 @@ const seed = async () => {
             createdAt: now,
             updatedAt: now,
             isSampleData: true,
+            role: 'user',
         });
     });
     console.log(`  - Staged ${sampleUsers.length} users.`);
