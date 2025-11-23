@@ -105,6 +105,4 @@ const nextConfig = {
   },
 };
 
-module.exports = withPWA(nextConfig);
-
-    
+module.exports = isProduction ? withPWA(nextConfig) : nextConfig;
