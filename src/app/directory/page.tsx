@@ -155,4 +155,9 @@ export default function DirectoryPage() {
       {!loading && (!filteredVenues || filteredVenues.length === 0) && (
         <div className="text-center py-16 border border-dashed rounded-lg">
           <h3 className="text-xl font-semibold">No places found</h3>
-          <p className="text-muted-foreground mt-2">Try adjusting your filters or add a
+          <p className="text-muted-foreground mt-2">Try adjusting your filters or add a new place.</p>
+        </div>
+      )}
+    </div>
+  );
+}

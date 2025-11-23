@@ -208,3 +208,10 @@ export default function VenueDetailPage() {
                 </div>
               
             </CardContent>
+          </Card>
+          <UpcomingEvents venueId={venueId} />
+        </div>
+      </div>
+    </div>
+  );
+}
