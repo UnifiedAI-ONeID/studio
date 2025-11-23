@@ -134,11 +134,38 @@ export default function EventDetailPage() {
     }
   };
 
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: event?.title,
+        text: event?.description,
+        url: window.location.href,
+      }).catch(console.error);
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast({ title: 'Link copied to clipboard!' });
+    }
+  };
+  
+  const discussionLink = `/commons/new?relatedEventId=${eventId}&title=${encodeURIComponent(`Discuss: ${event?.title}`)}&topic=general`;
+
+  const handleDiscussionClick = (e: React.MouseEvent) => {
+    if (!user) {
+      e.preventDefault();
+      if(setPrompted) setPrompted(true);
+      router.push(`/login?continueUrl=${encodeURIComponent(discussionLink)}`);
+    }
+  };
+
   if (eventLoading) {
     return (
       <div className="container mx-auto max-w-4xl animate-pulse">
         <Skeleton className="h-64 w-full md:h-96 rounded-b-lg -mt-8 -mx-8" />
         <div className="p-4 transform -translate-y-16">
+          <div className="flex items-center gap-2 mb-4">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-28" />
+          </div>
           <Card>
             <CardHeader>
               <Skeleton className="h-6 w-24" />
@@ -148,10 +175,6 @@ export default function EventDetailPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Skeleton className="h-16 w-full" />
                 <Skeleton className="h-16 w-full" />
-              </div>
-              <div className="flex items-center gap-4">
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-28" />
               </div>
               <Skeleton className="h-20 w-full" />
             </CardContent>
@@ -165,30 +188,6 @@ export default function EventDetailPage() {
     return <div className="text-center py-10">Error loading event or event not found.</div>;
   }
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: event.title,
-        text: event.description,
-        url: window.location.href,
-      }).catch(console.error);
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast({ title: 'Link copied to clipboard!' });
-    }
-  };
-  
-  const discussionLink = `/commons/new?relatedEventId=${event.id}&title=${encodeURIComponent(`Discuss: ${event.title}`)}&topic=general`;
-
-  const handleDiscussionClick = (e: React.MouseEvent) => {
-    if (!user) {
-      e.preventDefault();
-      if(setPrompted) setPrompted(true);
-      router.push(`/login?continueUrl=${encodeURIComponent(discussionLink)}`);
-    }
-  };
-
-
   return (
     <div className="bg-background">
       <div className="container mx-auto max-w-4xl pb-12">
@@ -198,6 +197,19 @@ export default function EventDetailPage() {
         </div>
 
         <div className="p-4 transform -translate-y-20">
+          <div className="flex items-center gap-2 mb-4">
+            <Button size="lg" variant={interaction?.type === 'going' ? 'default' : 'outline'} className="flex-1" onClick={() => handleInteraction('going')} disabled={interactionLoading}>
+              <CheckCircle className="mr-2"/> {interaction?.type === 'going' ? 'You are going' : 'I\'m Going'} ({event.stats?.goingCount || 0})
+            </Button>
+            <Button size="lg" variant={interaction?.type === 'interested' ? 'default' : 'outline'} className="flex-1" onClick={() => handleInteraction('interested')} disabled={interactionLoading}>
+              <Heart className="mr-2"/> {interaction?.type === 'interested' ? 'You\'re Interested' : 'Interested'} ({event.stats?.interestedCount || 0})
+            </Button>
+            <Button size="lg" variant={interaction?.type === 'saved' ? 'default' : 'outline'} onClick={() => handleInteraction('saved')} disabled={interactionLoading}>
+              <Star className="mr-2"/> {interaction?.type === 'saved' ? 'Saved' : 'Save'}
+            </Button>
+            <Button size="lg" variant="outline" onClick={handleShare}><Share2/></Button>
+          </div>
+          
           <Card className="bg-card/90 backdrop-blur-sm">
             <CardHeader>
               <div className="flex justify-between items-start">
@@ -238,19 +250,6 @@ export default function EventDetailPage() {
                   )}
               </div>
 
-              <div className="flex items-center gap-2">
-                <Button size="lg" variant={interaction?.type === 'going' ? 'default' : 'outline'} className="flex-1" onClick={() => handleInteraction('going')} disabled={interactionLoading}>
-                  <CheckCircle className="mr-2"/> {interaction?.type === 'going' ? 'You are going' : 'I\'m Going'} ({event.stats?.goingCount || 0})
-                </Button>
-                <Button size="lg" variant={interaction?.type === 'interested' ? 'default' : 'outline'} className="flex-1" onClick={() => handleInteraction('interested')} disabled={interactionLoading}>
-                  <Heart className="mr-2"/> {interaction?.type === 'interested' ? 'You\'re Interested' : 'Interested'} ({event.stats?.interestedCount || 0})
-                </Button>
-                <Button size="lg" variant={interaction?.type === 'saved' ? 'default' : 'outline'} onClick={() => handleInteraction('saved')} disabled={interactionLoading}>
-                  <Star className="mr-2"/> {interaction?.type === 'saved' ? 'Saved' : 'Save'}
-                </Button>
-                <Button size="lg" variant="outline" onClick={handleShare}><Share2/></Button>
-              </div>
-              
               <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
                 <div className={cn("prose prose-sm dark:prose-invert max-w-none relative", !isExpanded && "max-h-24 overflow-hidden")}>
                   <p>
@@ -299,3 +298,5 @@ export default function EventDetailPage() {
     </div>
   );
 }
+
+    
