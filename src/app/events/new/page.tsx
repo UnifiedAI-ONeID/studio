@@ -29,7 +29,7 @@ import { useAuth, useCollection, useMemoFirebase } from '@/hooks/use-firebase-ho
 import { createEvent, uploadImage } from '@/lib/firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import type { Venue } from '@/lib/types';
+import type { Venue, AppUser } from '@/lib/types';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';
 
@@ -112,7 +112,7 @@ export default function NewEventPage() {
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       };
 
-      const eventId = await createEvent(eventData, user.id);
+      const eventId = await createEvent(eventData, user as AppUser);
 
       toast({
         title: 'Event Submitted!',
@@ -298,4 +298,3 @@ export default function NewEventPage() {
   );
 }
 
-    

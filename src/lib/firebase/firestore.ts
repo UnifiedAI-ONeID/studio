@@ -59,7 +59,7 @@ export const createUserProfile = async (user: User) => {
       email: email,
       bio: '',
       role: 'user',
-      homeCity: 'San Francisco',
+      homeCity: 'Taipei',
       interests: [],
       skills: [],
       locationPreferences: [],
@@ -92,7 +92,7 @@ type CreateEventData = Partial<Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 's
 
 export const createEvent = async (
   eventData: CreateEventData,
-  userId: string,
+  user: AppUser,
 ): Promise<string> => {
     const errors: {[key: string]: string} = {};
     if (!eventData.title || eventData.title.length < 5) errors.title = 'Title must be at least 5 characters.';
@@ -106,10 +106,10 @@ export const createEvent = async (
 
   const newEventData = {
     ...eventData,
-    hostId: userId,
-    createdBy: userId,
-    city: 'San Francisco', // Defaulting city
-    status: 'published' as const, // Default to published for now
+    hostId: user.id,
+    createdBy: user.id,
+    city: user.homeCity, 
+    status: 'published' as const, 
     visibility: 'public' as const,
     approvalStatus: 'approved' as ApprovalStatus,
     stats: {
@@ -140,7 +140,7 @@ type CreateVenueData = Partial<Omit<Venue, 'id' | 'createdAt' | 'updatedAt' | 's
 
 export const createVenue = async (
   venueData: CreateVenueData,
-  userId: string
+  user: AppUser,
 ): Promise<string> => {
     const errors: {[key: string]: string} = {};
     if (!venueData.name || venueData.name.length < 3) errors.name = 'Name must be at least 3 characters.';
@@ -154,8 +154,8 @@ export const createVenue = async (
   const venueCollection = collection(firestore, 'venues');
   const newVenueData = {
     ...venueData,
-    createdBy: userId,
-    city: 'San Francisco',
+    createdBy: user.id,
+    city: user.homeCity,
     status: 'approved' as const,
     stats: {
         ratingAverage: 0,
@@ -196,6 +196,7 @@ export const createThread = async (threadData: CreateThreadData, user: AppUser):
     const newThreadData = {
         ...threadData,
         authorId: user.id,
+        city: user.homeCity,
         authorInfo: {
             displayName: user.displayName,
             photoURL: user.photoURL

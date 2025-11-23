@@ -43,8 +43,7 @@ export default function ThisWeekendSection() {
     
     return query(
       collection(firestore, 'events'),
-      where('status', '==', 'published'),
-      where('visibility', '==', 'public'),
+      where('isFeaturedOnLanding', '==', true),
       where('city', '==', 'Taipei'),
       where('startTime', '>=', Timestamp.fromDate(friday)),
       where('startTime', '<=', Timestamp.fromDate(sunday)),

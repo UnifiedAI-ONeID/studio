@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { createVenue, uploadImage } from '@/lib/firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { AppUser } from '@/lib/types';
 
 const venueCategories = ["Live music", "Bar", "Restaurant", "Cafe", "Art Gallery", "Theater", "Club", "Park", "Other"];
 
@@ -81,7 +82,7 @@ export default function NewVenuePage() {
         coverImageUrl,
       };
 
-      const venueId = await createVenue(venueData, user.id);
+      const venueId = await createVenue(venueData, user as AppUser);
 
       toast({
         title: 'Place Submitted!',
