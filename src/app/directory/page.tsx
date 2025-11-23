@@ -89,6 +89,7 @@ export default function DirectoryPage() {
         </div>
          <div className="flex flex-wrap gap-2">
             <Button
+                key="all-categories"
                 variant={!activeCategory ? 'secondary' : 'ghost'}
                 size="sm"
                 onClick={() => setActiveCategory(null)}
