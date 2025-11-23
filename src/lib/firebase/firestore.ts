@@ -41,39 +41,40 @@ class ValidationError extends Error {
 export const createUserProfile = async (user: User) => {
   const userRef = doc(firestore, 'users', user.uid);
   
-  try {
-    const userDoc = await getDoc(userRef);
-    if (!userDoc.exists()) {
-      const { uid, email, displayName, photoURL } = user;
-      const profileData = {
-        uid: uid,
-        displayName: displayName || email?.split('@')[0] || 'Anonymous',
-        photoURL: photoURL || `https://i.pravatar.cc/150?u=${uid}`,
-        email: email,
-        bio: '',
-        role: 'user',
-        homeCity: 'San Francisco',
-        interests: [],
-        skills: [],
-        locationPreferences: [],
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      };
-      
-      setDoc(userRef, profileData)
-        .catch((serverError) => {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: userRef.path,
-                operation: 'create',
-                requestResourceData: profileData,
-            }));
-        });
-    }
-  } catch (error) {
-     errorEmitter.emit('permission-error', new FirestorePermissionError({
+  const userDoc = await getDoc(userRef).catch((serverError) => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: userRef.path,
         operation: 'get',
     }));
+    // Re-throw or handle as needed, for now, we'll let it proceed
+    // as the onSnapshot in useUser might handle it.
+  });
+
+  if (userDoc && !userDoc.exists()) {
+    const { uid, email, displayName, photoURL } = user;
+    const profileData = {
+      uid: uid,
+      displayName: displayName || email?.split('@')[0] || 'Anonymous',
+      photoURL: photoURL || `https://i.pravatar.cc/150?u=${uid}`,
+      email: email,
+      bio: '',
+      role: 'user',
+      homeCity: 'San Francisco',
+      interests: [],
+      skills: [],
+      locationPreferences: [],
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+    
+    setDoc(userRef, profileData)
+      .catch((serverError) => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: userRef.path,
+              operation: 'create',
+              requestResourceData: profileData,
+          }));
+      });
   }
 };
 
