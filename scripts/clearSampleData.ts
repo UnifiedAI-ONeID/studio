@@ -70,7 +70,7 @@ const clearAllSampleData = async () => {
             await deleteCollectionByQuery(queryToExecute, 50); // Using a batch size of 50
             console.log(`\nSuccessfully cleared sample data from ${collectionName}.`);
         } catch (error) {
-            console.error(`\nFailed to clear data from ${collectionName}. This might be due to security rules or the collection not existing.`, error);
+            console.error(`\nFailed to clear data from ${collectionName}. This might be due to security rules or the collection not existing.`);
         }
     }
 
