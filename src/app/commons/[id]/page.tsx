@@ -36,7 +36,11 @@ function RelatedItem({ type, id }: { type: 'event' | 'venue', id: string }) {
                 </CardHeader>
                 <CardContent>
                     <Link href={`/events/${event.id}`} className="flex items-center gap-4">
-                        {event.coverImageUrl && <Image src={event.coverImageUrl} alt={event.title} width={80} height={45} className="rounded-md object-cover aspect-video" />}
+                        {event.coverImageUrl && 
+                          <div className="relative w-20 h-11">
+                            <Image src={event.coverImageUrl} alt={event.title} fill className="rounded-md object-cover" />
+                          </div>
+                        }
                         <div>
                             <p className="font-semibold">{event.title}</p>
                             <p className="text-sm text-muted-foreground">{format((event.startTime as Timestamp).toDate(), "MMM d, yyyy")}</p>
@@ -56,7 +60,11 @@ function RelatedItem({ type, id }: { type: 'event' | 'venue', id: string }) {
                 </CardHeader>
                 <CardContent>
                     <Link href={`/directory/${venue.id}`} className="flex items-center gap-4">
-                        {venue.coverImageUrl && <Image src={venue.coverImageUrl} alt={venue.name} width={80} height={45} className="rounded-md object-cover aspect-video" />}
+                        {venue.coverImageUrl && 
+                          <div className="relative w-20 h-11">
+                            <Image src={venue.coverImageUrl} alt={venue.name} fill className="rounded-md object-cover" />
+                          </div>
+                        }
                         <div>
                             <p className="font-semibold">{venue.name}</p>
                             <p className="text-sm text-muted-foreground">{venue.neighborhood}</p>

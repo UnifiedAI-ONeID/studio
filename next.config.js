@@ -7,7 +7,9 @@ const pwaConfig = {
   disable: !isProduction,
   runtimeCaching: [
     {
-      urlPattern: ({ url }) => url.origin === self.location.origin && url.pathname.startsWith('/_next/static/'),
+      urlPattern: ({ url }) =>
+        url.origin === self.location.origin &&
+        url.pathname.startsWith('/_next/static/'),
       handler: 'CacheFirst',
       options: {
         cacheName: 'next-static',
@@ -18,7 +20,9 @@ const pwaConfig = {
       },
     },
     {
-      urlPattern: ({ url }) => url.origin === self.location.origin && url.pathname.startsWith('/_next/image'),
+      urlPattern: ({ url }) =>
+        url.origin === self.location.origin &&
+        url.pathname.startsWith('/_next/image'),
       handler: 'StaleWhileRevalidate',
       options: {
         cacheName: 'next-image',
@@ -28,8 +32,11 @@ const pwaConfig = {
         },
       },
     },
-     {
-      urlPattern: ({ url }) => url.origin === self.location.origin && (url.pathname.startsWith('/icons/') || url.pathname.startsWith('/manifest.json')),
+    {
+      urlPattern: ({ url }) =>
+        url.origin === self.location.origin &&
+        (url.pathname.startsWith('/icons/') ||
+          url.pathname.startsWith('/manifest.json')),
       handler: 'CacheFirst',
       options: {
         cacheName: 'app-icons-manifest',
@@ -41,10 +48,10 @@ const pwaConfig = {
     },
     {
       urlPattern: ({ request }) => request.mode === 'navigate',
-      handler: 'StaleWhileRevalidate',
+      handler: 'NetworkFirst', // 🔧 changed from StaleWhileRevalidate
       options: {
         cacheName: 'pages-cache',
-        networkTimeoutSeconds: 4, // If network fails, fallback to cache in 4 seconds
+        networkTimeoutSeconds: 4, // allowed with NetworkFirst
         expiration: {
           maxEntries: 60,
           maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
@@ -52,22 +59,22 @@ const pwaConfig = {
       },
     },
     {
-      urlPattern: /^https:\/\/(images\.unsplash\.com|picsum\.photos|i\.pravatar\.cc|lh3\.googleusercontent\.com)\/.*/i,
+      urlPattern:
+        /^https:\/\/(images\.unsplash\.com|picsum\.photos|i\.pravatar\.cc|lh3\.googleusercontent\.com)\/.*/i,
       handler: 'StaleWhileRevalidate',
       options: {
-          cacheName: 'remote-images-cache',
-          expiration: {
-              maxEntries: 50,
-              maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
-          },
+        cacheName: 'remote-images-cache',
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+        },
       },
     },
   ],
   fallbacks: {
-    document: '/offline', // Fallback for document requests
+    document: '/offline',
   },
 };
-
 
 const nextConfig = {
   reactStrictMode: true,
@@ -92,7 +99,7 @@ const nextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https' ,
+        protocol: 'https',
         hostname: 'i.pravatar.cc',
         port: '',
         pathname: '/**',
@@ -102,7 +109,7 @@ const nextConfig = {
         hostname: 'lh3.googleusercontent.com',
         port: '',
         pathname: '/**',
-      }
+      },
     ],
   },
 };
