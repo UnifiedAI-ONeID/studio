@@ -4,7 +4,7 @@
  * @fileOverview Provides personalized event recommendations based on user profile, location, and time.
  *
  * - getPersonalizedEventRecommendations - A function that returns personalized event recommendations.
- * - PersonalizedEventRecommendationsInput - The input type for the getPersonalizedEventRecommendations function.
+ * - PersonalizedEventRecommendationsInput - The input type for the getPersonalizedEventRecommendations function PersonalizedEventRecommendationsInput.
  * - PersonalizedEventRecommendationsOutput - The return type for the getPersonalizedEventRecommendations function.
  */
 
@@ -26,6 +26,7 @@ const PersonalizedEventRecommendationsOutputSchema = z.object({
     eventId: z.string().describe('The ID of the recommended event.'),
     eventName: z.string().describe('Name of the event'),
     eventDescription: z.string().describe('Description of the event'),
+    coverImageUrl: z.string().optional().describe('The cover image URL for the event.'),
     reason: z.string().describe('A short, compelling reason why this event is recommended for the user.'),
   })).describe('A list of personalized event recommendations'),
 });
@@ -55,7 +56,7 @@ const eventRecommendationPrompt = ai.definePrompt({
   1. Use the 'findEvents' tool to search for events that match one or more of the user's interests. You can search for events in their home city.
   2. For each recommended event, you MUST provide a short, compelling reason why the user would be interested in it. Connect it directly to their stated interests.
   3. Ensure you return the exact number of recommendations requested.
-  4. Return the eventId for each recommendation so the user can click on it.
+  4. Return the eventId and coverImageUrl for each recommendation so the user can click on it and see an image.
   
   Format your output as a JSON object matching the schema.
   `,

@@ -28,6 +28,7 @@ const PersonalizedDirectoryRecommendationsOutputSchema = z.object({
       venueId: z.string().describe('The ID of the recommended venue.'),
       name: z.string().describe('The name of the venue.'),
       description: z.string().describe('A short description of the venue.'),
+      coverImageUrl: z.string().optional().describe('The cover image URL for the venue.'),
       reason: z.string().describe('A short, compelling reason why this venue is recommended for the user.'),
   })).describe('A list of personalized venue recommendations'),
 });
@@ -61,7 +62,7 @@ const prompt = ai.definePrompt({
   Number of recommendations requested: {{count}}
 
   1. Use the 'findVenues' tool to search for venues. Try to find venues that align with the user's interests. You can use their interests as keywords or categories.
-  2. For each recommendation, provide the venue's ID and a short, compelling reason why the user would like this place, linking it to their interests.
+  2. For each recommendation, provide the venue's ID, name, coverImageUrl, and a short, compelling reason why the user would like this place, linking it to their interests.
   3. Return exactly the number of recommendations requested.
 
   Return a JSON object that matches the specified output schema.

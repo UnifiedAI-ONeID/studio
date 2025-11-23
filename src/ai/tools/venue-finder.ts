@@ -22,6 +22,7 @@ export const findVenues = ai.defineTool(
           name: z.string(),
           description: z.string().optional(),
           categories: z.array(z.string()),
+          coverImageUrl: z.string().optional(),
       })),
     },
     async (input) => {
@@ -59,6 +60,7 @@ export const findVenues = ai.defineTool(
                 name: data.name,
                 description: data.description,
                 categories: data.categories,
+                coverImageUrl: data.coverImageUrl,
             };
         });
         

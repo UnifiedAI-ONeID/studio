@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { addEventInteraction } from '@/lib/firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import PlaceHolderImages from '@/lib/placeholder-images';
 
 function getPriceDisplay(event: Event) {
   if (event.priceType === 'free') return 'Free';
@@ -25,6 +26,8 @@ export default function EventCard({ event }: { event: Event }) {
   const { user, setPrompted } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const placeholder = PlaceHolderImages.find(p => p.id.includes('event')) || PlaceHolderImages[0];
+
 
   const handleSave = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigating to event page
@@ -49,14 +52,13 @@ export default function EventCard({ event }: { event: Event }) {
       <div className="relative">
         <Link href={`/events/${event.id}`}>
           <div className="aspect-[16/9] w-full">
-            {event.coverImageUrl && (
-              <Image
-                src={event.coverImageUrl}
-                alt={event.title}
-                fill
-                className="object-cover"
-              />
-            )}
+            <Image
+              src={event.coverImageUrl || placeholder.imageUrl}
+              alt={event.title}
+              fill
+              className="object-cover"
+              data-ai-hint={placeholder.imageHint}
+            />
           </div>
         </Link>
         <Badge variant="secondary" className="absolute top-3 left-3">

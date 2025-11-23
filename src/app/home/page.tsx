@@ -31,15 +31,13 @@ function EventCard({ event }: { event: Event }) {
     <Link href={`/events/${event.id}`} key={event.id}>
       <Card className="overflow-hidden h-full flex flex-col transition-all hover:shadow-lg hover:-translate-y-1">
         <div className="relative h-40 w-full">
-          {event.coverImageUrl && (
-            <Image
-                src={event.coverImageUrl}
-                alt={event.title}
-                fill
-                className="object-cover"
-                data-ai-hint={placeholder.imageHint}
-            />
-          )}
+          <Image
+              src={event.coverImageUrl || placeholder.imageUrl}
+              alt={event.title}
+              fill
+              className="object-cover"
+              data-ai-hint={placeholder.imageHint}
+          />
           <Badge variant="secondary" className="absolute top-2 right-2">{getPriceDisplay(event)}</Badge>
         </div>
         <CardHeader>

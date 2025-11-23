@@ -10,20 +10,21 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
+import PlaceHolderImages from '@/lib/placeholder-images';
 
 function FeaturedEventCard({ event, large = false }: { event: Event; large?: boolean }) {
+    const placeholder = PlaceHolderImages.find(p => p.id.includes('event')) || PlaceHolderImages[0];
     if (!event.startTime) return null;
   return (
     <Link href={`/events/${event.id}`} className={`group relative block overflow-hidden rounded-3xl ${large ? 'col-span-2' : ''}`}>
       <div className={`aspect-square w-full ${large ? 'md:aspect-[2/1]' : ''}`}>
-        {event.coverImageUrl && (
-            <Image
-            src={event.coverImageUrl}
-            alt={event.title}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-        )}
+        <Image
+          src={event.coverImageUrl || placeholder.imageUrl}
+          alt={event.title}
+          fill
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
+          data-ai-hint={placeholder.imageHint}
+        />
       </div>
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
       <div className="absolute bottom-0 left-0 p-4 md:p-6 text-white">

@@ -23,6 +23,7 @@ export const findEvents = ai.defineTool(
           description: z.string(),
           category: z.string(),
           city: z.string(),
+          coverImageUrl: z.string().optional(),
       })),
     },
     async (input) => {
@@ -63,6 +64,7 @@ export const findEvents = ai.defineTool(
               description: data.description,
               category: data.category,
               city: data.city,
+              coverImageUrl: data.coverImageUrl,
           }
       });
 
