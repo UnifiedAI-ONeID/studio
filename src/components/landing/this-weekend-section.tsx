@@ -10,7 +10,6 @@ import Link from 'next/link';
 import { Button } from '../ui/button';
 import { ArrowRight } from 'lucide-react';
 import EventCard from './event-card';
-import { startOfWeek, endOfWeek } from 'date-fns';
 import { useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 
 function SectionSkeleton() {
@@ -32,21 +31,10 @@ function SectionSkeleton() {
 
 export default function ThisWeekendSection() {
   const eventsQuery = useMemoFirebase(() => {
-    const now = new Date();
-    // Get Friday of the current week
-    const start = startOfWeek(now, { weekStartsOn: 1 }); // Monday
-    const friday = new Date(start);
-    friday.setDate(start.getDate() + 4);
-    friday.setHours(0,0,0,0);
-    // Get Sunday of the current week
-    const sunday = endOfWeek(now, { weekStartsOn: 1 });
-    
     return query(
       collection(firestore, 'events'),
       where('isFeaturedOnLanding', '==', true),
-      where('city', '==', 'Taipei'),
-      where('startTime', '>=', Timestamp.fromDate(friday)),
-      where('startTime', '<=', Timestamp.fromDate(sunday)),
+      where('startTime', '>=', Timestamp.now()),
       orderBy('startTime', 'asc'),
       limit(3)
     );

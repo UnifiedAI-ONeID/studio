@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -85,7 +86,7 @@ function ReplyItem({ reply }: { reply: CommonsReply }) {
     const handleReport = async () => {
         if (!user) return;
         try {
-            await reportContent('reply', reply.id, 'User reported this reply.', user.id);
+            await reportContent('comment', reply.id, 'User reported this reply.', user.id);
             toast({ title: 'Reply reported', description: 'Thank you for helping keep the community safe.' });
         } catch (e) {
             toast({ variant: 'destructive', title: 'Failed to report' });

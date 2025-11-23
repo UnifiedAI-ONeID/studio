@@ -1,3 +1,4 @@
+
 // scripts/seedSampleData.ts
 // Node-only script: DO NOT import this from your Next.js app.
 // Run with:  npx ts-node scripts/seedSampleData.ts
@@ -465,7 +466,7 @@ async function seedThreads() {
     await db
       .collection("threads")
       .doc(reply.threadId)
-      .collection("replies")
+      .collection("comments")
       .doc(reply.id)
       .set(reply, { merge: true });
 
