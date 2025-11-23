@@ -3,7 +3,7 @@
 
 import { useAuth, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import { collection, query, where, orderBy, Timestamp, limit } from 'firebase/firestore';
-import { db as firestore } from '@/lib/firebase';
+import { db as firestore } from '@/src/lib/firebase';
 import type { Event, Follow } from '@/lib/types';
 import Link from 'next/link';
 import Image from 'next/image';

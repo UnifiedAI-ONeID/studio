@@ -31,7 +31,7 @@ import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { Venue } from '@/lib/types';
 import { collection, query, where, orderBy } from 'firebase/firestore';
-import { db as firestore } from '@/lib/firebase';
+import { db as firestore } from '@/src/lib/firebase';
 
 
 const categories = ['Music', 'Food & Drink', 'Talks', 'Sports', 'Arts', 'Networking', 'Other'];

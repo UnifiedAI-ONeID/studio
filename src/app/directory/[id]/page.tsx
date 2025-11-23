@@ -3,7 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { doc, collection, query, where, Timestamp, orderBy, limit } from 'firebase/firestore';
-import { db as firestore } from '@/lib/firebase';
+import { db as firestore } from '@/src/lib/firebase';
 import { useAuth, useDoc, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import type { Venue, Event, Follow } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';

@@ -4,7 +4,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { collection, query, where, getDocs, limit, orderBy, QueryConstraint } from 'firebase/firestore';
-import { db as firestore } from '@/lib/firebase';
+import { db as firestore } from '@/src/lib/firebase';
 import type { Event } from '@/lib/types';
 
 export const findEvents = ai.defineTool(

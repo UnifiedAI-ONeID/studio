@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { collection, query, orderBy, where, limit, QueryConstraint } from 'firebase/firestore';
-import { db as firestore } from '@/lib/firebase';
+import { db as firestore } from '@/src/lib/firebase';
 import { useCollection, useAuth, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import type { CommonsThread } from '@/lib/types';
 import { Button } from '@/components/ui/button';

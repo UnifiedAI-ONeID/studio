@@ -8,7 +8,7 @@ import {
   useContext
 } from 'react';
 import { User as FirebaseUser, Auth } from 'firebase/auth';
-import { auth as fAuth, db as fs } from '@/lib/firebase';
+import { auth as fAuth, db as fs } from '@/src/lib/firebase';
 import { useUser as useAppUser } from './auth/use-user';
 
 import type { AppUser } from '@/lib/types';
