@@ -53,6 +53,8 @@ export const createUserProfile = async (user: User) => {
         interests: ['Technology', 'Music', 'Art'],
         createdAt: serverTimestamp() as Timestamp,
         updatedAt: serverTimestamp() as Timestamp,
+        homeCity: 'Taipei',
+        isSampleData: false,
       };
       try {
         await setDoc(userRef, profileData);
@@ -62,6 +64,7 @@ export const createUserProfile = async (user: User) => {
               operation: 'create',
               requestResourceData: profileData
           }));
+          throw e; // Re-throw to inform the caller
       }
     }
   } catch(serverError) {
@@ -69,6 +72,7 @@ export const createUserProfile = async (user: User) => {
         path: userRef.path,
         operation: 'get',
     }));
+    throw serverError; // Re-throw to inform the caller
   }
 };
 
@@ -102,7 +106,7 @@ export const createEvent = async (
     ...eventData,
     hostId: user.id,
     createdBy: user.id,
-    city: user.homeCity, 
+    city: user.homeCity || 'Taipei', 
     status: 'published' as const, 
     visibility: 'public' as const,
     approvalStatus: 'approved' as ApprovalStatus,
@@ -149,7 +153,7 @@ export const createVenue = async (
   const newVenueData = {
     ...venueData,
     createdBy: user.id,
-    city: user.homeCity,
+    city: user.homeCity || 'Taipei',
     status: 'approved' as const,
     stats: {
         ratingAverage: 0,
@@ -190,7 +194,7 @@ export const createThread = async (threadData: CreateThreadData, user: AppUser):
     const newThreadData = {
         ...threadData,
         authorId: user.id,
-        city: user.homeCity,
+        city: user.homeCity || 'Taipei',
         authorInfo: {
             displayName: user.displayName,
             photoURL: user.photoURL
@@ -230,6 +234,7 @@ export const createReply = async (replyData: CreateReplyData, user: AppUser): Pr
     const newReplyData = {
         ...replyData,
         authorId: user.id,
+        createdBy: user.id, // For security rules
         authorInfo: {
             displayName: user.displayName,
             photoURL: user.photoURL,

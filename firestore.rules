@@ -55,9 +55,11 @@ service cloud.firestore {
       return data.uid == request.auth.uid
           && data.email is string
           && (data.displayName == null || (data.displayName is string && data.displayName.size() > 0 && data.displayName.size() < 50))
+          // photoURL and homeCity are optional and can be set later.
           && (data.photoURL == null || (data.photoURL is string && data.photoURL.matches('^https?://.*')))
-          && (isNewUser ? data.role == 'user' : isUnchanged('role')) // Can't change your own role
-          && (data.homeCity == null || data.homeCity is string);
+          && (data.homeCity == null || data.homeCity is string)
+          // Role can only be 'user' at creation and cannot be changed by the user.
+          && (isNewUser ? data.role == 'user' : isUnchanged('role'));
     }
 
     function isValidEvent() {
@@ -66,11 +68,12 @@ service cloud.firestore {
           && data.description is string && data.description.size() >= 10 && data.description.size() < 5000
           && data.category is string && data.category.size() > 0
           && data.startTime is timestamp
-          && data.hostId == request.auth.uid
-          && data.status is string
-          && data.visibility is string
-          && data.approvalStatus is string
-          && data.createdBy == request.auth.uid;
+          // Server-set fields are checked separately. This function validates client-sent data.
+          && (isCreating() || isUpdating());
+    }
+    
+    function isSecureEventWrite() {
+        return isOwner(incomingData().createdBy) && incomingData().hostId == request.auth.uid;
     }
 
     function isValidVenue() {
@@ -80,7 +83,11 @@ service cloud.firestore {
             && data.address is string && data.address.size() >= 5 && data.address.size() < 200
             && data.neighborhood is string
             && (data.description == null || (data.description is string && data.description.size() < 5000))
-            && data.createdBy == request.auth.uid;
+            && (isCreating() || isUpdating());
+    }
+
+    function isSecureVenueWrite() {
+        return isOwner(incomingData().createdBy);
     }
 
     function isValidThread() {
@@ -88,14 +95,22 @@ service cloud.firestore {
         return data.title is string && data.title.size() >= 5 && data.title.size() < 150
             && data.body is string && data.body.size() >= 10 && data.body.size() < 10000
             && data.topic is string && data.topic.size() > 0
-            && data.authorId == request.auth.uid;
+            && (isCreating() || isUpdating());
+    }
+    
+    function isSecureThreadWrite() {
+        return isOwner(incomingData().authorId);
     }
 
     function isValidComment() {
         let data = incomingData();
         return data.threadId is string
             && data.body is string && data.body.size() > 0 && data.body.size() < 5000
-            && data.createdBy == request.auth.uid;
+             && (isCreating() || isUpdating());
+    }
+    
+    function isSecureCommentWrite() {
+        return isOwner(incomingData().createdBy);
     }
 
 
@@ -110,28 +125,28 @@ service cloud.firestore {
     
     match /events/{eventId} {
       allow read: if true;
-      allow create: if isSignedIn() && isValidEvent();
-      allow update: if (isOwner(existingData().createdBy) || isAdmin()) && isValidEvent() && isUnchanged('createdAt') && isUnchanged('createdBy');
+      allow create: if isSignedIn() && isValidEvent() && isSecureEventWrite();
+      allow update: if (isOwner(existingData().createdBy) || isAdmin()) && isValidEvent() && isUnchanged('createdAt') && isUnchanged('createdBy') && isSecureEventWrite();
       allow delete: if isOwner(existingData().createdBy) || isAdmin();
     }
     
     match /venues/{venueId} {
       allow read: if true;
-      allow create: if isSignedIn() && isValidVenue();
-      allow update: if (isOwner(existingData().createdBy) || isAdmin()) && isValidVenue() && isUnchanged('createdAt') && isUnchanged('createdBy');
+      allow create: if isSignedIn() && isValidVenue() && isSecureVenueWrite();
+      allow update: if (isOwner(existingData().createdBy) || isAdmin()) && isValidVenue() && isUnchanged('createdAt') && isUnchanged('createdBy') && isSecureVenueWrite();
       allow delete: if isOwner(existingData().createdBy) || isAdmin();
     }
     
     match /threads/{threadId} {
       allow read: if true;
-      allow create: if isSignedIn() && isValidThread();
-      allow update: if (isOwner(existingData().authorId) || isAdmin()) && isValidThread() && isUnchanged('createdAt') && isUnchanged('authorId');
+      allow create: if isSignedIn() && isValidThread() && isSecureThreadWrite();
+      allow update: if (isOwner(existingData().authorId) || isAdmin()) && isValidThread() && isUnchanged('createdAt') && isUnchanged('authorId') && isSecureThreadWrite();
       allow delete: if isOwner(existingData().authorId) || isAdmin();
 
       match /comments/{commentId} {
         allow read: if true;
-        allow create: if isSignedIn() && isValidComment();
-        allow update: if (isOwner(existingData().createdBy) || isAdmin()) && isValidComment() && isUnchanged('createdAt') && isUnchanged('createdBy');
+        allow create: if isSignedIn() && isValidComment() && isSecureCommentWrite();
+        allow update: if (isOwner(existingData().createdBy) || isAdmin()) && isValidComment() && isUnchanged('createdAt') && isUnchanged('createdBy') && isSecureCommentWrite();
         allow delete: if isOwner(existingData().createdBy) || isAdmin();
       }
     }

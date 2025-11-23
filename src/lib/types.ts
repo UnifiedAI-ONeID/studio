@@ -137,6 +137,7 @@ export interface CommonsThread extends DocumentWithId {
 export interface CommonsReply extends DocumentWithId {
   threadId: string;
   authorId: string;
+  createdBy: string; // For security rules
   body: string;
   parentReplyId?: string;
   authorInfo?: {
