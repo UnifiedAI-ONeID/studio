@@ -220,7 +220,7 @@ export const createThread = async (threadData: CreateThreadData, user: AppUser):
     }
 };
 
-type CreateReplyData = Omit<CommonsReply, 'id' | 'createdAt' | 'updatedAt' | 'authorId' | 'authorInfo' | 'createdBy'>;
+type CreateReplyData = Omit<CommonsReply, 'id' | 'createdAt' | 'updatedAt' | 'authorId' | 'authorInfo' | 'createdBy' | 'likeCount' | 'parentId' >;
 
 export const createReply = async (replyData: CreateReplyData, user: AppUser): Promise<string> => {
     const batch = writeBatch(firestore);

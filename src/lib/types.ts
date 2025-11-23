@@ -7,28 +7,26 @@ export interface DocumentWithId {
 
 export interface AppUser extends DocumentWithId {
   uid: string;
-  role: 'user' | 'admin';
-  displayName: string;
-  photoURL?: string;
   email?: string;
-  bio?: string;
-  homeCity?: string;
+  displayName?: string;
+  photoURL?: string;
+  role: 'user' | 'admin';
   interests?: string[];
   skills?: string[];
   locationPreferences?: string[];
+  homeCity?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   isSampleData?: boolean;
 }
 
 export type PriceType = "free" | "paid" | "donation";
-export type EventStatus = "draft" | "pending_review" | "published" | "archived" | "cancelled";
-export type EventVisibility = "public" | "unlisted" | "private";
+export type EventStatus = "draft" | "published" | "cancelled";
+export type EventVisibility = "public" | "private";
 export type ApprovalStatus = "pending" | "approved" | "rejected";
 
 export interface Event extends DocumentWithId {
   title: string;
-  subtitle?: string;
   description: string;
   category: string;
   tags?: string[];
@@ -40,145 +38,131 @@ export interface Event extends DocumentWithId {
     venueId?: string;
     address?: string;
     neighborhood?: string;
-    lat?: number;
-    lng?: number;
   };
+  hostId: string;
+  coverImageUrl?: string;
   priceType: PriceType;
   priceMin?: number;
   priceMax?: number;
-  coverImageUrl?: string;
-  ticketUrl?: string;
-  hostId: string;
-  hostType?: "user" | "organization";
   status: EventStatus;
   visibility: EventVisibility;
   approvalStatus: ApprovalStatus;
-  isFeaturedOnLanding?: boolean;
-  homepageSection?: "hero" | "this_weekend" | "editors_pick";
-  priorityScore?: number;
   stats: {
     interestedCount: number;
     goingCount: number;
-    savedCount?: number;
-    viewCount?: number;
+    savedCount: number;
+    viewCount: number;
   };
   createdBy: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  isSampleData?: boolean;
+  isFeaturedOnLanding?: boolean;
+  priorityScore?: number;
 }
 
 export interface Venue extends DocumentWithId {
   name: string;
-  slug?: string;
-  description?: string;
   categories: string[];
-  homepageTagline?: string;
+  description?: string;
   address: string;
-  city: string;
-  neighborhood?: string;
-  lat?: number;
-  lng?: number;
-  website?: string;
-  phone?: string;
-  openingHours?: { day: string; open: string; close: string }[];
-  priceLevel?: 1 | 2 | 3 | 4;
-  coverImageUrl?: string;
-  isFeaturedOnLanding?: boolean;
-  stats: {
-    ratingAverage?: number;
-    ratingCount?: number;
-    eventCount?: number;
+  neighborhood: string;
+  location?: {
+    latitude: number;
+    longitude: number;
   };
+  openingHours?: string;
+  priceLevel?: number;
+  tags?: string[];
+  coverImageUrl?: string;
+  status: 'pending_review' | 'approved';
   createdBy: string;
-  status?: 'pending_review' | 'approved';
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  isSampleData?: boolean;
+  isFeaturedOnLanding?: boolean;
+  homepageTagline?: string; // This was in seed data but not schema, adding for consistency
 }
 
-export interface Organization extends DocumentWithId {
-  name: string;
-  description?: string;
-  city?: string;
-  website?: string;
-  social?: { platform: string; url: string }[];
-  coverImageUrl?: string;
-  ownerUserId: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  isSampleData?: boolean;
-}
+export type ThreadTopic = "general" | "neighborhoods" | "buy-sell" | "housing" | "clubs" | "events";
 
 export interface CommonsThread extends DocumentWithId {
   title: string;
   body: string;
   bodyPreview?: string;
-  topic: string;
-  city: string;
+  topic: ThreadTopic;
+  city?: string;
   tags?: string[];
+  relatedEventId?: string;
+  relatedVenueId?: string;
   authorId: string;
   authorInfo?: {
     displayName: string;
     photoURL?: string;
   };
-  relatedEventId?: string;
-  relatedVenueId?: string;
+  lastActivityAt: Timestamp;
   stats: {
     replyCount: number;
-    viewCount: number;
     likeCount: number;
+    viewCount: number;
   };
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  lastActivityAt: Timestamp;
   isSampleData?: boolean;
 }
 
 export interface CommonsReply extends DocumentWithId {
   threadId: string;
-  authorId: string;
-  createdBy: string; // For security rules
+  parentId?: string;
   body: string;
-  parentReplyId?: string;
+  createdBy: string;
+  authorId: string; // for consistency with threads
   authorInfo?: {
-    displayName: string;
-    photoURL?: string;
+      displayName: string;
+      photoURL?: string;
   };
+  likeCount: number;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   isSampleData?: boolean;
 }
 
-export type EventInteractionType = 'saved' | 'interested' | 'going';
+export type ReportType = "thread" | "comment";
 
-export interface EventInteraction extends DocumentWithId {
-  eventId: string;
-  userId: string;
-  type: EventInteractionType;
+export interface Report extends DocumentWithId {
+  type: ReportType;
+  targetId: string;
+  reason: string;
+  createdBy: string;
   createdAt: Timestamp;
 }
 
-export type FollowTargetType = 'user' | 'organization' | 'venue' | 'topic';
+
+export type FollowTargetType = 'venue' | 'topic' | 'organization' | 'user';
 
 export interface Follow extends DocumentWithId {
-  id: string;
   userId: string;
-  targetType: FollowTargetType;
   targetId: string;
+  targetType: FollowTargetType;
   createdAt: Timestamp;
 }
 
-export type NotificationType = 'thread_reply' | 'mention' | 'event_update';
+export type ReactionType = 'like';
+export type ReactionTargetType = 'thread' | 'comment';
 
-export interface Notification extends DocumentWithId {
+export interface Reaction extends DocumentWithId {
   userId: string;
-  type: NotificationType;
-  refId?: string;
-  title: string;
-  body: string;
+  targetId: string;
+  targetType: ReactionTargetType;
+  type: ReactionType;
   createdAt: Timestamp;
-  read: boolean;
+}
+
+export type EventInteractionType = 'interested' | 'going' | 'saved';
+
+export interface EventInteraction extends DocumentWithId {
+  userId: string;
+  eventId: string;
+  type: EventInteractionType;
+  createdAt: Timestamp;
 }
 
 export interface LandingConfig {
@@ -199,25 +183,3 @@ export interface NewsletterSubscriber {
 export interface AppRoles {
   admins: { [uid: string]: boolean };
 }
-
-export type ReportType = 'thread' | 'comment';
-
-export interface Report {
-    id: string;
-    type: ReportType;
-    targetId: string;
-    reason: string;
-    createdBy: string;
-    createdAt: Timestamp;
-}
-
-export interface Reaction {
-    id: string;
-    userId: string;
-    targetId: string;
-    targetType: 'thread' | 'comment';
-    type: 'like';
-    createdAt: Timestamp;
-}
-
-    
