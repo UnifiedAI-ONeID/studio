@@ -97,7 +97,7 @@ export const createEvent = async (
     if (!eventData.description || eventData.description.length < 10) errors.description = 'Description must be at least 10 characters.';
     if (!eventData.category) errors.category = 'Please select a category.';
     if (!eventData.startTime) errors.startTime = 'An event date and time is required.';
-    if (!eventData.coverImageUrl) errors.coverImageUrl = 'Cover image is required.';
+    
     if (Object.keys(errors).length > 0) {
         throw new ValidationError('Validation failed', errors);
     }
@@ -384,3 +384,5 @@ export const addNewsletterSubscriber = (email: string, city: string = 'unknown')
             }));
         });
 };
+
+    

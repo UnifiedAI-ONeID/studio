@@ -86,11 +86,6 @@ export default function NewEventPage() {
         const imageFile = coverImage as File;
         const imagePath = `eventCovers/${user.id}/${Date.now()}_${imageFile.name}`;
         coverImageUrl = await uploadImage(imagePath, imageFile);
-      } else {
-          // A cover image is required, handle error
-          setErrors({ coverImageUrl: "Cover image is required." });
-          setIsLoading(false);
-          return;
       }
 
       const selectedVenue = venues?.find(v => v.id === venueId);
@@ -228,10 +223,11 @@ export default function NewEventPage() {
                           defaultValue={startTime ? format(startTime, 'HH:mm') : ''}
                           onChange={(e) => {
                               const time = e.target.value;
+                              if (!time) return;
                               const [hours, minutes] = time.split(':').map(Number);
                               const newDate = startTime ? new Date(startTime) : new Date();
                               newDate.setHours(hours, minutes);
-                              setStartTime(newDate);
+                              setStartTime(new Date(newDate));
                           }}
                       />
                   </div>
@@ -298,3 +294,5 @@ export default function NewEventPage() {
     </div>
   );
 }
+
+    

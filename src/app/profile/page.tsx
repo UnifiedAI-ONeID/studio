@@ -73,40 +73,37 @@ function FollowedItem({ follow }: { follow: Follow }) {
     const { targetId, targetType } = follow;
 
     const isVenue = targetType === 'venue';
-    const collectionName = isVenue ? 'venues' : null;
-    const linkPath = isVenue ? '/directory' : '/commons'; // Fallback for topic
-
+    
+    // Only create a docRef if the target is a venue
     const docRef = useMemoFirebase(() => 
-        collectionName ? doc(firestore, collectionName, targetId) : null
-    , [collectionName, targetId]);
+        isVenue ? doc(firestore, 'venues', targetId) : null
+    , [isVenue, targetId]);
 
-    // The 'useDoc' hook is only used for Firestore documents (venues in this case).
-    // For topics, which are not documents, we handle them differently.
-    const { data: docData, loading } = useDoc<Venue>(docRef);
+    const { data: venueData, loading } = useDoc<Venue>(docRef);
 
     if (loading) {
         return <Skeleton className="h-14 w-full" />;
     }
     
-    // Determine the name and icon based on the target type
-    let name = 'Unknown';
-    let icon = <BookText className="h-5 w-5 text-muted-foreground" />;
-    
-    if (isVenue && docData) {
-        name = docData.name;
+    let name: string;
+    let icon: React.ReactNode;
+    let link: string;
+
+    if (isVenue) {
+        if (!venueData) return null; // Don't render if venue data isn't loaded
+        name = venueData.name;
         icon = <Building className="h-5 w-5 text-muted-foreground" />;
+        link = `/directory/${targetId}`;
     } else if (targetType === 'topic') {
-        name = targetId; // For topics, the ID is the name itself
-    } else if (!isVenue) {
-      // Could be a user or organization in the future
+        name = targetId;
+        icon = <BookText className="h-5 w-5 text-muted-foreground" />;
+        link = `/commons?topic=${targetId}`;
+    } else {
       return null;
     }
 
-    // Construct the final link href
-    const finalLink = targetType === 'topic' ? `${linkPath}?topic=${targetId}` : `${linkPath}/${targetId}`;
-
     return (
-        <Link href={finalLink}>
+        <Link href={link}>
             <Card className="hover:bg-muted/50">
                 <CardContent className="p-3 flex items-center gap-3">
                     {icon}
@@ -228,3 +225,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
