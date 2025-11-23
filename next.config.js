@@ -2,8 +2,6 @@
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-const withPWA = require('next-pwa');
-
 const pwaConfig = {
   dest: 'public',
   disable: !isProduction,
@@ -72,6 +70,7 @@ const pwaConfig = {
 
 
 const nextConfig = {
+  reactStrictMode: true,
   images: {
     remotePatterns: [
       {
@@ -87,7 +86,7 @@ const nextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https',
+        protocol: 'https/picsum.photos',
         hostname: 'picsum.photos',
         port: '',
         pathname: '/**',
@@ -108,4 +107,9 @@ const nextConfig = {
   },
 };
 
-module.exports = isProduction ? withPWA(pwaConfig)(nextConfig) : nextConfig;
+if (isProduction) {
+  const withPWA = require('next-pwa')(pwaConfig);
+  module.exports = withPWA(nextConfig);
+} else {
+  module.exports = nextConfig;
+}

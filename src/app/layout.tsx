@@ -33,13 +33,13 @@ export const metadata: Metadata = {
     telephone: false,
   },
   icons: {
-    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
     apple: '/icons/apple-touch-icon.png',
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#0f172a',
+  themeColor: '#3F51B5',
 };
 
 export default function RootLayout({

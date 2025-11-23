@@ -1,11 +1,11 @@
 {
   "name": "Avidity",
   "short_name": "Avidity",
-  "description": "Avidity: Connect, Discover, and Engage.",
+  "description": "Connect, Discover, and Engage.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#f5f5f5",
+  "theme_color": "#3F51B5",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
