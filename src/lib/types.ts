@@ -22,8 +22,8 @@ export interface AppUser extends DocumentWithId {
 }
 
 export type PriceType = "free" | "paid" | "donation";
-export type EventStatus = "draft" | "pending_review" | "published" | "archived";
-export type EventVisibility = "public" | "unlisted";
+export type EventStatus = "draft" | "pending_review" | "published" | "archived" | "cancelled";
+export type EventVisibility = "public" | "unlisted" | "private";
 export type ApprovalStatus = "pending" | "approved" | "rejected";
 
 export interface Event extends DocumentWithId {
@@ -115,7 +115,7 @@ export interface CommonsThread extends DocumentWithId {
   body: string;
   bodyPreview?: string;
   topic: string;
-  city?: string;
+  city: string;
   tags?: string[];
   authorId: string;
   authorInfo?: {
@@ -219,3 +219,5 @@ export interface Reaction {
     type: 'like';
     createdAt: Timestamp;
 }
+
+    

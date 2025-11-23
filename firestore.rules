@@ -99,7 +99,7 @@ service cloud.firestore {
     }
     
     function isSecureThreadWrite() {
-        return isOwner(incomingData().authorId);
+        return isOwner(incomingData().authorId) && incomingData().city == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.homeCity;
     }
 
     function isValidComment() {
@@ -124,7 +124,7 @@ service cloud.firestore {
     }
     
     match /events/{eventId} {
-      allow read: if true;
+      allow read: if resource.data.visibility == 'public' && resource.data.status == 'published';
       allow create: if isSignedIn() && isValidEvent() && isSecureEventWrite();
       allow update: if (isOwner(existingData().createdBy) || isAdmin()) && isValidEvent() && isUnchanged('createdAt') && isUnchanged('createdBy') && isSecureEventWrite();
       allow delete: if isOwner(existingData().createdBy) || isAdmin();
@@ -172,3 +172,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

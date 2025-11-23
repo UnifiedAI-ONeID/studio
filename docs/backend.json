@@ -47,6 +47,15 @@
         "status": { "type": "string", "enum": ["draft", "published", "cancelled"] },
         "visibility": { "type": "string", "enum": ["public", "private"] },
         "approvalStatus": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "stats": {
+          "type": "object",
+          "properties": {
+            "interestedCount": { "type": "number" },
+            "goingCount": { "type": "number" },
+            "savedCount": { "type": "number" },
+            "viewCount": { "type": "number" }
+          }
+        },
         "createdBy": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" },
@@ -216,3 +225,5 @@
     }
   }
 }
+
+    
