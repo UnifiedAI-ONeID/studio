@@ -2,7 +2,9 @@
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-const withPWA = require('next-pwa')({
+const withPWA = require('next-pwa');
+
+const pwaConfig = {
   dest: 'public',
   disable: !isProduction,
   runtimeCaching: [
@@ -66,7 +68,7 @@ const withPWA = require('next-pwa')({
   fallbacks: {
     document: '/offline', // Fallback for document requests
   },
-});
+};
 
 
 const nextConfig = {
@@ -106,4 +108,4 @@ const nextConfig = {
   },
 };
 
-module.exports = isProduction ? withPWA(nextConfig) : nextConfig;
+module.exports = isProduction ? withPWA(pwaConfig)(nextConfig) : nextConfig;
