@@ -1,8 +1,7 @@
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/google-genai';
-import {isDev, isServer} from 'genkit/internal/util';
 
-if (isDev() && isServer()) {
+if (process.env.NODE_ENV === 'production') {
   const {NodeSDK} = require('@opentelemetry/sdk-node');
   const {
     OTLPTraceExporter,
