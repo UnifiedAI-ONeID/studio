@@ -47,3 +47,4 @@ export function useDoc<T extends DocumentWithId>(ref: DocumentReference | null) 
 
   return { data, loading, error };
 }
+

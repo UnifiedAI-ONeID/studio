@@ -2,9 +2,9 @@
 'use client';
 
 import { getApps, initializeApp, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
-import { getStorage, FirebaseStorage } from 'firebase/storage';
+import { getAuth, Auth, connectAuthEmulator } from 'firebase/auth';
+import { getFirestore, Firestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getStorage, FirebaseStorage, connectStorageEmulator } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -26,6 +26,23 @@ if (getApps().length === 0) {
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
 const storage: FirebaseStorage = getStorage(app);
+
+// --- Emulator Connections ---
+// The following block is for connecting to LOCAL emulators for development.
+// It is commented out to ensure the app connects to production Firebase services.
+// To use emulators, you would uncomment this block and run 'firebase emulators:start'
+/*
+if (process.env.NODE_ENV === 'development') {
+  try {
+    console.log("Connecting to Firebase Emulators");
+    connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+    connectFirestoreEmulator(db, 'localhost', 8080);
+    connectStorageEmulator(storage, 'localhost', 9199);
+  } catch (e) {
+    console.error("Error connecting to emulators. Make sure they are running.", e);
+  }
+}
+*/
 
 export { 
   app, 
