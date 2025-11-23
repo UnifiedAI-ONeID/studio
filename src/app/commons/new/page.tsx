@@ -123,7 +123,7 @@ export default function NewThreadPage() {
 
             <div className="space-y-2">
               <Label>Topic</Label>
-               <Select onValueChange={setTopic} defaultValue={topic}>
+               <Select onValueChange={setTopic} value={topic}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a topic" />
                   </SelectTrigger>
