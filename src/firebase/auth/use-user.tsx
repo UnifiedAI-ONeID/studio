@@ -2,8 +2,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { auth, firestore } from '@/lib/firebase';
+import { doc, onSnapshot, getDoc } from 'firebase/firestore';
+import { auth, db as firestore } from '@/lib/firebase';
 import type { AppUser } from '@/lib/types';
 import { createUserProfile } from '@/lib/firebase/firestore';
 
@@ -31,17 +31,22 @@ export const useUser = () => {
     const unsubscribeSnapshot = onSnapshot(userRef, async (doc) => {
       if (doc.exists()) {
         setUser({ id: doc.id, ...doc.data() } as AppUser);
+        setLoading(false);
       } else {
         // This might happen for a brand new user, create their profile
         try {
-            await createUserProfile(firebaseUser);
-            // The snapshot listener will pick up the new profile
+            // Check again before creating to avoid race conditions
+            const freshDoc = await getDoc(userRef);
+            if (!freshDoc.exists()) {
+                await createUserProfile(firebaseUser);
+            }
+            // The snapshot listener will pick up the new profile, so we just wait.
         } catch(e) {
             console.error("Failed to create user profile on-the-fly", e);
-            setUser(null); // Or handle this case appropriately
+            setUser(null); 
+             setLoading(false);
         }
       }
-      setLoading(false);
     }, (error) => {
         console.error("Error listening to user profile:", error);
         setLoading(false);
