@@ -220,7 +220,7 @@ export const createThread = async (threadData: CreateThreadData, user: AppUser):
     }
 };
 
-type CreateReplyData = Omit<CommonsReply, 'id' | 'createdAt' | 'updatedAt' | 'authorId' | 'authorInfo' | 'createdBy' | 'likeCount' | 'parentId' >;
+type CreateReplyData = Pick<CommonsReply, 'threadId' | 'body'>;
 
 export const createReply = async (replyData: CreateReplyData, user: AppUser): Promise<string> => {
     const batch = writeBatch(firestore);
@@ -232,13 +232,14 @@ export const createReply = async (replyData: CreateReplyData, user: AppUser): Pr
     const newReplyData = {
         ...replyData,
         authorId: user.id,
-        createdBy: user.id, // For security rules
+        createdBy: user.id,
         authorInfo: {
             displayName: user.displayName,
             photoURL: user.photoURL,
         },
         createdAt: now,
         updatedAt: now,
+        likeCount: 0,
     };
     batch.set(newReplyRef, newReplyData);
 
@@ -387,4 +388,3 @@ export const addNewsletterSubscriber = (email: string, city: string = 'unknown')
             throw serverError;
         });
 };
-
