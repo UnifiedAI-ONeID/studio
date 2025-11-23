@@ -190,11 +190,4 @@ export default function EventsPage() {
       {!loading && (!filteredEvents || filteredEvents.length === 0) && (
         <div className="text-center py-16 border border-dashed rounded-lg">
           <h3 className="text-xl font-semibold">No events found</h3>
-          <p className="text-muted-foreground mt-2">Try adjusting your filters or creating a new event.</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-    
+          <p className="text-muted-foreground mt-2">Try adjusting your filters or

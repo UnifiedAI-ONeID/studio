@@ -377,9 +377,3 @@ export const addNewsletterSubscriber = (email: string, city: string = 'unknown')
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 path: subscriberCollection.path,
                 operation: 'create',
-                requestResourceData: subscriberData,
-            }));
-        });
-};
-
-    

@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { collection, query, where, orderBy } from 'firebase/firestore';
-import { db as firestore } from '@/src/lib/firebase';
+import { db as firestore } from '@/lib/firebase';
 import { useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import type { Venue } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -155,9 +155,4 @@ export default function DirectoryPage() {
       {!loading && (!filteredVenues || filteredVenues.length === 0) && (
         <div className="text-center py-16 border border-dashed rounded-lg">
           <h3 className="text-xl font-semibold">No places found</h3>
-          <p className="text-muted-foreground mt-2">Try adjusting your filters or add a new place.</p>
-        </div>
-      )}
-    </div>
-  );
-}
+          <p className="text-muted-foreground mt-2">Try adjusting your filters or add a
