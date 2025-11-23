@@ -29,10 +29,16 @@ export function useCollection<T extends DocumentWithId>(query: Query | null) {
       (err) => {
         console.error(err);
         setError(err);
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: (query as any)._query.path.segments.join('/'),
-            operation: 'list',
-        }));
+        
+        // Ensure query._query exists and has a path before accessing it
+        const path = (query as any)?._query?.path?.segments?.join('/');
+        if (path) {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: path,
+                operation: 'list',
+            }));
+        }
+
         setLoading(false);
       }
     );
