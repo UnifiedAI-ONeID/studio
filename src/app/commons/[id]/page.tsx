@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth, useDoc, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
 import { doc, collection, query, orderBy, Timestamp, where } from 'firebase/firestore';
-import { db as firestore } from '@/src/lib/firebase';
+import { db as firestore } from '@/lib/firebase';
 import { createReply, reportContent } from '@/lib/firebase/firestore';
 import type { CommonsThread, CommonsReply, Event, Venue } from '@/lib/types';
 
@@ -257,3 +257,5 @@ export default function ThreadDetailPage() {
         </div>
     );
 }
+
+    

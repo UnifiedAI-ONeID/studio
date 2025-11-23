@@ -28,6 +28,17 @@ const withPWA = require('next-pwa')({
         },
       },
     },
+     {
+      urlPattern: ({ url }) => url.origin === self.location.origin && url.pathname.startsWith('/icons/'),
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'app-icons',
+        expiration: {
+          maxEntries: 10,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+        },
+      },
+    },
     {
       urlPattern: ({ request }) => request.mode === 'navigate',
       handler: 'NetworkFirst',
@@ -95,3 +106,5 @@ const nextConfig = {
 };
 
 module.exports = withPWA(nextConfig);
+
+    
