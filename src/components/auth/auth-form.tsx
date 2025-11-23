@@ -31,6 +31,7 @@ export default function AuthForm({ mode, continueUrl }: AuthFormProps) {
 
   const handleSuccess = () => {
     if (setPrompted) setPrompted(false);
+    // The main app layout will handle the redirect, ensuring consistency.
     router.push(continueUrl || '/home');
   }
 
@@ -62,7 +63,8 @@ export default function AuthForm({ mode, continueUrl }: AuthFormProps) {
       } else {
         await signInWithEmail(email, password);
       }
-      handleSuccess();
+      // The AppLayout's useEffect will handle the redirect on auth state change.
+      // This centralizes the logic.
     } catch (error: any) {
       console.error(error);
       toast({
@@ -79,8 +81,9 @@ export default function AuthForm({ mode, continueUrl }: AuthFormProps) {
     setIsGoogleLoading(true);
     try {
       await signInWithGoogle();
-      handleSuccess();
-    } catch (error: any) {
+      // The AppLayout's useEffect will handle the redirect on auth state change.
+    } catch (error: any)
+       {
       console.error(error);
       toast({
         variant: 'destructive',

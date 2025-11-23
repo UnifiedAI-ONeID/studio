@@ -21,7 +21,7 @@ export const signUpWithEmail = async (email: string, password: string): Promise<
     email,
     password
   );
-  await createUserProfile(userCredential.user);
+  // The useUser hook will handle profile creation.
   return userCredential.user;
 };
 
@@ -32,8 +32,8 @@ export const signInWithEmail = async (email: string, password: string): Promise<
 
 export const signInWithGoogle = async (): Promise<User> => {
   const userCredential = await signInWithPopup(auth, googleProvider);
-  // This will create a profile if one doesn't exist.
-  await createUserProfile(userCredential.user);
+  // The useUser hook is now the single source of truth for creating the user profile.
+  // This prevents a race condition where the profile is created in two places.
   return userCredential.user;
 };
 

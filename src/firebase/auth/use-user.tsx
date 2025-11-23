@@ -16,14 +16,13 @@ export const useUser = () => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
       if (fbUser) {
-        // Attempt to create a profile. If it already exists, this does nothing.
-        // This handles the race condition where the snapshot listener might run
-        // before the profile is created on first login.
+        // This is now the single source of truth for creating a user profile.
+        // It will only create a document if one doesn't already exist.
         try {
           await createUserProfile(fbUser);
         } catch (err) {
             console.error("Error ensuring user profile exists:", err);
-            // Decide if we should bail out here. For now, we'll let the snapshot listener try.
+            // If this fails, we probably can't continue, but the snapshot listener will try.
         }
 
         const userRef = doc(db, 'users', fbUser.uid);
