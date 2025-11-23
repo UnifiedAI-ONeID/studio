@@ -15,7 +15,7 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
+// Initialize Firebase for production.
 let app: FirebaseApp;
 if (getApps().length === 0) {
   app = initializeApp(firebaseConfig);
@@ -27,17 +27,22 @@ const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
 const storage: FirebaseStorage = getStorage(app);
 
-// --- Emulator Connections ---
+// --- EMULATOR CONNECTIONS ---
 // The following block is for connecting to LOCAL emulators for development.
-// It is commented out to ensure the app connects to production Firebase services.
-// To use emulators, you would uncomment this block and run 'firebase emulators:start'
+// It is commented out by default to ensure the app connects to production Firebase services.
+// To use the emulators, you must:
+// 1. Set up the Firebase Emulators on your local machine (see Firebase documentation).
+// 2. Uncomment the block below.
+// 3. Run 'firebase emulators:start' in your terminal before starting the app.
 /*
 if (process.env.NODE_ENV === 'development') {
   try {
-    console.log("Connecting to Firebase Emulators");
+    console.log("Connecting to Firebase Emulators...");
+    // Make sure you have the emulators running.
     connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
     connectFirestoreEmulator(db, 'localhost', 8080);
     connectStorageEmulator(storage, 'localhost', 9199);
+    console.log("Successfully connected to Firebase Emulators.");
   } catch (e) {
     console.error("Error connecting to emulators. Make sure they are running.", e);
   }

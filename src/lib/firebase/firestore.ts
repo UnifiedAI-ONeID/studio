@@ -40,39 +40,37 @@ class ValidationError extends Error {
 
 export const createUserProfile = async (user: User) => {
   const userRef = doc(firestore, 'users', user.uid);
-  try {
-    const userDoc = await getDoc(userRef);
-    if (!userDoc.exists()) {
-      const { uid, email, displayName, photoURL } = user;
-      const profileData: Omit<AppUser, 'id'> = {
-        uid: uid,
-        displayName: displayName || 'New User',
-        photoURL: photoURL || `https://i.pravatar.cc/150?u=${uid}`,
-        email: email,
-        role: 'user',
-        interests: ['Technology', 'Music', 'Art'],
-        createdAt: serverTimestamp() as Timestamp,
-        updatedAt: serverTimestamp() as Timestamp,
-        homeCity: 'Taipei',
-        isSampleData: false,
-      };
-      try {
-        await setDoc(userRef, profileData);
-      } catch (e) {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({
-              path: userRef.path,
-              operation: 'create',
-              requestResourceData: profileData
-          }));
-          throw e; // Re-throw to inform the caller
-      }
-    }
-  } catch(serverError) {
-    errorEmitter.emit('permission-error', new FirestorePermissionError({
+  const userDoc = await getDoc(userRef).catch((serverError) => {
+     errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: userRef.path,
         operation: 'get',
     }));
     throw serverError; // Re-throw to inform the caller
+  });
+
+  if (!userDoc.exists()) {
+    const { uid, email, displayName, photoURL } = user;
+    const profileData: Omit<AppUser, 'id'> = {
+      uid: uid,
+      displayName: displayName || 'New User',
+      photoURL: photoURL || `https://i.pravatar.cc/150?u=${uid}`,
+      email: email,
+      role: 'user',
+      interests: ['Technology', 'Music', 'Art'],
+      createdAt: serverTimestamp() as Timestamp,
+      updatedAt: serverTimestamp() as Timestamp,
+      homeCity: 'Taipei',
+      isSampleData: false,
+    };
+    setDoc(userRef, profileData)
+      .catch((e) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: userRef.path,
+            operation: 'create',
+            requestResourceData: profileData
+        }));
+        throw e; // Re-throw to inform the caller
+      });
   }
 };
 
@@ -264,7 +262,7 @@ export const createReply = async (replyData: CreateReplyData, user: AppUser): Pr
 };
 
 
-export const reportContent = async (type: 'thread' | 'reply', targetId: string, reason: string, userId: string) => {
+export const reportContent = (type: 'thread' | 'reply', targetId: string, reason: string, userId: string) => {
     const reportCollection = collection(firestore, 'reports');
     const reportData = {
         type,
@@ -274,15 +272,15 @@ export const reportContent = async (type: 'thread' | 'reply', targetId: string, 
         createdAt: serverTimestamp(),
     };
     
-    try {
-      await addDoc(reportCollection, reportData);
-    } catch(serverError) {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: reportCollection.path,
-            operation: 'create',
-            requestResourceData: reportData,
-        }));
-    }
+    addDoc(reportCollection, reportData)
+        .catch((serverError) => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: reportCollection.path,
+                operation: 'create',
+                requestResourceData: reportData,
+            }));
+            throw serverError;
+        });
 };
 
 export const followTarget = (userId: string, targetId: string, targetType: FollowTargetType) => {
@@ -302,6 +300,7 @@ export const followTarget = (userId: string, targetId: string, targetType: Follo
               operation: 'create',
               requestResourceData: followData,
           }));
+          throw serverError;
       });
 };
 
@@ -314,6 +313,7 @@ export const unfollowTarget = (userId: string, targetId: string, targetType: Fol
                 path: followRef.path,
                 operation: 'delete',
             }));
+            throw serverError;
         });
 };
 
@@ -344,6 +344,7 @@ export const addEventInteraction = (userId: string, eventId: string, type: Event
             operation: 'update',
             requestResourceData: interactionData,
         }));
+        throw serverError;
     });
 };
 
@@ -361,6 +362,7 @@ export const removeEventInteraction = (userId: string, eventId: string, type: Ev
             path: interactionRef.path,
             operation: 'delete',
         }));
+        throw serverError;
     });
 };
 
@@ -382,7 +384,6 @@ export const addNewsletterSubscriber = (email: string, city: string = 'unknown')
                 operation: 'create',
                 requestResourceData: subscriberData
             }));
+            throw serverError;
         });
 };
-
-    
