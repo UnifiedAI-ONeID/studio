@@ -1,7 +1,7 @@
 
 // scripts/seedSampleData.ts
 // Node-only script: DO NOT import this from your Next.js app.
-// Run with:  npx ts-node scripts/seedSampleData.ts
+// Run with:  npx tsx scripts/seedSampleData.ts
 
 import * as admin from "firebase-admin";
 
@@ -32,10 +32,8 @@ const venues = [
     description:
       "A cozy basement venue in the heart of Zhongshan. Expect small-batch cocktails, local jazz bands, and late-night conversations.",
     categories: ["bar", "live music"],
-    capacity: 80,
     tags: ["live music", "jazz", "nightlife"],
     isFeaturedOnLanding: true,
-    homepageOrder: 1,
     coverImageUrl:
       "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=1200&q=80",
     isSampleData: true,
@@ -54,10 +52,8 @@ const venues = [
     description:
       "An open-air rooftop with modular seating and a small indoor lab. Great for founders’ meetups, screenings, and design sprints.",
     categories: ["rooftop", "founders"],
-    capacity: 120,
     tags: ["founders", "startups", "screenings"],
     isFeaturedOnLanding: true,
-    homepageOrder: 2,
     coverImageUrl:
       "https://images.unsplash.com/photo-1486946255434-2466348c2166?auto=format&fit=crop&w=1200&q=80",
     isSampleData: true,
@@ -76,10 +72,8 @@ const venues = [
     description:
       "A bright townhouse with meeting rooms, a prototyping lab, and a café-style ground floor. Home for climate and civic-tech operators.",
     categories: ["hub", "co-working"],
-    capacity: 60,
     tags: ["climate", "civic tech", "co-working"],
     isFeaturedOnLanding: true,
-    homepageOrder: 3,
     coverImageUrl:
       "https://images.unsplash.com/photo-1522204502588-1b53c5df83ef?auto=format&fit=crop&w=1200&q=80",
     isSampleData: true,
@@ -97,10 +91,8 @@ const venues = [
     description:
       "A waterfront venue with a panoramic view of the harbor. Ideal for offsites, design sprints, and small retreats.",
     categories: ["hub", "retreat"],
-    capacity: 40,
     tags: ["offsite", "retreat", "harbor"],
     isFeaturedOnLanding: true,
-    homepageOrder: 4,
     coverImageUrl:
       "https://images.unsplash.com/photo-1470219954231-ff19a730a3a1?auto=format&fit=crop&w=1200&q=80",
     isSampleData: true,
@@ -119,7 +111,11 @@ const events = [
   {
     id: "event_impact_brunch",
     title: "Impact Brunch & Founder Intros",
-    venueId: "venue_midnight_alley",
+    location: {
+      venueId: "venue_midnight_alley",
+      neighborhood: "Zhongshan",
+      address: "123 Jazz Lane, Zhongshan District, Taipei"
+    },
     city: "Taipei",
     category: "founders",
     status: "published",
@@ -132,13 +128,13 @@ const events = [
     endTime: admin.firestore.Timestamp.fromDate(
       new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000)
     ),
+    timezone: "Asia/Taipei",
     description:
       "A lightly curated brunch where 8–12 founders and operators share what they’re building, what’s stuck, and where they could use help. Brunch for founders and operators building in climate, civic tech, and education.",
     tags: ["founders", "climate", "edtech"],
     priceType: "paid",
     priceMin: 450,
     stats: { interestedCount: 15, goingCount: 22, savedCount: 8, viewCount: 250 },
-    maxAttendees: 30,
     coverImageUrl:
       "https://images.unsplash.com/photo-1459682687441-7761439a7090?auto=format&fit=crop&w=1200&q=80",
     isSampleData: true,
@@ -151,7 +147,11 @@ const events = [
   {
     id: "event_night_jazz_lab",
     title: "Night Lab: Live Jazz & Side Projects",
-    venueId: "venue_midnight_alley",
+    location: {
+      venueId: "venue_midnight_alley",
+      neighborhood: "Zhongshan",
+      address: "123 Jazz Lane, Zhongshan District, Taipei"
+    },
     city: "Taipei",
     category: "social",
     status: "published",
@@ -164,12 +164,12 @@ const events = [
     endTime: admin.firestore.Timestamp.fromDate(
       new Date(Date.now() + 5 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000)
     ),
+    timezone: "Asia/Taipei",
     description:
       "Bring your side project, ship something small, and end the night with live jazz sets and casual intros. Live jazz, side project demos, and very lightweight pitches.",
     tags: ["live music", "side projects"],
     priceType: "free",
     stats: { interestedCount: 45, goingCount: 30, savedCount: 12, viewCount: 450 },
-    maxAttendees: 60,
     coverImageUrl:
       "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=1200&q=80",
     isSampleData: true,
@@ -182,7 +182,11 @@ const events = [
   {
     id: "event_rooftop_screening",
     title: "Rooftop Screening: Future Cities",
-    venueId: "venue_rooftop_lab",
+    location: {
+      venueId: "venue_rooftop_lab",
+      neighborhood: "Xinyi",
+      address: "456 Skyline Rd, Xinyi District, Taipei"
+    },
     city: "Taipei",
     category: "screening",
     status: "published",
@@ -195,13 +199,13 @@ const events = [
     endTime: admin.firestore.Timestamp.fromDate(
       new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000)
     ),
+    timezone: "Asia/Taipei",
     description:
       "A curated set of short films about urban resilience, followed by moderated discussion circles. Short film program and discussion about livable, resilient cities.",
     tags: ["cities", "resilience", "screening"],
     priceType: "paid",
     priceMin: 350,
     stats: { interestedCount: 50, goingCount: 41, savedCount: 25, viewCount: 600 },
-    maxAttendees: 80,
     coverImageUrl:
       "https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1200&q=80",
     isSampleData: true,
@@ -214,7 +218,11 @@ const events = [
   {
     id: "event_climate_sprint",
     title: "Climate Sprint: Harbor Resilience",
-    venueId: "venue_sea_view_hub",
+    location: {
+      venueId: "venue_sea_view_hub",
+      neighborhood: "Gushan",
+      address: "789 Portside Ave, Gushan District, Kaohsiung"
+    },
     city: "Kaohsiung",
     category: "climate",
     status: "published",
@@ -227,13 +235,13 @@ const events = [
     endTime: admin.firestore.Timestamp.fromDate(
       new Date(Date.now() + 10 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000)
     ),
+    timezone: "Asia/Taipei",
     description:
       "Multi-disciplinary teams explore real challenges with mentors from climate, logistics, and public policy. One-day design sprint on coastal resilience and harbor systems.",
     tags: ["climate", "sprint", "harbor"],
     priceType: "paid",
     priceMin: 800,
     stats: { interestedCount: 18, goingCount: 12, savedCount: 9, viewCount: 320 },
-    maxAttendees: 40,
     coverImageUrl:
       "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80",
     isSampleData: true,
@@ -266,7 +274,6 @@ const threads = [
     stats: {
       replyCount: 3,
       likeCount: 12,
-      lastReplyAt: now,
       viewCount: 128,
     },
     isSampleData: true,
@@ -284,8 +291,8 @@ const threads = [
         displayName: "Avery",
         photoURL: 'https://i.pravatar.cc/150?u=avery',
     },
-    venueId: "venue_sea_view_hub",
-    eventId: "event_climate_sprint",
+    relatedVenueId: "venue_sea_view_hub",
+    relatedEventId: "event_climate_sprint",
     body:
       "I'm attending the Climate Sprint next month and wanted to brainstorm some ideas beforehand. What are useful prompts, datasets, or field visits we should line up for the sprint? Anyone else going?",
     bodyPreview:
@@ -293,7 +300,6 @@ const threads = [
     stats: {
       replyCount: 2,
       likeCount: 7,
-      lastReplyAt: now,
       viewCount: 98,
     },
     isSampleData: true,
@@ -310,7 +316,9 @@ const threadReplies: {
   authorInfo: { displayName: string; photoURL: string; };
   body: string;
   createdAt: admin.firestore.Timestamp;
+  updatedAt: admin.firestore.Timestamp;
   isSampleData: boolean;
+  likeCount: number;
 }[] = [
   {
     threadId: "thread_taipei_weekly",
@@ -324,6 +332,8 @@ const threadReplies: {
       "There’s a small founders’ coffee happening at Impact House on Thursday 10–12. Also Rooftop Lab has a free slot Friday night.",
     isSampleData: true,
     createdAt: now,
+    updatedAt: now,
+    likeCount: 2,
   },
   {
     threadId: "thread_taipei_weekly",
@@ -337,6 +347,8 @@ const threadReplies: {
       "Looking for a quiet corner on Sunday afternoon to write. Any suggestions near Da’an?",
     isSampleData: true,
     createdAt: now,
+    updatedAt: now,
+    likeCount: 0,
   },
   {
     threadId: "thread_taipei_weekly",
@@ -350,6 +362,8 @@ const threadReplies: {
       "Impact House ground floor is usually quiet after 3pm on Sundays. Book in the directory and we’ll keep a table for you.",
     isSampleData: true,
     createdAt: now,
+    updatedAt: now,
+    likeCount: 5,
   },
   {
     threadId: "thread_climate_sprint_ideas",
@@ -363,6 +377,8 @@ const threadReplies: {
       "It’d be great to get a short briefing from harbor operations before we jump into ideas.",
     isSampleData: true,
     createdAt: now,
+    updatedAt: now,
+    likeCount: 3,
   },
   {
     threadId: "thread_climate_sprint_ideas",
@@ -376,6 +392,8 @@ const threadReplies: {
       "Love this. We’re lining up a short morning walkthrough with the port team.",
     isSampleData: true,
     createdAt: now,
+    updatedAt: now,
+    likeCount: 1,
   },
 ];
 
@@ -406,12 +424,14 @@ async function seedAll() {
 
     console.log("\nSeeding thread comments...");
     for (const reply of threadReplies) {
+        // createdBy is not part of the reply data, it's added by the createReply function
+        const { threadId, ...replyData } = reply;
         await db
         .collection("threads")
-        .doc(reply.threadId)
+        .doc(threadId)
         .collection("comments")
         .doc(reply.id)
-        .set(reply, { merge: true });
+        .set(replyData, { merge: true });
         process.stdout.write('✓');
     }
     console.log(`\nSeeded ${threadReplies.length} documents in comments subcollections.`);

@@ -54,8 +54,6 @@ const clearAllSampleData = async () => {
         'events', 
         'venues', 
         'threads', 
-        'comments', // Note: comments are a subcollection
-        'landingConfig',
         'eventInteractions',
         'follows',
         'reports'
@@ -75,13 +73,13 @@ const clearAllSampleData = async () => {
     }
 
     // Special handling for subcollections like 'comments'
-    console.log(`\nChecking subcollection: comments`);
+    console.log(`\nChecking comments in threads marked as sample data...`);
     const threadsWithSampleData = await db.collection('threads').where('isSampleData', '==', true).get();
     for (const threadDoc of threadsWithSampleData.docs) {
-        const commentsQuery = threadDoc.ref.collection('comments').where('isSampleData', '==', true);
+        const commentsQuery = threadDoc.ref.collection('comments');
         await deleteCollectionByQuery(commentsQuery, 50);
     }
-     console.log(`\nSuccessfully cleared sample data from comments subcollections.`);
+     console.log(`\nSuccessfully cleared sample comments subcollections.`);
 
     console.log("\n\nSample data cleanup complete.");
 };
