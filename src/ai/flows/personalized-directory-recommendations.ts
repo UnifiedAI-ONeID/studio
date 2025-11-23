@@ -37,32 +37,6 @@ export type PersonalizedDirectoryRecommendationsOutput = z.infer<
   typeof PersonalizedDirectoryRecommendationsOutputSchema
 >;
 
-const prompt = ai.definePrompt({
-  name: 'personalizedDirectoryRecommendationsPrompt',
-  input: {
-    schema: PersonalizedDirectoryRecommendationsInputSchema,
-  },
-  output: {
-    schema: PersonalizedDirectoryRecommendationsOutputSchema,
-  },
-  tools: [findVenuesTool],
-  prompt: `You are an AI assistant that recommends places (venues) to users based on their profile.
-  Your goal is to provide a list of venues that are most relevant to the user's interests.
-
-  User Profile:
-  - Interests: {{userProfile.interests}}
-  - Location: {{userProfile.homeCity}}
-  
-  Number of recommendations requested: {{count}}
-
-  1. Use the 'findVenues' tool to search for venues. Try to find venues that align with the user's interests. You can use their interests as keywords or categories.
-  2. For each recommendation, provide the venue's ID, name, coverImageUrl, and a short, compelling reason why the user would like this place, linking it to their interests.
-  3. Return exactly the number of recommendations requested.
-
-  Return a JSON object that matches the specified output schema.
-  `,
-});
-
 const personalizedDirectoryRecommendationsFlow = ai.defineFlow(
   {
     name: 'personalizedDirectoryRecommendationsFlow',
@@ -70,6 +44,31 @@ const personalizedDirectoryRecommendationsFlow = ai.defineFlow(
     outputSchema: PersonalizedDirectoryRecommendationsOutputSchema,
   },
   async input => {
+    const prompt = ai.definePrompt({
+      name: 'personalizedDirectoryRecommendationsPrompt',
+      input: {
+        schema: PersonalizedDirectoryRecommendationsInputSchema,
+      },
+      output: {
+        schema: PersonalizedDirectoryRecommendationsOutputSchema,
+      },
+      tools: [findVenuesTool],
+      prompt: `You are an AI assistant that recommends places (venues) to users based on their profile.
+      Your goal is to provide a list of venues that are most relevant to the user's interests.
+    
+      User Profile:
+      - Interests: {{userProfile.interests}}
+      - Location: {{userProfile.homeCity}}
+      
+      Number of recommendations requested: {{count}}
+    
+      1. Use the 'findVenues' tool to search for venues. Try to find venues that align with the user's interests. You can use their interests as keywords or categories.
+      2. For each recommendation, provide the venue's ID, name, coverImageUrl, and a short, compelling reason why the user would like this place, linking it to their interests.
+      3. Return exactly the number of recommendations requested.
+    
+      Return a JSON object that matches the specified output schema.
+      `,
+    });
     const {output} = await prompt(input);
     return output!;
   }

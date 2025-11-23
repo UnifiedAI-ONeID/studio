@@ -32,30 +32,6 @@ const PersonalizedEventRecommendationsOutputSchema = z.object({
 });
 export type PersonalizedEventRecommendationsOutput = z.infer<typeof PersonalizedEventRecommendationsOutputSchema>;
 
-const eventRecommendationPrompt = ai.definePrompt({
-  name: 'eventRecommendationPrompt',
-  input: {schema: PersonalizedEventRecommendationsInputSchema},
-  output: {schema: PersonalizedEventRecommendationsOutputSchema},
-  tools: [findEventsTool],
-  prompt: `You are an expert at recommending relevant and interesting events to users.
-  
-  Your goal is to find events that align with the user's interests and location.
-  
-  User Profile:
-  - Interests: {{userProfile.interests}}
-  - Location: {{userProfile.homeCity}}
-  
-  Number of recommendations requested: {{count}}
-  
-  1. Use the 'findEvents' tool to search for events that match one or more of the user's interests. You can search for events in their home city.
-  2. For each recommended event, you MUST provide a short, compelling reason why the user would be interested in it. Connect it directly to their stated interests.
-  3. Ensure you return the exact number of recommendations requested.
-  4. Return the eventId and coverImageUrl for each recommendation so the user can click on it and see an image.
-  
-  Format your output as a JSON object matching the schema.
-  `,
-});
-
 const personalizedEventRecommendationsFlow = ai.defineFlow(
     {
       name: 'personalizedEventRecommendationsFlow',
@@ -63,6 +39,29 @@ const personalizedEventRecommendationsFlow = ai.defineFlow(
       outputSchema: PersonalizedEventRecommendationsOutputSchema,
     },
     async input => {
+      const eventRecommendationPrompt = ai.definePrompt({
+        name: 'eventRecommendationPrompt',
+        input: {schema: PersonalizedEventRecommendationsInputSchema},
+        output: {schema: PersonalizedEventRecommendationsOutputSchema},
+        tools: [findEventsTool],
+        prompt: `You are an expert at recommending relevant and interesting events to users.
+        
+        Your goal is to find events that align with the user's interests and location.
+        
+        User Profile:
+        - Interests: {{userProfile.interests}}
+        - Location: {{userProfile.homeCity}}
+        
+        Number of recommendations requested: {{count}}
+        
+        1. Use the 'findEvents' tool to search for events that match one or more of the user's interests. You can search for events in their home city.
+        2. For each recommended event, you MUST provide a short, compelling reason why the user would be interested in it. Connect it directly to their stated interests.
+        3. Ensure you return the exact number of recommendations requested.
+        4. Return the eventId and coverImageUrl for each recommendation so the user can click on it and see an image.
+        
+        Format your output as a JSON object matching the schema.
+        `,
+      });
       const {output} = await eventRecommendationPrompt(input);
       return output!;
     }
