@@ -29,6 +29,7 @@
         "startTime": { "type": "string", "format": "date-time" },
         "endTime": { "type": "string", "format": "date-time" },
         "timezone": { "type": "string" },
+        "city": { "type": "string" },
         "venueId": { "type": "string" },
         "hostId": { "type": "string" },
         "coverImageUrl": { "type": "string", "format": "uri" },
