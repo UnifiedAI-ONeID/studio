@@ -1,3 +1,5 @@
+'use server';
+
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { collection, query, where, getDocs, limit, QueryConstraint } from 'firebase/firestore';
@@ -12,18 +14,20 @@ const findVenuesSchema = z.object({
     count: z.number().int().min(1).max(10).default(5).describe('The maximum number of venues to return.'),
   });
 
+const VenueSchema = z.object({
+      id: z.string(),
+      name: z.string(),
+      description: z.string().optional(),
+      categories: z.array(z.string()),
+      coverImageUrl: z.string().optional(),
+});
+
 export const findVenuesTool = ai.defineTool(
     {
       name: 'findVenues',
       description: 'Finds venues (places) from the database based on criteria like category or name.',
       inputSchema: findVenuesSchema,
-      outputSchema: z.array(z.object({
-          id: z.string(),
-          name: z.string(),
-          description: z.string().optional(),
-          categories: z.array(z.string()),
-          coverImageUrl: z.string().optional(),
-      })),
+      outputSchema: z.array(VenueSchema),
     },
     async (input) => {
         console.log(`[findVenues tool] called with input: ${JSON.stringify(input)}`);
@@ -31,7 +35,6 @@ export const findVenuesTool = ai.defineTool(
         const venuesRef = collection(firestore, 'venues');
         const constraints: QueryConstraint[] = [
             where('status', '==', 'approved'),
-            limit(input.count),
         ];
 
         if (input.category) {
@@ -40,11 +43,9 @@ export const findVenuesTool = ai.defineTool(
         if (input.city) {
             constraints.push(where('city', '==', input.city));
         }
-         // A full-text search on 'keyword' is not supported natively.
-         // This is a simplified search. For a real app, use a dedicated search service.
-         if (!input.category && input.keyword) {
-             constraints.push(where('categories', 'array-contains', input.keyword));
-         }
+
+        // Fetch more if we are doing a text-based filter
+        constraints.push(limit(input.keyword ? 50 : input.count));
 
         const q = query(venuesRef, ...constraints);
         const snapshot = await getDocs(q);
@@ -53,7 +54,7 @@ export const findVenuesTool = ai.defineTool(
             return [];
         }
 
-        const venues = snapshot.docs.map(doc => {
+        let venues = snapshot.docs.map(doc => {
             const data = doc.data() as Venue;
             return {
                 id: doc.id,
@@ -63,6 +64,28 @@ export const findVenuesTool = ai.defineTool(
                 coverImageUrl: data.coverImageUrl,
             };
         });
+
+        if (input.keyword) {
+             const filterPrompt = ai.definePrompt({
+              name: 'venueFilterPrompt',
+              input: { schema: z.object({ query: z.string(), venues: z.array(VenueSchema) }) },
+              output: { schema: z.array(VenueSchema) },
+              prompt: `You are an intelligent filter. From the provided list of venues, return only the ones that match the user's query: "{{query}}".
+              
+              Return the venues that are most relevant to the query based on their name, categories, and description.
+              
+              Available Venues:
+              ---
+              {{{json venues}}}
+              ---
+              
+              Return a JSON array of the matching venue objects. If no venues match, return an empty array.
+              `,
+          });
+          
+          const filteredVenues = await filterPrompt({ query: input.keyword, venues });
+          return filteredVenues.output ? filteredVenues.output.slice(0, input.count) : [];
+        }
         
         console.log(`[findVenues tool] found ${venues.length} venues.`);
         return venues;

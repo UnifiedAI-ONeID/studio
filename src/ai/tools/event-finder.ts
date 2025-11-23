@@ -1,6 +1,8 @@
+'use server';
+
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { collection, query, where, getDocs, limit, orderBy, QueryConstraint } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, QueryConstraint } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';
 import type { Event } from '@/lib/types';
 
@@ -11,19 +13,21 @@ const findEventsSchema = z.object({
     count: z.number().int().min(1).max(10).default(5).describe('The maximum number of events to return.'),
   });
 
+const EventSchema = z.object({
+      id: z.string(),
+      title: z.string(),
+      description: z.string(),
+      category: z.string(),
+      city: z.string(),
+      coverImageUrl: z.string().optional(),
+});
+
 export const findEventsTool = ai.defineTool(
     {
       name: 'findEvents',
       description: 'Finds events from the database based on various criteria like interests, category, or location.',
       inputSchema: findEventsSchema,
-      outputSchema: z.array(z.object({
-          id: z.string(),
-          title: z.string(),
-          description: z.string(),
-          category: z.string(),
-          city: z.string(),
-          coverImageUrl: z.string().optional(),
-      })),
+      outputSchema: z.array(EventSchema),
     },
     async (input) => {
       console.log(`[findEvents tool] called with input: ${JSON.stringify(input)}`);
@@ -40,13 +44,9 @@ export const findEventsTool = ai.defineTool(
       if (input.city) {
         constraints.push(where('city', '==', input.city));
       }
-
-      // If there's a queryText but no category, we will do a client-side filter
-      // as Firestore doesn't support case-insensitive or partial text search efficiently.
-      // For a production app, a dedicated search service like Algolia is recommended.
-      if (!input.queryText) {
-          constraints.push(limit(input.count));
-      }
+      
+      // If a text query is provided, fetch more results to be filtered by the LLM. Otherwise, just limit.
+      constraints.push(limit(input.queryText ? 50 : input.count));
       
       const q = query(eventsRef, ...constraints);
       const snapshot = await getDocs(q);
@@ -68,11 +68,25 @@ export const findEventsTool = ai.defineTool(
       });
 
       if (input.queryText) {
-        const lowercasedQuery = input.queryText.toLowerCase();
-        events = events.filter(event => 
-            event.title.toLowerCase().includes(lowercasedQuery) ||
-            event.description.toLowerCase().includes(lowercasedQuery)
-        ).slice(0, input.count);
+          const filterPrompt = ai.definePrompt({
+              name: 'eventFilterPrompt',
+              input: { schema: z.object({ query: z.string(), events: z.array(EventSchema) }) },
+              output: { schema: z.array(EventSchema) },
+              prompt: `You are an intelligent filter. From the provided list of events, return only the ones that match the user's query: "{{query}}".
+              
+              Return the events that are most relevant to the query based on their title and description.
+              
+              Available Events:
+              ---
+              {{{json events}}}
+              ---
+              
+              Return a JSON array of the matching event objects. If no events match, return an empty array.
+              `,
+          });
+          
+          const filteredEvents = await filterPrompt({ query: input.queryText, events });
+          return filteredEvents.output ? filteredEvents.output.slice(0, input.count) : [];
       }
       
       console.log(`[findEvents tool] found ${events.length} events.`);
