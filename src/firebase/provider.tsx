@@ -1,3 +1,4 @@
+
 'use client';
 import {
   createContext,
@@ -7,8 +8,8 @@ import {
   useContext
 } from 'react';
 import { User as FirebaseUser, Auth } from 'firebase/auth';
-import { auth as fAuth, db as fs } from '@/lib/firebase';
-import { useUser } from './auth/use-user';
+import { auth as fAuth, firestore as fs } from '@/lib/firebase';
+import { useUser as useAppUser } from './auth/use-user';
 
 import type { AppUser } from '@/lib/types';
 import { Firestore } from 'firebase/firestore';
@@ -21,7 +22,7 @@ export interface AuthState {
   setPrompted: (prompted: boolean) => void;
 }
 
-const AuthContext = createContext<AuthState>({
+export const AuthContext = createContext<AuthState>({
   user: null,
   firebaseUser: null,
   loading: true,
@@ -58,20 +59,28 @@ export const useFirebase = (): FirebaseContextValue => {
   return context;
 };
 
-export function FirebaseClientProvider({ children }: { children: ReactNode }) {
-  const { user, firebaseUser, loading } = useUser();
-  const [prompted, setPrompted] = useState(false);
-  
-  const authContextValue = useMemo(
-    () => ({ user, firebaseUser, loading, prompted, setPrompted }),
-    [user, firebaseUser, loading, prompted]
-  );
+function AuthProvider({ children }: { children: ReactNode }) {
+    const { user, firebaseUser, loading } = useAppUser();
+    const [prompted, setPrompted] = useState(false);
+    
+    const authContextValue = useMemo(
+        () => ({ user, firebaseUser, loading, prompted, setPrompted }),
+        [user, firebaseUser, loading, prompted]
+    );
 
+    return (
+        <AuthContext.Provider value={authContextValue}>
+            {children}
+        </AuthContext.Provider>
+    );
+}
+
+export function FirebaseClientProvider({ children }: { children: ReactNode }) {
   return (
     <FirebaseProvider>
-      <AuthContext.Provider value={authContextValue}>
+      <AuthProvider>
         {children}
-      </AuthContext.Provider>
+      </AuthProvider>
     </FirebaseProvider>
   );
 }
