@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon, Upload } from 'lucide-react';
+import { Calendar as CalendarIcon, Upload, Wand2 } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 import Image from 'next/image';
 
@@ -33,6 +33,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import type { Venue, AppUser } from '@/lib/types';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';
+import { generateDescription } from '@/ai/flows/generate-description';
 
 
 const categories = ['Music', 'Food & Drink', 'Talks', 'Sports', 'Arts', 'Networking', 'Other'];
@@ -42,6 +43,7 @@ export default function NewEventPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(false);
   
   const venuesQuery = useMemoFirebase(() => query(collection(firestore, 'venues'), where('status', '==', 'approved'), orderBy('name')), []);
   const { data: venues } = useCollection<Venue>(venuesQuery);
@@ -79,6 +81,29 @@ export default function NewEventPage() {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
+
+  const handleGenerateDescription = async () => {
+    if (!title || !category) {
+      toast({
+        variant: 'destructive',
+        title: 'Please enter a title and category first.',
+      });
+      return;
+    }
+    setIsAiLoading(true);
+    try {
+      const result = await generateDescription({ title, category });
+      if (result.description) {
+        setDescription(result.description);
+        toast({ title: 'Description generated!' });
+      }
+    } catch (error) {
+      console.error(error);
+      toast({ variant: 'destructive', title: 'Failed to generate description.' });
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -263,7 +288,13 @@ export default function NewEventPage() {
             </div>
 
             <div className='space-y-2'>
-              <Label htmlFor='description'>Description</Label>
+              <div className="flex justify-between items-center">
+                <Label htmlFor='description'>Description</Label>
+                <Button variant="ghost" size="sm" type="button" onClick={handleGenerateDescription} disabled={isAiLoading}>
+                  <Wand2 className={`mr-2 h-4 w-4 ${isAiLoading ? 'animate-pulse' : ''}`} />
+                  {isAiLoading ? 'Generating...' : 'Generate with AI'}
+                </Button>
+              </div>
               <Textarea
                 id='description'
                 placeholder="Tell us more about your event..."
@@ -304,3 +335,5 @@ export default function NewEventPage() {
     </div>
   );
 }
+
+    

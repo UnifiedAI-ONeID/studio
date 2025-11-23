@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Upload } from 'lucide-react';
+import { Upload, Wand2 } from 'lucide-react';
 import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { createVenue, uploadImage } from '@/lib/firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AppUser } from '@/lib/types';
+import { generateDescription } from '@/ai/flows/generate-description';
 
 const venueCategories = ["Live music", "Bar", "Restaurant", "Cafe", "Art Gallery", "Theater", "Club", "Park", "Other"];
 
@@ -31,6 +32,7 @@ export default function NewVenuePage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(false);
 
   const [name, setName] = useState('');
   const [categories, setCategories] = useState<string[]>([]);
@@ -63,6 +65,29 @@ export default function NewVenuePage() {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
+
+  const handleGenerateDescription = async () => {
+    if (!name || !categories.length) {
+      toast({
+        variant: 'destructive',
+        title: 'Please enter a name and category first.',
+      });
+      return;
+    }
+    setIsAiLoading(true);
+    try {
+      const result = await generateDescription({ title: name, category: categories[0] });
+      if (result.description) {
+        setDescription(result.description);
+        toast({ title: 'Description generated!' });
+      }
+    } catch (error) {
+      console.error(error);
+      toast({ variant: 'destructive', title: 'Failed to generate description.' });
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,7 +200,13 @@ export default function NewVenuePage() {
             </div>
 
              <div className='space-y-2'>
-              <Label htmlFor='description'>Description</Label>
+              <div className="flex justify-between items-center">
+                <Label htmlFor='description'>Description</Label>
+                <Button variant="ghost" size="sm" type="button" onClick={handleGenerateDescription} disabled={isAiLoading}>
+                  <Wand2 className={`mr-2 h-4 w-4 ${isAiLoading ? 'animate-pulse' : ''}`} />
+                  {isAiLoading ? 'Generating...' : 'Generate with AI'}
+                </Button>
+              </div>
               <Textarea
                 id='description'
                 placeholder="Tell us about this place..."
@@ -222,3 +253,5 @@ export default function NewVenuePage() {
     </div>
   );
 }
+
+    
