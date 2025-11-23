@@ -17,7 +17,7 @@ import {
   limit,
   Firestore,
 } from 'firebase/firestore';
-import { db as firestore } from '../firebase';
+import { db as firestore } from '@/lib/firebase';
 import type { User } from 'firebase/auth';
 import type { AppUser, Event, Venue, CommonsThread, CommonsReply, FollowTargetType, EventInteractionType, ApprovalStatus } from '../types';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -95,7 +95,7 @@ export const createEvent = async (
   userId: string,
 ): Promise<string> => {
     const errors: {[key: string]: string} = {};
-    if (!eventData.title || eventData.title.length < 3) errors.title = 'Title must be at least 3 characters.';
+    if (!eventData.title || eventData.title.length < 5) errors.title = 'Title must be at least 5 characters.';
     if (!eventData.description || eventData.description.length < 10) errors.description = 'Description must be at least 10 characters.';
     if (!eventData.category) errors.category = 'Please select a category.';
     if (!eventData.startTime) errors.startTime = 'An event date and time is required.';

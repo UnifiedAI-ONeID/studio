@@ -51,15 +51,17 @@ service cloud.firestore {
       let data = incomingData();
       return data.uid == request.auth.uid
           && data.email is string
-          && (data.displayName == null || data.displayName is string)
-          && (data.photoURL == null || data.photoURL is string)
-          && (data.role == 'user' || data.role == 'admin');
+          && (data.displayName == null || (data.displayName is string && data.displayName.size() > 0))
+          && (data.photoURL == null || (data.photoURL is string && data.photoURL.matches('^https?://.*')))
+          && (data.role == 'user' || data.role == 'admin')
+          && (data.homeCity is string);
     }
 
     function isValidEvent() {
       let data = incomingData();
-      return data.title is string && data.title.size() > 0
-          && data.category is string
+      return data.title is string && data.title.size() >= 5
+          && data.description is string && data.description.size() >= 10
+          && data.category is string && data.category.size() > 0
           && data.startTime is timestamp
           && data.hostId is string
           && data.status is string
@@ -70,19 +72,18 @@ service cloud.firestore {
 
     function isValidVenue() {
         let data = incomingData();
-        return data.name is string && data.name.size() > 0
-            && data.type is string
-            && data.address is string
+        return data.name is string && data.name.size() >= 3
+            && data.categories is list && data.categories.size() > 0
+            && data.address is string && data.address.size() >= 5
             && data.neighborhood is string
-            && data.createdBy is string
-            && data.verified is bool;
+            && data.createdBy is string;
     }
 
     function isValidThread() {
         let data = incomingData();
-        return data.title is string && data.title.size() > 0
-            && data.body is string && data.body.size() > 0
-            && data.topic is string
+        return data.title is string && data.title.size() >= 5
+            && data.body is string && data.body.size() >= 10
+            && data.topic is string && data.topic.size() > 0
             && data.createdBy is string;
     }
 
@@ -131,12 +132,12 @@ service cloud.firestore {
     }
 
     match /eventInteractions/{interactionId} {
-      allow read, delete: if isOwner(existingData().userId);
+      allow read, delete: if isOwner(resource.data.userId);
       allow create, update: if isOwner(incomingData().userId);
     }
     
     match /follows/{followId} {
-        allow read, delete: if isOwner(existingData().userId);
+        allow read, delete: if isOwner(resource.data.userId);
         allow create: if isOwner(incomingData().userId);
     }
     
