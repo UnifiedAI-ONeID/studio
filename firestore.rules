@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -8,12 +9,11 @@ service cloud.firestore {
     }
 
     // EVENTS
-    // - Public reads only for published + public events
+    // - Public reads for all events
     // - Any signed-in user can create (you can tighten later)
     // - Only owner can update/delete
     match /events/{eventId} {
-      allow read: if resource.data.status == "published"
-                  && resource.data.visibility == "public";
+      allow read: if true;
 
       allow create: if isSignedIn();
 
@@ -46,11 +46,11 @@ service cloud.firestore {
                             && request.auth.uid == resource.data.authorId;
     }
 
-    // THREAD REPLIES
+    // THREAD COMMENTS
     // - Public readable
     // - Any signed-in user can create
     // - Only author can update/delete
-    match /threads/{threadId}/replies/{replyId} {
+    match /threads/{threadId}/comments/{commentId} {
       allow read: if true;
 
       allow create: if isSignedIn();

@@ -19,7 +19,7 @@ import {
 } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';
 import type { User } from 'firebase/auth';
-import type { AppUser, Event, Venue, CommonsThread, CommonsReply, FollowTargetType, EventInteractionType, ApprovalStatus } from '../types';
+import type { AppUser, Event, Venue, CommonsThread, CommonsReply, FollowTargetType, EventInteractionType, ApprovalStatus, ReportType } from '../types';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { errorEmitter } from './error-emitter';
 import { FirestorePermissionError } from './errors';
@@ -262,7 +262,7 @@ export const createReply = async (replyData: CreateReplyData, user: AppUser): Pr
 };
 
 
-export const reportContent = (type: 'thread' | 'reply', targetId: string, reason: string, userId: string) => {
+export const reportContent = (type: ReportType, targetId: string, reason: string, userId: string) => {
     const reportCollection = collection(firestore, 'reports');
     const reportData = {
         type,
