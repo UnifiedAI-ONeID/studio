@@ -14,6 +14,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
+      // In a real app, this would be more secure, e.g., checking a custom claim.
       return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
     
@@ -80,6 +81,7 @@ service cloud.firestore {
             && data.categories is list && data.categories.size() > 0
             && data.address is string && data.address.size() >= 5
             && data.neighborhood is string
+            && (data.description == null || data.description is string)
             && data.createdBy is string;
     }
 
@@ -111,26 +113,27 @@ service cloud.firestore {
     match /events/{eventId} {
       allow read: if true;
       allow create: if isSignedIn() && isOwner(incomingData().createdBy) && isValidEvent();
-      allow update: if (isOwner(existingData().createdBy) || isAdmin()) && isValidEvent();
+      allow update: if (isOwner(existingData().createdBy) || isAdmin()) && isValidEvent() && isUnchanged('createdAt') && isUnchanged('createdBy');
       allow delete: if isOwner(existingData().createdBy) || isAdmin();
     }
     
     match /venues/{venueId} {
       allow read: if true;
       allow create: if isSignedIn() && isOwner(incomingData().createdBy) && isValidVenue();
-      allow update, delete: if (isOwner(existingData().createdBy) || isAdmin());
+      allow update: if (isOwner(existingData().createdBy) || isAdmin()) && isValidVenue() && isUnchanged('createdAt') && isUnchanged('createdBy');
+      allow delete: if isOwner(existingData().createdBy) || isAdmin();
     }
     
     match /threads/{threadId} {
       allow read: if true;
       allow create: if isSignedIn() && isOwner(incomingData().authorId) && isValidThread();
-      allow update: if (isOwner(existingData().authorId) || isAdmin()) && isUnchanged('createdAt');
+      allow update: if (isOwner(existingData().authorId) || isAdmin()) && isValidThread() && isUnchanged('createdAt') && isUnchanged('authorId');
       allow delete: if isOwner(existingData().authorId) || isAdmin();
 
       match /comments/{commentId} {
         allow read: if true;
         allow create: if isSignedIn() && isOwner(incomingData().createdBy) && isValidComment();
-        allow update: if (isOwner(existingData().createdBy) || isAdmin()) && isUnchanged('createdAt');
+        allow update: if (isOwner(existingData().createdBy) || isAdmin()) && isValidComment() && isUnchanged('createdAt') && isUnchanged('createdBy');
         allow delete: if isOwner(existingData().createdBy) || isAdmin();
       }
     }
@@ -156,5 +159,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
