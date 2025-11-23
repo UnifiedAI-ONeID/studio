@@ -52,7 +52,7 @@ const pwaConfig = {
       },
     },
     {
-      urlPattern: new RegExp('^https://(images.unsplash.com|picsum.photos|i.pravatar.cc|lh3.googleusercontent.com)'),
+      urlPattern: new RegExp('^https://(images.unsplash.com|picsum.photos|i.pravatar.cc|lh3.googleusercontent.com)/.*'),
       handler: 'StaleWhileRevalidate',
       options: {
           cacheName: 'remote-images-cache',

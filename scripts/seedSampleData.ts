@@ -1,4 +1,3 @@
-
 // scripts/seedSampleData.ts
 import * as admin from "firebase-admin";
 
@@ -62,12 +61,12 @@ const sampleVenues = [
     { id: 'seed_venue_1', name: 'Midnight Alley Jazz Bar', categories: ['Bar', 'Live music'], address: '123 Fuxing S Rd, Da\'an District', city: 'Taipei', neighborhood: 'Da\'an', homepageTagline: 'Intimate live jazz bar with local bands every weekend.', priceLevel: 3, coverImageUrl: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', isFeaturedOnLanding: true, createdBy: 'seed_user_alex', status: 'approved' },
     { id: 'seed_venue_2', name: 'Daybreak Coffee Lab', categories: ['Cafe'], address: '456 Zhongshan N Rd, Zhongshan District', city: 'Taipei', neighborhood: 'Zhongshan', homepageTagline: 'Bright café with plenty of plugs and quiet corners for deep work.', priceLevel: 2, coverImageUrl: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=2047&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', isFeaturedOnLanding: true, createdBy: 'seed_user_mei', status: 'approved' },
     { id: 'seed_venue_3', name: 'Cornerstone Community Hub', categories: ['Coworking', 'Community'], address: '789 Xinyi Rd, Xinyi District', city: 'Taipei', neighborhood: 'Xinyi', homepageTagline: 'A space for creators, innovators, and neighbors to connect.', priceLevel: 2, coverImageUrl: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2070&auto=format&fit=crop&ixlib-rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', isFeaturedOnLanding: true, createdBy: 'seed_user_host_1', status: 'approved' },
-    { id: 'seed_venue_4', name: 'Lightbox Art Space', categories: ['Art Gallery'], address: '101 Songde Rd, Xinyi District', city: 'Taipei', neighborhood: 'Xinyi', homepageTagline: 'Showcasing contemporary digital and interactive art.', priceLevel: 1, coverImageUrl: 'https://images.unsplash.com/photo-1536924940846-227afb31e2a5?q=80&w=2067&auto=format&fit=crop&ixlib-rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', isFeaturedOnLanding: true, createdBy: 'seed_user_mei', status: 'approved' },
-    { id: 'seed_venue_5', name: 'The Wall Live House', categories: ['Live music'], address: 'B1, No. 200, Section 4, Roosevelt Rd, Wenshan District', city: 'Taipei', neighborhood: 'Wenshan', homepageTagline: 'Taipei\'s legendary underground music venue.', priceLevel: 2, coverImageUrl: 'https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?q=80&w=2070&auto=format&fit=crop&ixlib-rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', isFeaturedOnLanding: true, createdBy: 'seed_user_host_3', status: 'approved' },
+    { id: 'seed_venue_4', name: 'Lightbox Art Space', categories: ['Art Gallery'], address: '101 Songde Rd, Xinyi District', city: 'Taipei', neighborhood: 'Xinyi', homepageTagline: 'Showcasing contemporary digital and interactive art.', priceLevel: 1, coverImageUrl: 'https://images.unsplash.com/photo-1536924940846-227afb31e2a5?q=80&w=2067&auto=format&fit=crop&ixlib-rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%(AMPERSAND)3D%3D', isFeaturedOnLanding: true, createdBy: 'seed_user_mei', status: 'approved' },
+    { id: 'seed_venue_5', name: 'The Wall Live House', categories: ['Live music'], address: 'B1, No. 200, Section 4, Roosevelt Rd, Wenshan District', city: 'Taipei', neighborhood: 'Wenshan', homepageTagline: 'Taipei\'s legendary underground music venue.', priceLevel: 2, coverImageUrl: 'https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', isFeaturedOnLanding: true, createdBy: 'seed_user_host_3', status: 'approved' },
 ];
 
 const sampleEvents = [
-    { id: 'seed_event_1', title: 'Rooftop Jazz Night at Zhongshan', category: 'Music', startTime: getFutureDate(3, 20), city: 'Taipei', neighborhood: 'Zhongshan', hostId: 'seed_user_host_3', priceType: 'paid', priceMin: 600, coverImageUrl: 'https://images.unsplash.com/photo-1619532938034-0a373b577b22?q=80&w=1964&auto=format&fit=crop&ixlib-rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', isFeaturedOnLanding: true, priorityScore: 100, stats: { interestedCount: 45, goingCount: 22 } },
+    { id: 'seed_event_1', title: 'Rooftop Jazz Night at Zhongshan', category: 'Music', startTime: getFutureDate(3, 20), city: 'Taipei', neighborhood: 'Zhongshan', hostId: 'seed_user_host_3', priceType: 'paid', priceMin: 600, coverImageUrl: 'https://images.unsplash.com/photo-1619532938034-0a373b577b22?q=80&w=1964&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', isFeaturedOnLanding: true, priorityScore: 100, stats: { interestedCount: 45, goingCount: 22 } },
     { id: 'seed_event_2', title: 'Art Walk: Hidden Galleries of Da\'an', category: 'Arts', startTime: getFutureDate(4, 14), city: 'Taipei', neighborhood: 'Da\'an', hostId: 'seed_user_mei', priceType: 'free', coverImageUrl: 'https://images.unsplash.com/photo-1501430654243-c934cec2e1c0?q=80&w=2070&auto=format&fit=crop&ixlib-rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', isFeaturedOnLanding: true, priorityScore: 95, stats: { interestedCount: 78, goingCount: 41 } },
     { id: 'seed_event_3', title: 'Startup Founder Breakfast Meetup', category: 'Networking', startTime: getFutureDate(9, 8), city: 'Taipei', neighborhood: 'Xinyi', hostId: 'seed_user_host_1', priceType: 'paid', priceMin: 250, location: { venueId: 'seed_venue_3' }, coverImageUrl: 'https://images.unsplash.com/photo-1543269865-cbf427effbad?q=80&w=2070&auto=format&fit=crop&ixlib-rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', stats: { interestedCount: 120, goingCount: 60 } },
     { id: 'seed_event_4', title: 'Sunday Yoga by the Riverside', category: 'Wellness', startTime: getFutureDate(5, 9), city: 'Taipei', neighborhood: 'Songshan', hostId: 'seed_user_host_2', priceType: 'donation', coverImageUrl: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=2120&auto=format&fit=crop&ixlib-rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', isFeaturedOnLanding: true, priorityScore: 80, stats: { interestedCount: 95, goingCount: 55 } },
@@ -100,6 +99,8 @@ const seed = async () => {
         const ref = db.collection('users').doc(user.id);
         batch.set(ref, {
             ...user,
+            uid: user.id,
+            email: `${user.id}@example.com`,
             createdAt: now,
             updatedAt: now,
             isSampleData: true,
@@ -125,7 +126,7 @@ const seed = async () => {
         const ref = db.collection('events').doc(event.id);
         batch.set(ref, {
             ...event,
-            description: 'Placeholder event description.',
+            description: 'Placeholder event description. Suspendisse potenti. Nullam na Suspendisse potenti. Nullam na Suspendisse potenti. Nullam na Suspendisse potenti. Nullam na Suspendisse potenti. Nullam na Suspendisse potenti. Nullam na Suspendisse potenti. Nullam na ',
             timezone: 'Asia/Taipei',
             status: 'published',
             visibility: 'public',
