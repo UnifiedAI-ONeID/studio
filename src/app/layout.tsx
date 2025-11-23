@@ -51,6 +51,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
         <meta name="theme-color" content="#3F51B5" />
       </head>
       <body className={`${inter.variable} ${spaceGrotesk.variable} font-body antialiased`}>
