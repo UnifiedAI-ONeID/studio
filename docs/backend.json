@@ -92,6 +92,7 @@
         "title": { "type": "string", "description": "The title of the thread." },
         "body": { "type": "string", "description": "The initial content of the thread." },
         "topic": { "type": "string", "enum": ["general", "neighborhoods", "buy-sell", "housing", "clubs", "events"] },
+        "city": { "type": "string", "description": "The city where the thread is relevant." },
         "tags": { "type": "array", "items": { "type": "string" } },
         "relatedEventId": { "type": "string", "description": "Optional ID of a related event." },
         "relatedVenueId": { "type": "string", "description": "Optional ID of a related venue." },
@@ -215,5 +216,3 @@
     }
   }
 }
-
-    
