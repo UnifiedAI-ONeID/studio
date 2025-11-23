@@ -39,7 +39,7 @@ function EventCard({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground italic">&quot;{rec.reason}&quot;</p>
+          <p className="text-sm text-muted-foreground italic">"{rec.reason}"</p>
         </CardContent>
       </Card>
     </Link>

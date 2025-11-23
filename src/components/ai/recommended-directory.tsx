@@ -36,7 +36,7 @@ function DirectoryCard({
           <CardTitle className="font-headline text-lg line-clamp-2">{item.name}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground italic">&quot;{item.reason}&quot;</p>
+          <p className="text-sm text-muted-foreground italic">"{item.reason}"</p>
         </CardContent>
       </Card>
     </Link>
