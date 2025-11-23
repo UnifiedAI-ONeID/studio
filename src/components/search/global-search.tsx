@@ -175,7 +175,7 @@ export default function GlobalSearch({
                 </div>
             )}
             {!loading && debouncedSearchTerm && results.length === 0 && (
-                <p className="text-center text-muted-foreground py-8">No results found for "{debouncedSearchTerm}".</p>
+                <p className="text-center text-muted-foreground py-8">No results found for &quot;{debouncedSearchTerm}&quot;.</p>
             )}
         </div>
       </DialogContent>

@@ -13,7 +13,7 @@ export default function SeedPage() {
         <CardHeader>
           <CardTitle>Seed Firestore Database</CardTitle>
           <CardDescription>
-            To populate your database with sample data, please run the following command from your project's terminal.
+            To populate your database with sample data, please run the following command from your project&apos;s terminal.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-4">

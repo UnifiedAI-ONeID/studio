@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -30,7 +31,7 @@ function EventCard({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground italic">"{rec.reason}"</p>
+          <p className="text-sm text-muted-foreground italic">&quot;{rec.reason}&quot;</p>
         </CardContent>
       </Card>
     </Link>

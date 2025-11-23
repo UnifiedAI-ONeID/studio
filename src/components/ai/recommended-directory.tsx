@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -27,7 +28,7 @@ function DirectoryCard({
           <CardTitle className="font-headline text-lg line-clamp-2">{item.name}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground italic">"{item.reason}"</p>
+          <p className="text-sm text-muted-foreground italic">&quot;{item.reason}&quot;</p>
         </CardContent>
       </Card>
     </Link>

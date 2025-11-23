@@ -45,7 +45,7 @@ function MyEvents() {
             </div>
         );
     }
-    if (!events || events.length === 0) return <p>You haven't saved or RSVP'd to any events yet.</p>
+    if (!events || events.length === 0) return <p>You haven&apos;t saved or RSVP&apos;d to any events yet.</p>
 
     return (
         <div className="space-y-4">
@@ -164,7 +164,7 @@ function MyThreads() {
             </div>
         );
     }
-    if (!threads || threads.length === 0) return <p>You haven't posted any threads.</p>
+    if (!threads || threads.length === 0) return <p>You haven&apos;t posted any threads.</p>
 
     return (
         <div className="space-y-3">
@@ -225,5 +225,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    

@@ -12,7 +12,7 @@ export default function LandingHero() {
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-2 lg:py-16 lg:px-8">
         <div className="flex flex-col justify-center">
           <h1 className="font-headline text-4xl font-bold tracking-tight text-slate-800 sm:text-5xl">
-            What's on in <span className="text-primary">your community</span> this week
+            What&apos;s on in <span className="text-primary">your community</span> this week
           </h1>
           <p className="mt-4 text-lg text-slate-600">
             Discover and connect with the best events, places, and people in your city.
