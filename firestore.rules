@@ -49,12 +49,16 @@ service cloud.firestore {
 
     function isValidUserProfile() {
       let data = incomingData();
-      return data.uid == request.auth.uid
+      let isNewUser = isCreating();
+      let isOwnProfile = isUser(data.uid);
+
+      return isOwnProfile
+          && data.uid == request.auth.uid
           && data.email is string
-          && (data.displayName == null || (data.displayName is string && data.displayName.size() > 0))
-          && (data.photoURL == null || (data.photoURL is string && data.photoURL.matches('^https?://.*')))
-          && (data.role == 'user' || data.role == 'admin')
-          && (data.homeCity is string);
+          && (data.displayName is string && data.displayName.size() > 0)
+          && (data.photoURL is string && data.photoURL.matches('^https?://.*'))
+          && (isNewUser ? data.role == 'user' : isUnchanged('role'))
+          && (data.homeCity == null || data.homeCity is string);
     }
 
     function isValidEvent() {
@@ -100,7 +104,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isUser(userId) && isValidUserProfile();
-      allow update: if isUser(userId) && isValidUserProfile();
+      allow update: if (isUser(userId) && isValidUserProfile()) || isAdmin();
       allow delete: if isUser(userId) || isAdmin();
     }
     
