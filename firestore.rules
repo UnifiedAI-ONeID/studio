@@ -95,7 +95,6 @@ service cloud.firestore {
 
     // --- Rules ---
 
-    // Users can read profiles, but only owners can create/update their own.
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isUser(userId) && isValidUserProfile();
@@ -105,9 +104,9 @@ service cloud.firestore {
     
     match /events/{eventId} {
       allow read: if true;
-      allow create: if isSignedIn() && isOwner(incomingData().hostId) && isValidEvent();
-      allow update: if (isOwner(existingData().hostId) || isAdmin()) && isValidEvent();
-      allow delete: if isOwner(existingData().hostId) || isAdmin();
+      allow create: if isSignedIn() && isOwner(incomingData().createdBy) && isValidEvent();
+      allow update: if (isOwner(existingData().createdBy) || isAdmin()) && isValidEvent();
+      allow delete: if isOwner(existingData().createdBy) || isAdmin();
     }
     
     match /venues/{venueId} {

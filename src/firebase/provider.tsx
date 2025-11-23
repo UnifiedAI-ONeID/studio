@@ -21,7 +21,7 @@ export interface AuthState {
   setPrompted: (prompted: boolean) => void;
 }
 
-export const AuthContext = createContext<AuthState>({
+const AuthContext = createContext<AuthState>({
   user: null,
   firebaseUser: null,
   loading: true,
@@ -35,9 +35,9 @@ export interface FirebaseContextValue {
   firestore: Firestore;
 }
 
-export const FirebaseContext = createContext<FirebaseContextValue | null>(null);
+const FirebaseContext = createContext<FirebaseContextValue | null>(null);
 
-export function FirebaseProvider({ children }: { children: ReactNode }) {
+function FirebaseProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       auth: fAuth,

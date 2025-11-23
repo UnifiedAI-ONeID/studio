@@ -15,6 +15,7 @@ import {
   getDocs,
   deleteDoc,
   limit,
+  Firestore,
 } from 'firebase/firestore';
 import { db as firestore } from '../firebase';
 import type { User } from 'firebase/auth';
@@ -59,14 +60,13 @@ export const createUserProfile = async (user: User) => {
         updatedAt: serverTimestamp(),
       };
       
-      await setDoc(userRef, profileData)
+      setDoc(userRef, profileData)
         .catch((serverError) => {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 path: userRef.path,
                 operation: 'create',
                 requestResourceData: profileData,
             }));
-            throw serverError;
         });
     }
   } catch (error) {
@@ -74,7 +74,6 @@ export const createUserProfile = async (user: User) => {
         path: userRef.path,
         operation: 'get',
     }));
-    throw error;
   }
 };
 
@@ -130,7 +129,7 @@ export const createEvent = async (
             operation: 'create',
             requestResourceData: newEventData,
         }));
-        throw serverError;
+        throw serverError; // Re-throw to be caught by the calling UI
     });
 
   return docRef.id;
@@ -250,20 +249,19 @@ export const createReply = async (replyData: CreateReplyData, user: AppUser): Pr
         lastActivityAt: now,
     });
 
-    await batch.commit().catch((serverError) => {
+    batch.commit().catch((serverError) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: newReplyRef.path,
             operation: 'create',
             requestResourceData: newReplyData,
         }));
-        throw serverError;
     });
 
     return newReplyRef.id;
 };
 
 
-export const reportContent = async (type: 'thread' | 'reply', targetId: string, reason: string, userId: string) => {
+export const reportContent = (type: 'thread' | 'reply', targetId: string, reason: string, userId: string) => {
     const reportCollection = collection(firestore, 'reports');
     const reportData = {
         type,
@@ -273,18 +271,17 @@ export const reportContent = async (type: 'thread' | 'reply', targetId: string, 
         createdAt: serverTimestamp(),
     };
     
-    await addDoc(reportCollection, reportData)
+    addDoc(reportCollection, reportData)
       .catch((serverError) => {
           errorEmitter.emit('permission-error', new FirestorePermissionError({
               path: reportCollection.path,
               operation: 'create',
               requestResourceData: reportData,
           }));
-          throw serverError;
       });
 };
 
-export const followTarget = async (userId: string, targetId: string, targetType: FollowTargetType) => {
+export const followTarget = (userId: string, targetId: string, targetType: FollowTargetType) => {
     const followId = `${userId}_${targetType}_${targetId}`;
     const followRef = doc(firestore, 'follows', followId);
     const followData = {
@@ -294,32 +291,30 @@ export const followTarget = async (userId: string, targetId: string, targetType:
         createdAt: serverTimestamp(),
     };
     
-    await setDoc(followRef, followData)
+    setDoc(followRef, followData)
       .catch((serverError) => {
           errorEmitter.emit('permission-error', new FirestorePermissionError({
               path: followRef.path,
               operation: 'create',
               requestResourceData: followData,
           }));
-          throw serverError;
       });
 };
 
-export const unfollowTarget = async (userId: string, targetId: string, targetType: FollowTargetType) => {
+export const unfollowTarget = (userId: string, targetId: string, targetType: FollowTargetType) => {
     const followId = `${userId}_${targetType}_${targetId}`;
     const followRef = doc(firestore, 'follows', followId);
-    await deleteDoc(followRef)
+    deleteDoc(followRef)
         .catch((serverError) => {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 path: followRef.path,
                 operation: 'delete',
             }));
-            throw serverError;
         });
 };
 
 
-export const addEventInteraction = async (userId: string, eventId: string, type: EventInteractionType, previousType?: EventInteractionType | null) => {
+export const addEventInteraction = (userId: string, eventId: string, type: EventInteractionType, previousType?: EventInteractionType | null) => {
     const interactionId = `${userId}_${eventId}`;
     const interactionRef = doc(firestore, 'eventInteractions', interactionId);
     const eventRef = doc(firestore, 'events', eventId);
@@ -339,17 +334,16 @@ export const addEventInteraction = async (userId: string, eventId: string, type:
     }
     batch.update(eventRef, updates);
 
-    await batch.commit().catch(serverError => {
+    batch.commit().catch(serverError => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: interactionRef.path,
             operation: 'update',
             requestResourceData: interactionData,
         }));
-        throw serverError;
     });
 };
 
-export const removeEventInteraction = async (userId: string, eventId: string, type: EventInteractionType) => {
+export const removeEventInteraction = (userId: string, eventId: string, type: EventInteractionType) => {
     const interactionId = `${userId}_${eventId}`;
     const interactionRef = doc(firestore, 'eventInteractions', interactionId);
     const eventRef = doc(firestore, 'events', eventId);
@@ -358,16 +352,15 @@ export const removeEventInteraction = async (userId: string, eventId: string, ty
     batch.delete(interactionRef);
     batch.update(eventRef, { [`stats.${type}Count`]: increment(-1) });
 
-    await batch.commit().catch(serverError => {
+    batch.commit().catch(serverError => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: interactionRef.path,
             operation: 'delete',
         }));
-        throw serverError;
     });
 };
 
-export const addNewsletterSubscriber = async (email: string, city: string = 'unknown') => {
+export const addNewsletterSubscriber = (email: string, city: string = 'unknown') => {
     if (!email || !email.includes('@')) {
         throw new Error("A valid email is required.");
     }
@@ -378,13 +371,12 @@ export const addNewsletterSubscriber = async (email: string, city: string = 'unk
         createdAt: serverTimestamp()
     };
 
-    await addDoc(subscriberCollection, subscriberData)
+    addDoc(subscriberCollection, subscriberData)
         .catch((serverError) => {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 path: subscriberCollection.path,
                 operation: 'create',
                 requestResourceData: subscriberData,
             }));
-            throw serverError;
         });
 };

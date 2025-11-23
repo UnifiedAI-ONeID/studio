@@ -28,31 +28,45 @@ export const useUser = () => {
     if (!firebaseUser) return;
 
     const userRef = doc(firestore, 'users', firebaseUser.uid);
-    const unsubscribeSnapshot = onSnapshot(userRef, async (doc) => {
-      if (doc.exists()) {
-        setUser({ id: doc.id, ...doc.data() } as AppUser);
-        setLoading(false);
-      } else {
-        // This might happen for a brand new user, create their profile
+    let unsubscribeSnapshot: () => void;
+
+    const setupListener = () => {
+        unsubscribeSnapshot = onSnapshot(userRef, (doc) => {
+            if (doc.exists()) {
+                setUser({ id: doc.id, ...doc.data() } as AppUser);
+            } else {
+                // This will be handled by the profile creation logic below
+                setUser(null);
+            }
+            setLoading(false);
+        }, (error) => {
+            console.error("Error listening to user profile:", error);
+            setLoading(false);
+        });
+    };
+    
+    const checkAndCreateProfile = async () => {
         try {
-            // Check again before creating to avoid race conditions
-            const freshDoc = await getDoc(userRef);
-            if (!freshDoc.exists()) {
+            const userDoc = await getDoc(userRef);
+            if (!userDoc.exists()) {
                 await createUserProfile(firebaseUser);
             }
-            // The snapshot listener will pick up the new profile, so we just wait.
-        } catch(e) {
-            console.error("Failed to create user profile on-the-fly", e);
-            setUser(null); 
-             setLoading(false);
+            // After potentially creating the profile, set up the listener.
+            // The listener will then fetch the data.
+            setupListener();
+        } catch (e) {
+            console.error("Failed to check or create user profile", e);
+            setLoading(false);
         }
-      }
-    }, (error) => {
-        console.error("Error listening to user profile:", error);
-        setLoading(false);
-    });
+    };
+    
+    checkAndCreateProfile();
 
-    return () => unsubscribeSnapshot();
+    return () => {
+        if (unsubscribeSnapshot) {
+            unsubscribeSnapshot();
+        }
+    };
   }, [firebaseUser]);
 
   return { user, firebaseUser, loading };
