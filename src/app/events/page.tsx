@@ -76,7 +76,7 @@ export default function EventsPage() {
   
   const filteredEvents = useMemo(() => {
     // Do not filter until the client-side "now" is established to prevent hydration mismatch
-    if (!events || !clientNow) return [];
+    if (!events || !clientNow) return events?.filter(event => event.startTime && (event.startTime as Timestamp).toDate() > new Date()) || [];
     
     return events.filter((event) => {
         if (!event.startTime) return false;
