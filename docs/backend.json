@@ -13,7 +13,8 @@
         "role": { "type": "string", "enum": ["user", "admin"], "description": "The user's role." },
         "interests": { "type": "array", "items": { "type": "string" } },
         "skills": { "type": "array", "items": { "type": "string" } },
-        "locationPreferences": { "type": "array", "items": { "type": "string" } }
+        "locationPreferences": { "type": "array", "items": { "type": "string" } },
+        "homeCity": { "type": "string", "description": "The user's home city." }
       },
       "required": ["uid", "email"]
     },
@@ -30,7 +31,14 @@
         "endTime": { "type": "string", "format": "date-time" },
         "timezone": { "type": "string" },
         "city": { "type": "string" },
-        "venueId": { "type": "string" },
+        "location": {
+            "type": "object",
+            "properties": {
+                "venueId": { "type": "string" },
+                "address": { "type": "string" },
+                "neighborhood": { "type": "string" }
+            }
+        },
         "hostId": { "type": "string" },
         "coverImageUrl": { "type": "string", "format": "uri" },
         "priceType": { "type": "string", "enum": ["free", "paid", "donation"] },
@@ -53,7 +61,7 @@
       "type": "object",
       "properties": {
         "name": { "type": "string" },
-        "type": { "type": "string", "enum": ["cafe", "bar", "gallery", "ngo", "venue", "other"] },
+        "categories": { "type": "array", "items": { "type": "string" }, "description": "A list of categories for the venue." },
         "description": { "type": "string" },
         "address": { "type": "string" },
         "neighborhood": { "type": "string" },
@@ -68,13 +76,13 @@
         "priceLevel": { "type": "number", "description": "A number from 1 to 4 representing price level." },
         "tags": { "type": "array", "items": { "type": "string" } },
         "coverImageUrl": { "type": "string", "format": "uri" },
-        "verified": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["pending_review", "approved"]},
         "createdBy": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" },
         "isFeaturedOnLanding": { "type": "boolean" }
       },
-      "required": ["name", "type", "address", "neighborhood", "createdBy", "createdAt", "updatedAt", "verified"]
+      "required": ["name", "categories", "address", "neighborhood", "createdBy", "createdAt", "updatedAt", "status"]
     },
     "Thread": {
       "title": "Thread",
@@ -83,16 +91,16 @@
       "properties": {
         "title": { "type": "string", "description": "The title of the thread." },
         "body": { "type": "string", "description": "The initial content of the thread." },
-        "topic": { "type": "string", "enum": ["general", "neighborhoods", "buy-sell", "housing", "clubs"] },
+        "topic": { "type": "string", "enum": ["general", "neighborhoods", "buy-sell", "housing", "clubs", "events"] },
         "tags": { "type": "array", "items": { "type": "string" } },
         "relatedEventId": { "type": "string", "description": "Optional ID of a related event." },
         "relatedVenueId": { "type": "string", "description": "Optional ID of a related venue." },
-        "createdBy": { "type": "string", "description": "The user ID of the creator." },
+        "authorId": { "type": "string", "description": "The user ID of the creator." },
         "lastActivityAt": { "type": "string", "format": "date-time", "description": "Timestamp of the last activity (creation or new comment)." },
         "replyCount": { "type": "number", "description": "The number of replies." },
         "likeCount": { "type": "number", "description": "The number of likes." }
       },
-      "required": ["title", "body", "topic", "createdBy", "lastActivityAt", "replyCount"]
+      "required": ["title", "body", "topic", "authorId", "lastActivityAt", "replyCount"]
     },
     "Comment": {
       "title": "Comment",
@@ -207,3 +215,5 @@
     }
   }
 }
+
+    

@@ -53,7 +53,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "topic", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
+        { "fieldPath": "lastActivityAt", "order": "DESCENDING" }
       ]
     },
     {
@@ -92,7 +92,7 @@
       "collectionGroup": "follows",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "followerUserId", "order": "ASCENDING" },
+        { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "targetType", "order": "ASCENDING" }
       ]
     },
@@ -106,7 +106,7 @@
     },
     {
       "collectionGroup": "events",
-      "queryScope": "COLLECTION",
+      "queryScope": "COLlection",
       "fields": [
         { "fieldPath": "title", "order": "ASCENDING" }
       ]
@@ -127,3 +127,5 @@
     }
   ]
 }
+
+    

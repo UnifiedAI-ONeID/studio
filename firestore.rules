@@ -88,7 +88,7 @@ service cloud.firestore {
         return data.title is string && data.title.size() >= 5
             && data.body is string && data.body.size() >= 10
             && data.topic is string && data.topic.size() > 0
-            && data.createdBy is string;
+            && data.authorId is string;
     }
 
     function isValidComment() {
@@ -123,9 +123,9 @@ service cloud.firestore {
     
     match /threads/{threadId} {
       allow read: if true;
-      allow create: if isSignedIn() && isOwner(incomingData().createdBy) && isValidThread();
-      allow update: if (isOwner(existingData().createdBy) || isAdmin()) && isUnchanged('createdAt');
-      allow delete: if isOwner(existingData().createdBy) || isAdmin();
+      allow create: if isSignedIn() && isOwner(incomingData().authorId) && isValidThread();
+      allow update: if (isOwner(existingData().authorId) || isAdmin()) && isUnchanged('createdAt');
+      allow delete: if isOwner(existingData().authorId) || isAdmin();
 
       match /comments/{commentId} {
         allow read: if true;
@@ -156,3 +156,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
