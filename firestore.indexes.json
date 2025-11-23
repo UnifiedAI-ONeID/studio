@@ -26,8 +26,6 @@
       "collectionGroup": "events",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "visibility", "order": "ASCENDING" },
         { "fieldPath": "location.venueId", "order": "ASCENDING" },
         { "fieldPath": "startTime", "order": "ASCENDING" }
       ]
@@ -106,7 +104,7 @@
     },
     {
       "collectionGroup": "events",
-      "queryScope": "COLlection",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "title", "order": "ASCENDING" }
       ]
@@ -127,5 +125,3 @@
     }
   ]
 }
-
-    
