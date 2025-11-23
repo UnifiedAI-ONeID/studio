@@ -249,16 +249,18 @@ export const createReply = async (replyData: CreateReplyData, user: AppUser): Pr
         'stats.replyCount': increment(1),
         lastActivityAt: now,
     });
-
-    batch.commit().catch((serverError) => {
+    
+    try {
+        await batch.commit();
+        return newReplyRef.id;
+    } catch(serverError) {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: newReplyRef.path,
             operation: 'create',
             requestResourceData: newReplyData,
         }));
-    });
-
-    return newReplyRef.id;
+        throw serverError;
+    }
 };
 
 
@@ -377,3 +379,7 @@ export const addNewsletterSubscriber = (email: string, city: string = 'unknown')
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 path: subscriberCollection.path,
                 operation: 'create',
+                requestResourceData: subscriberData
+            }));
+        });
+};
