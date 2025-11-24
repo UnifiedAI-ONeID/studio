@@ -4,10 +4,10 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth, useDoc, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
-import { doc, collection, query, orderBy, Timestamp, where } from 'firebase/firestore';
+import { doc, collection, query, orderBy, Timestamp } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';
-import { createReply, reportContent } from '@/lib/firebase/firestore';
-import type { CommonsThread, CommonsReply, Event, Venue } from '@/lib/types';
+import { createReply, reportContent, addReaction, removeReaction } from '@/lib/firebase/firestore';
+import type { CommonsThread, CommonsReply, Event, Venue, Reaction } from '@/lib/types';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -134,6 +134,12 @@ export default function ThreadDetailPage() {
         threadId ? query(collection(firestore, `threads/${threadId}/comments`), orderBy('createdAt', 'asc')) : null
     , [threadId]);
     const { data: replies, loading: repliesLoading } = useCollection<CommonsReply>(repliesQuery);
+
+    const reactionId = useMemo(() => user ? `${user.id}_${threadId}` : null, [user, threadId]);
+    const reactionRef = useMemoFirebase(() => (reactionId && threadId) ? doc(firestore, `threads/${threadId}/reactions`, reactionId) : null, [reactionId, threadId]);
+    const { data: reaction, loading: reactionLoading } = useDoc<Reaction>(reactionRef);
+
+    const isLiked = !!reaction;
     
     const handlePostReply = async () => {
         if (!user || !replyText.trim()) return;
@@ -163,6 +169,20 @@ export default function ThreadDetailPage() {
             toast({ variant: 'destructive', title: 'Failed to report thread' });
         }
     }
+
+    const handleLike = async () => {
+        if (!user || reactionLoading) return;
+        try {
+            if (isLiked) {
+                await removeReaction(user.id, threadId, 'thread');
+            } else {
+                await addReaction(user.id, threadId, 'thread');
+            }
+        } catch (e) {
+            toast({ variant: 'destructive', title: 'Something went wrong.' });
+        }
+    };
+
 
     if (threadLoading) {
         return (
@@ -204,13 +224,13 @@ export default function ThreadDetailPage() {
             
             <div className="flex justify-between items-center mb-8 border-t border-b py-2">
                  <div className="flex items-center gap-4 text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <Heart className="h-5 w-5"/>
-                      <span className="font-semibold">{thread.stats.likeCount || 0}</span>
-                    </div>
+                    <Button variant="ghost" size="sm" onClick={handleLike} disabled={!user || reactionLoading}>
+                      <Heart className={cn("h-5 w-5", isLiked && "fill-destructive text-destructive")}/>
+                      <span className="font-semibold ml-2">{thread.stats?.likeCount || 0}</span>
+                    </Button>
                     <div className="flex items-center gap-2">
                       <MessageSquare className="h-5 w-5"/>
-                      <span className="font-semibold">{thread.stats.replyCount}</span>
+                      <span className="font-semibold">{thread.stats?.replyCount || 0}</span>
                     </div>
                  </div>
                  {user && user.id !== thread.authorId && (

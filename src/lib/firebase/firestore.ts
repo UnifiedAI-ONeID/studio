@@ -19,7 +19,7 @@ import {
 } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';
 import type { User } from 'firebase/auth';
-import type { AppUser, Event, Venue, CommonsThread, CommonsReply, FollowTargetType, EventInteractionType, ApprovalStatus, ReportType } from '../types';
+import type { AppUser, Event, Venue, CommonsThread, CommonsReply, FollowTargetType, EventInteractionType, ApprovalStatus, ReportType, ReactionType, ReactionTargetType } from '../types';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { errorEmitter } from './error-emitter';
 import { FirestorePermissionError } from './errors';
@@ -188,7 +188,11 @@ export const createThread = async (threadData: CreateThreadData, user: AppUser):
     }
 };
 
-type CreateReplyData = Partial<Omit<CommonsReply, 'id' | 'createdAt' | 'updatedAt' | 'likeCount' | 'authorId' | 'authorInfo'>>;
+type CreateReplyData = {
+  threadId: string;
+  body: string;
+  parentId?: string;
+};
 
 export const createReply = async (replyData: CreateReplyData, user: AppUser): Promise<string> => {
     const batch = writeBatch(firestore);
@@ -197,7 +201,7 @@ export const createReply = async (replyData: CreateReplyData, user: AppUser): Pr
     const replyCollection = collection(firestore, `threads/${replyData.threadId}/comments`);
     const newReplyRef = doc(replyCollection);
 
-    const newReplyData = {
+    const newReplyData: Omit<CommonsReply, 'id'|'isSampleData'> = {
         ...replyData,
         authorId: user.id,
         createdBy: user.id,
@@ -355,4 +359,51 @@ export const addNewsletterSubscriber = (email: string, city: string = 'unknown')
             }));
             throw serverError;
         });
+};
+
+
+export const addReaction = (userId: string, targetId: string, targetType: ReactionTargetType) => {
+    const batch = writeBatch(firestore);
+    const reactionId = `${userId}_${targetId}`;
+    const reactionRef = doc(firestore, `${targetType}s`, targetId, 'reactions', reactionId);
+    
+    const reactionData = {
+        userId,
+        targetId,
+        targetType,
+        type: 'like',
+        createdAt: serverTimestamp(),
+    };
+    batch.set(reactionRef, reactionData);
+    
+    const targetRef = doc(firestore, `${targetType}s`, targetId);
+    batch.update(targetRef, { 'stats.likeCount': increment(1) });
+    
+    batch.commit().catch(serverError => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: reactionRef.path,
+            operation: 'create',
+            requestResourceData: reactionData
+        }));
+        throw serverError;
+    });
+};
+
+export const removeReaction = (userId: string, targetId: string, targetType: ReactionTargetType) => {
+    const batch = writeBatch(firestore);
+    const reactionId = `${userId}_${targetId}`;
+    const reactionRef = doc(firestore, `${targetType}s`, targetId, 'reactions', reactionId);
+
+    batch.delete(reactionRef);
+
+    const targetRef = doc(firestore, `${targetType}s`, targetId);
+    batch.update(targetRef, { 'stats.likeCount': increment(-1) });
+
+    batch.commit().catch(serverError => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: reactionRef.path,
+            operation: 'delete',
+        }));
+        throw serverError;
+    });
 };
