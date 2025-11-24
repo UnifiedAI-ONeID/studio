@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Building, MessageSquare, CheckCircle, Star, Heart, Share2, MapPin, User } from 'lucide-react';
+import { Calendar, Building, MessageSquare, CheckCircle, Star, Heart, Share2, MapPin, User, Wallet } from 'lucide-react';
 import { format } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import Link from 'next/link';
@@ -22,6 +22,15 @@ import { useToast } from '@/hooks/use-toast';
 import { addEventInteraction, removeEventInteraction } from '@/lib/firebase/firestore';
 import PlaceHolderImages from '@/lib/placeholder-images';
 import { useMemo } from 'react';
+
+function getPriceDisplay(event: Event) {
+  if (event.priceType === 'free') return 'Free';
+  if (event.priceType === 'donation') return 'Donation';
+  if (event.priceMin) {
+    return `$${event.priceMin}${event.priceMax && event.priceMax > event.priceMin ? ` - $${event.priceMax}`: ''}`;
+  }
+  return 'Paid';
+}
 
 function RelatedEvents({ category, currentEventId }: { category: string; currentEventId: string }) {
     const eventsQuery = useMemoFirebase(() => query(
@@ -226,7 +235,7 @@ export default function EventDetailPage() {
               <CardTitle className="text-3xl md:text-4xl font-headline mt-2">{event.title}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-muted-foreground">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-muted-foreground">
                   <div className="flex items-start gap-4">
                       <Calendar className="h-6 w-6 text-primary mt-1 flex-shrink-0"/>
                       <div>
@@ -251,6 +260,12 @@ export default function EventDetailPage() {
                       </div>
                     </div>
                   )}
+                   <div className="flex items-start gap-4">
+                      <Wallet className="h-6 w-6 text-primary mt-1 flex-shrink-0"/>
+                      <div>
+                          <p className="font-semibold text-foreground">{getPriceDisplay(event)}</p>
+                      </div>
+                  </div>
               </div>
 
               <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
