@@ -63,8 +63,9 @@ export const findVenuesTool = {
             };
         });
 
+        // If a keyword is provided, use an LLM to perform a semantic filter on the results.
         if (input.keyword) {
-             const prompt = `You are an intelligent filter. From the provided list of venues, return only the ones that match the user's query: "${input.keyword}".
+             const prompt = `You are an intelligent filter. From the provided list of venues, return only the ones that match the user's keyword search: "${input.keyword}".
               
               Return the venues that are most relevant to the query based on their name, categories, and description.
               
@@ -76,9 +77,20 @@ export const findVenuesTool = {
               Return a JSON array of the matching venue objects. If no venues match, return an empty array.
               `;
           
-          const jsonResponse = await generateText({ prompt });
-          const filteredVenues = z.array(VenueSchema).parse(JSON.parse(jsonResponse));
-          return filteredVenues ? filteredVenues.slice(0, input.count) : [];
+            try {
+                const jsonResponse = await generateText({ prompt });
+                // Gemini may wrap the JSON in ```json ... ```, so we need to strip that
+                const cleanedJson = jsonResponse.replace(/```json\n?|\n?```/g, '');
+                const filteredVenues = z.array(VenueSchema).parse(JSON.parse(cleanedJson));
+                return filteredVenues ? filteredVenues.slice(0, input.count) : [];
+            } catch (e) {
+                console.error("Failed to parse AI response for venue filtering:", e);
+                // Fallback to basic client-side filtering if AI fails
+                return venues.filter(venue => 
+                    venue.name.toLowerCase().includes(input.keyword!.toLowerCase()) || 
+                    (venue.description && venue.description.toLowerCase().includes(input.keyword!.toLowerCase()))
+                ).slice(0, input.count);
+            }
         }
         
         console.log(`[findVenues tool] found ${venues.length} venues.`);

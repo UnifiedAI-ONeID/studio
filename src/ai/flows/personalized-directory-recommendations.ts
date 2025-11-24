@@ -42,7 +42,12 @@ export async function getPersonalizedDirectoryRecommendations(input: Personalize
     const { userProfile, count } = input;
     const interests = userProfile.interests?.join(', ');
 
-    const availableVenues = await findVenuesTool.run({ city: userProfile.homeCity, count: 20 });
+    // The AI will now use the `keyword` parameter in the findVenuesTool to perform a more semantic search.
+    const availableVenues = await findVenuesTool.run({ 
+        city: userProfile.homeCity, 
+        count: 20, 
+        keyword: interests 
+    });
 
     if (!availableVenues || availableVenues.length === 0) {
       return { recommendations: [] };
@@ -50,9 +55,9 @@ export async function getPersonalizedDirectoryRecommendations(input: Personalize
 
     const systemInstruction = `You are a helpful assistant that recommends places to users based on their interests.
     Analyze the user's profile and the list of available venues.
-    Your main goal is to select ${count} venues that best match the user's interests.
+    Your main goal is to select ${count} venues that best match the user's interests from the pre-filtered list.
     For each recommendation, you MUST provide a short, compelling reason (the "reason" field) explaining why it's a good match for the user.
-    If the user has no specified interests, select a variety of popular or interesting venues.
+    If the user has no specified interests, select a variety of popular or interesting venues from the list.
     The output must be a valid JSON object matching this schema: ${JSON.stringify(PersonalizedDirectoryRecommendationsOutputSchema.shape)}.
     If no venues are a good fit, you can return an empty recommendations array.`;
 
@@ -60,12 +65,12 @@ export async function getPersonalizedDirectoryRecommendations(input: Personalize
 - Interests: ${interests || 'Not specified'}
 - Home City: ${userProfile.homeCity || 'Not specified'}
 
-Available Venues (JSON format):
+Available Venues (pre-filtered based on user interests):
 ---
 ${JSON.stringify(availableVenues, null, 2)}
 ---
 
-Return only the JSON object of recommendations.`;
+Select the best ${count} recommendations and return only the JSON object.`;
 
     try {
         const json = await generateText({ systemInstruction, prompt });

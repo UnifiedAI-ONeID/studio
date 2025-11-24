@@ -51,6 +51,7 @@ export const findEventsTool = {
         constraints.push(where('city', '==', input.city));
       }
       
+      // If doing a text search, fetch a larger number of initial results to filter down.
       constraints.push(limit(input.queryText ? 50 : input.count));
       
       const q = query(eventsRef, ...constraints);
@@ -72,6 +73,7 @@ export const findEventsTool = {
           }
       });
 
+      // If a queryText is provided, use an LLM to perform a semantic filter on the results.
       if (input.queryText) {
           const prompt = `You are an intelligent filter. From the provided list of events, return only the ones that match the user's query: "${input.queryText}".
               
@@ -84,9 +86,20 @@ export const findEventsTool = {
               
               Return a JSON array of the matching event objects. If no events match, return an empty array.`;
           
-          const jsonResponse = await generateText({ prompt });
-          const filteredEvents = z.array(EventSchema).parse(JSON.parse(jsonResponse));
-          return filteredEvents ? filteredEvents.slice(0, input.count) : [];
+          try {
+            const jsonResponse = await generateText({ prompt });
+            // Gemini may wrap the JSON in ```json ... ```, so we need to strip that
+            const cleanedJson = jsonResponse.replace(/```json\n?|\n?```/g, '');
+            const filteredEvents = z.array(EventSchema).parse(JSON.parse(cleanedJson));
+            return filteredEvents ? filteredEvents.slice(0, input.count) : [];
+          } catch(e) {
+            console.error("Failed to parse AI response for event filtering:", e);
+            // Fallback to basic client-side filtering if AI fails
+            return events.filter(event => 
+                event.title.toLowerCase().includes(input.queryText!.toLowerCase()) || 
+                event.description.toLowerCase().includes(input.queryText!.toLowerCase())
+            ).slice(0, input.count);
+          }
       }
       
       console.log(`[findEvents tool] found ${events.length} events.`);

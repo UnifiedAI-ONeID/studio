@@ -37,16 +37,22 @@ export async function getPersonalizedEventRecommendations(input: PersonalizedEve
     const { userProfile, count } = input;
     const interests = userProfile.interests?.join(', ');
 
-    const availableEvents = await findEventsTool.run({ city: userProfile.homeCity, count: 25 });
+    // The AI will now use the `queryText` parameter in the findEventsTool to perform a more semantic search.
+    const availableEvents = await findEventsTool.run({ 
+        city: userProfile.homeCity, 
+        count: 25,
+        queryText: interests
+    });
+
     if (!availableEvents || availableEvents.length === 0) {
       return { recommendations: [] };
     }
     
     const systemInstruction = `You are a helpful assistant that recommends events to users based on their interests.
     Analyze the user's profile and the list of available events.
-    Your main goal is to select ${count} events that best match the user's interests.
+    Your main goal is to select ${count} events that best match the user's interests from the pre-filtered list.
     For each recommendation, you MUST provide a short, compelling reason (the "reason" field) explaining why it's a good match for the user.
-    If the user has no specified interests, select a variety of popular or interesting upcoming events.
+    If the user has no specified interests, select a variety of popular or interesting upcoming events from the list.
     The output must be a valid JSON object matching this schema: ${JSON.stringify(PersonalizedEventRecommendationsOutputSchema.shape)}.
     If no events are a good fit, you can return an empty recommendations array.`;
 
@@ -54,21 +60,18 @@ export async function getPersonalizedEventRecommendations(input: PersonalizedEve
 - Interests: ${interests || 'Not specified'}
 - Home City: ${userProfile.homeCity || 'Not specified'}
 
-Available Events (JSON format):
+Available Events (pre-filtered based on user interests):
 ---
 ${JSON.stringify(availableEvents, null, 2)}
 ---
 
-Return only the JSON object of recommendations.`;
+Select the best ${count} recommendations and return only the JSON object.`;
 
     try {
         const json = await generateText({ systemInstruction, prompt });
-        // Gemini may wrap the JSON in ```json ... ```, so we need to strip that
         const cleanedJson = json.replace(/```json\n?|\n?```/g, '');
         const parsed = JSON.parse(cleanedJson);
 
-        // This is a bit of a hack to map the fields correctly, since the AI might hallucinate field names.
-        // A more robust solution would be to use a stricter output schema and prompt.
         const mappedRecs = parsed.recommendations?.map((rec: any) => ({
             eventId: rec.eventId,
             eventName: rec.eventName || rec.title,
