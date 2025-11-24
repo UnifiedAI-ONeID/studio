@@ -54,10 +54,10 @@ const personalizedEventRecommendationsFlow = ai.defineFlow(
         
         Number of recommendations requested: {{count}}
         
-        1. Use the 'findEvents' tool to search for events that match one or more of the user's interests. You can search for events in their home city.
+        1. Use the 'findEvents' tool to search for events. You can use one of the user's interests as the 'queryText' parameter to find relevant events. You must also pass the user's 'homeCity' to the tool.
         2. For each recommended event, you MUST provide a short, compelling reason why the user would be interested in it. Connect it directly to their stated interests.
         3. Ensure you return the exact number of recommendations requested.
-        4. Return the eventId and coverImageUrl for each recommendation so the user can click on it and see an image.
+        4. Return the eventId, a short eventDescription, and coverImageUrl for each recommendation so the user can click on it and see an image.
         
         Format your output as a JSON object matching the schema.
         `,

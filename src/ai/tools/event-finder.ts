@@ -79,9 +79,9 @@ export const findEventsTool = ai.defineTool(
       if (input.queryText) {
           const filterPrompt = ai.definePrompt({
               name: 'eventFilterPrompt',
-              input: { schema: z.object({ query: z.string(), events: z.array(EventSchema) }) },
+              input: { schema: z.object({ queryText: z.string(), events: z.array(EventSchema) }) },
               output: { schema: z.array(EventSchema) },
-              prompt: `You are an intelligent filter. From the provided list of events, return only the ones that match the user's query: "{{query}}".
+              prompt: `You are an intelligent filter. From the provided list of events, return only the ones that match the user's query: "{{queryText}}".
               
               Return the events that are most relevant to the query based on their title and description.
               
@@ -94,8 +94,8 @@ export const findEventsTool = ai.defineTool(
               `,
           });
           
-          const filteredEvents = await filterPrompt({ query: input.queryText, events });
-          return filteredEvents.output ? filteredEvents.output.slice(0, input.count) : [];
+          const { output } = await filterPrompt({ queryText: input.queryText, events });
+          return output ? output.slice(0, input.count) : [];
       }
       
       console.log(`[findEvents tool] found ${events.length} events.`);

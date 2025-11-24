@@ -68,9 +68,9 @@ export const findVenuesTool = ai.defineTool(
         if (input.keyword) {
              const filterPrompt = ai.definePrompt({
               name: 'venueFilterPrompt',
-              input: { schema: z.object({ query: z.string(), venues: z.array(VenueSchema) }) },
+              input: { schema: z.object({ keyword: z.string(), venues: z.array(VenueSchema) }) },
               output: { schema: z.array(VenueSchema) },
-              prompt: `You are an intelligent filter. From the provided list of venues, return only the ones that match the user's query: "{{query}}".
+              prompt: `You are an intelligent filter. From the provided list of venues, return only the ones that match the user's query: "{{keyword}}".
               
               Return the venues that are most relevant to the query based on their name, categories, and description.
               
@@ -83,8 +83,8 @@ export const findVenuesTool = ai.defineTool(
               `,
           });
           
-          const filteredVenues = await filterPrompt({ query: input.keyword, venues });
-          return filteredVenues.output ? filteredVenues.output.slice(0, input.count) : [];
+          const { output } = await filterPrompt({ keyword: input.keyword, venues });
+          return output ? output.slice(0, input.count) : [];
         }
         
         console.log(`[findVenues tool] found ${venues.length} venues.`);
