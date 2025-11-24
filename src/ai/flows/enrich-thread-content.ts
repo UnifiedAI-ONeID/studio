@@ -27,15 +27,40 @@ export type EnrichThreadContentOutput = z.infer<typeof EnrichThreadContentOutput
 
 
 export async function enrichThreadContent(input: EnrichThreadContentInput): Promise<EnrichThreadContentOutput> {
-  // Stub implementation. In a real scenario, you would call the Gemini API.
-  // const json = await generateText({
-  //   systemInstruction: 'You are an AI assistant for a community forum...',
-  //   prompt: `Analyze the following post content and suggest a title and tags... ${input.body}`,
-  // });
-  // return EnrichThreadContentOutputSchema.parse(JSON.parse(json));
+  const { body } = input;
   
-  return {
-    title: '',
-    tags: [],
-  };
+  const systemInstruction = `You are an AI assistant for a community forum. Your task is to analyze a user's post and suggest a concise title and relevant tags to help categorize it.
+    The output must be a valid JSON object matching this schema: ${JSON.stringify(EnrichThreadContentOutputSchema.shape)}.
+    
+    Guidelines:
+    - The title should be engaging and less than 8 words.
+    - The tags should be 3-5 single or two-word lowercase tags that capture the main topics.`;
+
+  const prompt = `Analyze the following post content and generate a suggested title and tags.
+    
+    Post Content:
+    ---
+    ${body}
+    ---
+    
+    Return only the JSON object.`;
+    
+  const json = await generateText({
+    systemInstruction,
+    prompt,
+  });
+
+  try {
+    // Gemini may wrap the JSON in ```json ... ```, so we need to strip that
+    const cleanedJson = json.replace(/```json\n?|\n?```/g, '');
+    const parsed = JSON.parse(cleanedJson);
+    return EnrichThreadContentOutputSchema.parse(parsed);
+  } catch (error) {
+    console.error("Failed to parse AI response for enrichThreadContent:", error);
+    // Return a safe default if parsing fails
+    return {
+      title: '',
+      tags: [],
+    };
+  }
 }
