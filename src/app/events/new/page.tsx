@@ -55,7 +55,8 @@ export default function NewEventPage() {
   const [category, setCategory] = useState('');
   const [startTime, setStartTime] = useState<Date | undefined>();
   const [priceType, setPriceType] = useState<'free' | 'paid' | 'donation'>('free');
-  const [minPrice, setMinPrice] = useState<number | undefined>();
+  const [priceMin, setPriceMin] = useState<number | undefined>();
+  const [priceMax, setPriceMax] = useState<number | undefined>();
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [venueId, setVenueId] = useState<string | undefined>();
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
@@ -139,7 +140,8 @@ export default function NewEventPage() {
         category,
         startTime: startTime ? Timestamp.fromDate(startTime) : undefined,
         priceType,
-        minPrice,
+        priceMin,
+        priceMax,
         city: user.homeCity,
         coverImageUrl,
         location: {
@@ -322,9 +324,15 @@ export default function NewEventPage() {
               </Select>
             </div>
             {priceType === 'paid' && (
-              <div className='space-y-2'>
-                <Label htmlFor='minPrice'>Price Amount ($)</Label>
-                <Input id='minPrice' type="number" placeholder="25.00" value={minPrice} onChange={e => setMinPrice(Number(e.target.value))} step="0.01" min="0" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className='space-y-2'>
+                  <Label htmlFor='priceMin'>Minimum Price ($)</Label>
+                  <Input id='priceMin' type="number" placeholder="25.00" value={priceMin} onChange={e => setPriceMin(Number(e.target.value))} step="0.01" min="0" />
+                </div>
+                 <div className='space-y-2'>
+                  <Label htmlFor='priceMax'>Maximum Price ($)</Label>
+                  <Input id='priceMax' type="number" placeholder="50.00 (optional)" value={priceMax} onChange={e => setPriceMax(Number(e.target.value))} step="0.01" min="0" />
+                </div>
               </div>
             )}
 

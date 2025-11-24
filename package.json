@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "seed": "npx tsx scripts/seedSampleData.ts",
-    "clear-sample-data": "npx tsx scripts/clearSampleData.ts"
+    "clear-sample-data": "npx tsx scripts/clearSampleData.ts",
+    "clean": "rm -rf .next out node_modules"
   },
   "dependencies": {
     "@genkit-ai/google-genai": "^1.0.0",
