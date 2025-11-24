@@ -59,7 +59,10 @@ export default function NewThreadPage() {
           async function getSuggestions() {
             setIsAiLoading(true);
             try {
-                const suggestions = await enrichThreadContent(debouncedBody);
+                const suggestions = await enrichThreadContent({
+                  body: debouncedBody,
+                  relatedEventId: relatedEventId || undefined,
+                });
                 setAiSuggestions(suggestions);
                 if (!title && suggestions.title) {
                     setTitle(suggestions.title);
@@ -72,7 +75,7 @@ export default function NewThreadPage() {
           }
           getSuggestions();
       }
-  }, [debouncedBody, title]);
+  }, [debouncedBody, title, relatedEventId]);
   
   const addTag = (tag: string) => {
     if (!tags.includes(tag)) {

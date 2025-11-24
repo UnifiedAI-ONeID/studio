@@ -2,9 +2,10 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { collection, query, where, getDocs, limit, QueryConstraint } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, doc, getDoc, QueryConstraint } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';
 import type { Event } from '@/lib/types';
+import { Timestamp } from 'firebase/firestore';
 
 const findEventsSchema = z.object({
     queryText: z.string().optional().describe('A general search query to match against event titles or descriptions.'),
@@ -21,6 +22,14 @@ const EventSchema = z.object({
       city: z.string(),
       coverImageUrl: z.string().optional(),
 });
+
+const EventDetailsSchema = EventSchema.extend({
+    startTime: z.string().describe("The start time of the event in ISO 8601 format."),
+    priceType: z.string(),
+    priceMin: z.number().optional(),
+    priceMax: z.number().optional(),
+});
+
 
 export const findEventsTool = ai.defineTool(
     {
@@ -93,6 +102,39 @@ export const findEventsTool = ai.defineTool(
       return events;
     }
   );
+
+export const getEventDetailsTool = ai.defineTool(
+    {
+        name: 'getEventDetails',
+        description: 'Gets the full details for a single event by its ID.',
+        inputSchema: z.object({ eventId: z.string().describe('The ID of the event to fetch.') }),
+        outputSchema: EventDetailsSchema,
+    },
+    async ({ eventId }) => {
+        console.log(`[getEventDetails tool] called for eventId: ${eventId}`);
+        const eventRef = doc(firestore, 'events', eventId);
+        const snapshot = await getDoc(eventRef);
+
+        if (!snapshot.exists()) {
+            throw new Error(`Event with ID ${eventId} not found.`);
+        }
+
+        const data = snapshot.data() as Event;
+
+        return {
+            id: snapshot.id,
+            title: data.title,
+            description: data.description,
+            category: data.category,
+            city: data.city,
+            coverImageUrl: data.coverImageUrl,
+            startTime: (data.startTime as Timestamp).toDate().toISOString(),
+            priceType: data.priceType,
+            priceMin: data.priceMin,
+            priceMax: data.priceMax,
+        };
+    }
+);
 
 
 export async function findEvents(input: z.infer<typeof findEventsSchema>) {
