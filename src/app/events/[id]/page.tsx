@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { addEventInteraction, removeEventInteraction } from '@/lib/firebase/firestore';
 import PlaceHolderImages from '@/lib/placeholder-images';
 import { useMemo } from 'react';
+import { Map, AdvancedMarker } from '@vis.gl/react-google-maps';
 
 function getPriceDisplay(event: Event) {
   if (event.priceType === 'free') return 'Free';
@@ -255,8 +256,8 @@ export default function EventDetailPage() {
                     <div className="flex items-start gap-4">
                       <MapPin className="h-6 w-6 text-primary mt-1 flex-shrink-0"/>
                       <div>
-                          <p className="font-semibold text-foreground">{event.location?.neighborhood || 'Location To Be Announced'}</p>
-                          <p>Venue details coming soon.</p>
+                          <p className="font-semibold text-foreground">{event.location?.address || event.location?.neighborhood || 'Location To Be Announced'}</p>
+                          {event.location?.address && <p>Venue details coming soon.</p>}
                       </div>
                     </div>
                   )}
@@ -267,6 +268,20 @@ export default function EventDetailPage() {
                       </div>
                   </div>
               </div>
+
+               {event.coordinates && (
+                <div className="h-64 w-full rounded-lg overflow-hidden border">
+                    <Map
+                      mapId="event-location-map"
+                      defaultCenter={{ lat: event.coordinates.lat, lng: event.coordinates.lng }}
+                      defaultZoom={15}
+                      gestureHandling={'greedy'}
+                      disableDefaultUI={true}
+                    >
+                      <AdvancedMarker position={event.coordinates} />
+                    </Map>
+                </div>
+              )}
 
               <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
                 <div className={cn("prose prose-sm dark:prose-invert max-w-none relative", !isExpanded && "max-h-24 overflow-hidden")}>
@@ -316,4 +331,3 @@ export default function EventDetailPage() {
     </div>
   );
 }
-    

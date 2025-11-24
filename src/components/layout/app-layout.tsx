@@ -5,6 +5,7 @@ import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { FirebaseClientProvider } from '@/firebase/provider';
 import { useAuth } from '@/hooks/use-auth';
+import { APIProvider } from '@vis.gl/react-google-maps';
 
 import AvidityLogo from '@/components/logo';
 import Header from './header';
@@ -155,9 +156,11 @@ const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => {
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <FirebaseClientProvider>
-      <LayoutContent>{children}</LayoutContent>
-      <Toaster />
-      <FirebaseErrorListener />
+        <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}>
+            <LayoutContent>{children}</LayoutContent>
+            <Toaster />
+            <FirebaseErrorListener />
+        </APIProvider>
     </FirebaseClientProvider>
   );
 }

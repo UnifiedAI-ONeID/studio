@@ -39,6 +39,10 @@ export interface Event extends DocumentWithId {
     address?: string;
     neighborhood?: string;
   };
+   coordinates?: {
+    lat: number;
+    lng: number;
+  };
   hostId: string;
   coverImageUrl?: string;
   priceType: PriceType;

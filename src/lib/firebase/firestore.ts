@@ -23,6 +23,7 @@ import type { AppUser, Event, Venue, CommonsThread, CommonsReply, FollowTargetTy
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { errorEmitter } from './error-emitter';
 import { FirestorePermissionError } from './errors';
+import { getCoordinatesForAddress } from '@/ai/tools/geocoding';
 
 export const createUserProfile = async (user: User) => {
   const userRef = doc(firestore, 'users', user.uid);
@@ -76,6 +77,33 @@ export const createEvent = async (
   eventData: CreateEventData,
   user: AppUser,
 ): Promise<string> => {
+  
+  let coordinates;
+  const selectedVenue = eventData.location?.venueId ? (await getDoc(doc(firestore, 'venues', eventData.location.venueId))).data() as Venue : null;
+
+  // If a venue is selected, use its location details. Otherwise, if an address is provided, geocode it.
+  const location = {
+    venueId: eventData.location?.venueId,
+    neighborhood: selectedVenue?.neighborhood || eventData.location?.neighborhood,
+    address: selectedVenue?.address || eventData.location?.address,
+  };
+
+  if (location.address && !selectedVenue) {
+    try {
+        coordinates = await getCoordinatesForAddress({ address: location.address });
+    } catch(e) {
+        console.error("Geocoding failed, creating event without coordinates.", e);
+        // We can choose to either fail or continue without coordinates.
+        // For a better UX, we'll continue.
+    }
+  } else if (selectedVenue?.location) {
+      coordinates = {
+          lat: selectedVenue.location.latitude,
+          lng: selectedVenue.location.longitude,
+      }
+  }
+
+
   const newEventData = {
     ...eventData,
     hostId: user.id,
@@ -90,6 +118,8 @@ export const createEvent = async (
         savedCount: 0,
         viewCount: 0,
     },
+    location,
+    coordinates,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
