@@ -3,9 +3,9 @@
 import {
   createContext,
   useState,
-  useMemo,
   ReactNode,
-  useContext
+  useContext,
+  useMemo
 } from 'react';
 import { User as FirebaseUser, Auth } from 'firebase/auth';
 import { auth as fAuth, db as fs } from '@/lib/firebase';
@@ -13,6 +13,7 @@ import { useUser as useAppUser } from './auth/use-user';
 
 import type { AppUser } from '@/lib/types';
 import { Firestore } from 'firebase/firestore';
+
 
 export interface AuthState {
   user: AppUser | null;
@@ -65,7 +66,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
     
     const authContextValue = useMemo(
         () => ({ user, firebaseUser, loading, prompted, setPrompted }),
-        [user, firebaseUser, loading, prompted, setPrompted]
+        [user, firebaseUser, loading, prompted]
     );
 
     return (

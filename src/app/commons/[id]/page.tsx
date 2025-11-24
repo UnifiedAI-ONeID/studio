@@ -1,9 +1,11 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams } from 'next/navigation';
-import { useAuth, useDoc, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
+import { useAuth } from '@/hooks/use-auth';
+import { useDoc, useCollection } from '@/firebase/firestore/use-doc-and-collection-hooks';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { doc, collection, query, orderBy, Timestamp } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';
 import { createReply, reportContent, addReaction, removeReaction } from '@/lib/firebase/firestore';
@@ -135,7 +137,7 @@ export default function ThreadDetailPage() {
     , [threadId]);
     const { data: replies, loading: repliesLoading } = useCollection<CommonsReply>(repliesQuery);
 
-    const reactionId = useMemo(() => user ? `${user.id}_${threadId}` : null, [user, threadId]);
+    const reactionId = useMemoFirebase(() => user ? `${user.id}_${threadId}` : null, [user, threadId]);
     const reactionRef = useMemoFirebase(() => (reactionId && threadId) ? doc(firestore, `threads/${threadId}/reactions`, reactionId) : null, [reactionId, threadId]);
     const { data: reaction, loading: reactionLoading } = useDoc<Reaction>(reactionRef);
 

@@ -4,7 +4,9 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { doc, collection, query, where, Timestamp, orderBy, limit } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';
-import { useAuth, useDoc, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
+import { useAuth } from '@/hooks/use-auth';
+import { useDoc, useCollection } from '@/firebase/firestore/use-doc-and-collection-hooks';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import type { Venue, Event, Follow } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -15,7 +17,7 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { followTarget, unfollowTarget } from '@/lib/firebase/firestore';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import PlaceHolderImages from '@/lib/placeholder-images';
 
 function UpcomingEvents({ venueId }: { venueId: string }) {
@@ -79,7 +81,7 @@ export default function VenueDetailPage() {
   const venueRef = useMemoFirebase(() => venueId ? doc(firestore, 'venues', venueId) : null, [venueId]);
   const { data: venue, loading, error } = useDoc<Venue>(venueRef);
 
-  const followId = useMemo(() => user ? `${user.id}_venue_${venueId}` : null, [user, venueId]);
+  const followId = useMemoFirebase(() => user ? `${user.id}_venue_${venueId}` : null, [user, venueId]);
   const followRef = useMemoFirebase(() => followId ? doc(firestore, 'follows', followId) : null, [followId]);
   const { data: followDoc, loading: followLoading } = useDoc<Follow>(followRef);
   const placeholder = PlaceHolderImages.find(p => p.id.includes('directory')) || PlaceHolderImages[0];

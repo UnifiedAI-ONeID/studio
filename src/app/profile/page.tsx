@@ -1,18 +1,20 @@
 
 'use client';
 
-import { useAuth, useCollection, useMemoFirebase, useDoc } from '@/hooks/use-firebase-hooks';
+import { useAuth } from '@/hooks/use-auth';
+import { useCollection, useDoc } from '@/firebase/firestore/use-doc-and-collection-hooks';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Event, EventInteraction, Follow, CommonsThread, Venue } from '@/lib/types';
 import { collection, query, where, orderBy, limit, doc } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';
-import { useMemo } from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { Building, BookText } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useMemo } from 'react';
 
 function MyEvents() {
     const { user } = useAuth();

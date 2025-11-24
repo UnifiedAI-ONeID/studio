@@ -1,11 +1,12 @@
 
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';
-import { useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
+import { useCollection } from '@/firebase/firestore/use-doc-and-collection-hooks';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import type { Event } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Search, MapPin, Plus } from 'lucide-react';
 import { format, isToday, isTomorrow, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 import PlaceHolderImages from '@/lib/placeholder-images';
+import { useMemo } from 'react';
 
 const categories = ['Music', 'Food & Drink', 'Talks', 'Sports', 'Arts', 'Networking', 'Other'];
 const dateFilters = ['All', 'Today', 'Tomorrow', 'This weekend'];

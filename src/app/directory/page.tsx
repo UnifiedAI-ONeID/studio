@@ -1,11 +1,12 @@
 
 'use client';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';
-import { useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
+import { useCollection } from '@/firebase/firestore/use-doc-and-collection-hooks';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import type { Venue } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Plus } from 'lucide-react';
 import PlaceHolderImages from '@/lib/placeholder-images';
+import { useMemo } from 'react';
 
 const venueCategories = ["Live music", "Bar", "Restaurant", "Cafe", "Art Gallery", "Theater", "Club", "Park", "Other"];
 

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Upload, Wand2 } from 'lucide-react';
@@ -26,7 +26,9 @@ import {
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
+import { useAuth } from '@/hooks/use-auth';
+import { useCollection } from '@/firebase/firestore/use-doc-and-collection-hooks';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { createEvent, uploadImage } from '@/lib/firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -335,5 +337,3 @@ export default function NewEventPage() {
     </div>
   );
 }
-
-    

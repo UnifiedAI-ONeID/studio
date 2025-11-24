@@ -1,7 +1,6 @@
 
 'use client';
 
-import { useMemo } from 'react';
 import { collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';
 import type { Venue } from '@/lib/types';
@@ -10,7 +9,8 @@ import Link from 'next/link';
 import { Button } from '../ui/button';
 import { ArrowRight } from 'lucide-react';
 import VenueCard from './venue-card';
-import { useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
+import { useCollection } from '@/firebase/firestore/use-doc-and-collection-hooks';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 
 function SectionSkeleton() {
   return (

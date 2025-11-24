@@ -1,11 +1,13 @@
 
 'use client';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { doc, collection, query, where, limit, Timestamp, orderBy } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';
-import { useAuth, useDoc, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
+import { useAuth } from '@/hooks/use-auth';
+import { useDoc, useCollection } from '@/firebase/firestore/use-doc-and-collection-hooks';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import type { Event, EventInteractionType, EventInteraction, AppUser } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -19,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { addEventInteraction, removeEventInteraction } from '@/lib/firebase/firestore';
 import PlaceHolderImages from '@/lib/placeholder-images';
+import { useMemo } from 'react';
 
 function RelatedEvents({ category, currentEventId }: { category: string; currentEventId: string }) {
     const eventsQuery = useMemoFirebase(() => query(
@@ -105,7 +108,7 @@ export default function EventDetailPage() {
   const eventRef = useMemoFirebase(() => eventId ? doc(firestore, 'events', eventId) : null, [eventId]);
   const { data: event, loading: eventLoading, error } = useDoc<Event>(eventRef);
   
-  const interactionId = useMemo(() => user ? `${user.id}_${eventId}` : null, [user, eventId]);
+  const interactionId = useMemoFirebase(() => user ? `${user.id}_${eventId}` : null, [user, eventId]);
   const interactionRef = useMemoFirebase(() => interactionId ? doc(firestore, 'eventInteractions', interactionId) : null, [interactionId]);
   const { data: interaction, loading: interactionLoading } = useDoc<EventInteraction>(interactionRef);
   const placeholder = PlaceHolderImages.find(p => p.id.includes('event')) || PlaceHolderImages[0];

@@ -1,7 +1,9 @@
 
 'use client';
 
-import { useAuth, useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
+import { useAuth } from '@/hooks/use-auth';
+import { useCollection } from '@/firebase/firestore/use-doc-and-collection-hooks';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { collection, query, where, orderBy, Timestamp, limit } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';
 import type { Event, Follow } from '@/lib/types';

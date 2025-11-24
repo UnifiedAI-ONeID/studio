@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
+import { useCollection } from '@/firebase/firestore/use-doc-and-collection-hooks';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';
 import type { CommonsThread } from '@/lib/types';

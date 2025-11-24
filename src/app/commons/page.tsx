@@ -1,10 +1,12 @@
 
 'use client';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { collection, query, orderBy, where, limit, QueryConstraint } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';
-import { useCollection, useAuth, useMemoFirebase } from '@/hooks/use-firebase-hooks';
+import { useCollection } from '@/firebase/firestore/use-doc-and-collection-hooks';
+import { useAuth } from '@/hooks/use-auth';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import type { CommonsThread } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +15,7 @@ import { Plus, MessageSquare, Clock, Heart, Search } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { Input } from '@/components/ui/input';
+import { useMemo } from 'react';
 
 const topics = ["all", "general", "neighborhoods", "buy-sell", "housing", "clubs", "events"];
 

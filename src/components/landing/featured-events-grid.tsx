@@ -1,7 +1,6 @@
 
 'use client';
 
-import { useMemo } from 'react';
 import { collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';
 import type { Event } from '@/lib/types';
@@ -9,7 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import Image from 'next/image';
 import { format } from 'date-fns';
-import { useCollection, useMemoFirebase } from '@/hooks/use-firebase-hooks';
+import { useCollection } from '@/firebase/firestore/use-doc-and-collection-hooks';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import PlaceHolderImages from '@/lib/placeholder-images';
 
 function FeaturedEventCard({ event, large = false }: { event: Event; large?: boolean }) {
