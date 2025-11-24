@@ -54,7 +54,7 @@ export default function RecommendedEvents() {
 
   useEffect(() => {
     async function fetchRecommendations() {
-      if (!user || !user.interests || user.interests.length === 0) {
+      if (!user) {
         setLoading(false);
         return;
       }

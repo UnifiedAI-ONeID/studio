@@ -51,7 +51,7 @@ export default function RecommendedDirectory() {
 
   useEffect(() => {
     async function fetchRecommendations() {
-      if (!user || !user.interests || user.interests.length === 0) {
+      if (!user) {
         setLoading(false);
         return;
       }
