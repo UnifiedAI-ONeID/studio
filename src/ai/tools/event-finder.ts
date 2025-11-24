@@ -135,8 +135,3 @@ export const getEventDetailsTool = ai.defineTool(
         };
     }
 );
-
-
-export async function findEvents(input: z.infer<typeof findEventsSchema>) {
-    return findEventsTool(input);
-}

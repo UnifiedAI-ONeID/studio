@@ -91,8 +91,3 @@ export const findVenuesTool = ai.defineTool(
         return venues;
     }
 );
-
-
-export async function findVenues(input: z.infer<typeof findVenuesSchema>) {
-    return findVenuesTool(input);
-}

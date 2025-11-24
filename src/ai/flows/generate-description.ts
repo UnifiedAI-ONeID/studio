@@ -22,29 +22,30 @@ const GenerateDescriptionOutputSchema = z.object({
 });
 export type GenerateDescriptionOutput = z.infer<typeof GenerateDescriptionOutputSchema>;
 
+const descriptionGeneratorPrompt = ai.definePrompt({
+    name: 'descriptionGeneratorPrompt',
+    input: { schema: GenerateDescriptionInputSchema },
+    output: { schema: GenerateDescriptionOutputSchema },
+    prompt: `You are an expert copywriter for a community events and places directory. Your task is to write a compelling, one-paragraph description.
+
+    You will be given a title and a category. Use them to generate an engaging description that would make someone interested in attending the event or visiting the place.
+    
+    Keep it to a single paragraph and make it sound appealing and informative.
+
+    Title: "{{title}}"
+    Category: "{{category}}"
+    
+    Return the response as a JSON object with a 'description' field.`,
+});
+
 const generateDescriptionFlow = ai.defineFlow(
   {
     name: 'generateDescriptionFlow',
     inputSchema: GenerateDescriptionInputSchema,
     outputSchema: GenerateDescriptionOutputSchema,
   },
-  async ({ title, category }) => {
-    const prompt = ai.definePrompt({
-        name: 'descriptionGeneratorPrompt',
-        output: { schema: GenerateDescriptionOutputSchema },
-        prompt: `You are an expert copywriter for a community events and places directory. Your task is to write a compelling, one-paragraph description.
-
-        You will be given a title and a category. Use them to generate an engaging description that would make someone interested in attending the event or visiting the place.
-        
-        Keep it to a single paragraph and make it sound appealing and informative.
-
-        Title: "${title}"
-        Category: "${category}"
-        
-        Return the response as a JSON object with a 'description' field.`,
-    });
-    
-    const { output } = await prompt({});
+  async (input) => {
+    const { output } = await descriptionGeneratorPrompt(input);
     return output!;
   }
 );
@@ -52,5 +53,3 @@ const generateDescriptionFlow = ai.defineFlow(
 export async function generateDescription(input: GenerateDescriptionInput): Promise<GenerateDescriptionOutput> {
   return generateDescriptionFlow(input);
 }
-
-    

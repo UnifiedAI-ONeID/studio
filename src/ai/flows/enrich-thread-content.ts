@@ -25,6 +25,30 @@ const EnrichThreadContentOutputSchema = z.object({
 });
 export type EnrichThreadContentOutput = z.infer<typeof EnrichThreadContentOutputSchema>;
 
+const threadEnrichmentPrompt = ai.definePrompt({
+    name: 'threadEnrichmentPrompt',
+    input: { schema: EnrichThreadContentInputSchema },
+    output: { schema: EnrichThreadContentOutputSchema },
+    tools: [getEventDetailsTool],
+    prompt: `You are an AI assistant for a community forum. Your task is to help users by suggesting a concise, engaging title and relevant tags for their post.
+
+    Analyze the following post content:
+    ---
+    {{{body}}}
+    ---
+    
+    {{#if relatedEventId}}
+    This thread is related to a specific event. Use the 'getEventDetails' tool to get information about the event with ID: {{{relatedEventId}}}. 
+    Incorporate details from the event (like its title, category, or pricing) to make your suggestions more relevant.
+    {{/if}}
+
+    Based on all available content, generate:
+    1. A 'title' that is short (ideally under 8 words) and captures the main topic.
+    2. A list of 3-5 'tags' that are relevant to the content. Tags can be one or two words.
+    
+    Return the response as a JSON object that matches the specified output schema.`,
+});
+
 const enrichThreadFlow = ai.defineFlow(
   {
     name: 'enrichThreadFlow',
@@ -32,31 +56,7 @@ const enrichThreadFlow = ai.defineFlow(
     outputSchema: EnrichThreadContentOutputSchema,
   },
   async (input) => {
-    const prompt = ai.definePrompt({
-        name: 'threadEnrichmentPrompt',
-        input: { schema: EnrichThreadContentInputSchema },
-        output: { schema: EnrichThreadContentOutputSchema },
-        tools: [getEventDetailsTool],
-        prompt: `You are an AI assistant for a community forum. Your task is to help users by suggesting a concise, engaging title and relevant tags for their post.
-
-        Analyze the following post content:
-        ---
-        {{{body}}}
-        ---
-        
-        {{#if relatedEventId}}
-        This thread is related to a specific event. Use the 'getEventDetails' tool to get information about the event with ID: {{{relatedEventId}}}. 
-        Incorporate details from the event (like its title, category, or pricing) to make your suggestions more relevant.
-        {{/if}}
-
-        Based on all available content, generate:
-        1. A 'title' that is short (ideally under 8 words) and captures the main topic.
-        2. A list of 3-5 'tags' that are relevant to the content. Tags can be one or two words.
-        
-        Return the response as a JSON object that matches the specified output schema.`,
-    });
-    
-    const { output } = await prompt(input);
+    const { output } = await threadEnrichmentPrompt(input);
     return output!;
   }
 );
