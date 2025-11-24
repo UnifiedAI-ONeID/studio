@@ -1,10 +1,10 @@
 'use server';
 
-import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { collection, query, where, getDocs, limit, QueryConstraint } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';
 import type { Venue } from '@/lib/types';
+import { generateText } from '../gemini';
 
 
 const findVenuesSchema = z.object({
@@ -22,14 +22,12 @@ const VenueSchema = z.object({
       coverImageUrl: z.string().optional(),
 });
 
-export const findVenuesTool = ai.defineTool(
-    {
+export const findVenuesTool = {
       name: 'findVenues',
       description: 'Finds venues (places) from the database based on criteria like category or name.',
       inputSchema: findVenuesSchema,
       outputSchema: z.array(VenueSchema),
-    },
-    async (input) => {
+      run: async (input: z.infer<typeof findVenuesSchema>) => {
         console.log(`[findVenues tool] called with input: ${JSON.stringify(input)}`);
 
         const venuesRef = collection(firestore, 'venues');
@@ -66,28 +64,24 @@ export const findVenuesTool = ai.defineTool(
         });
 
         if (input.keyword) {
-             const filterPrompt = ai.definePrompt({
-              name: 'venueFilterPrompt',
-              input: { schema: z.object({ keyword: z.string(), venues: z.array(VenueSchema) }) },
-              output: { schema: z.array(VenueSchema) },
-              prompt: `You are an intelligent filter. From the provided list of venues, return only the ones that match the user's query: "{{keyword}}".
+             const prompt = `You are an intelligent filter. From the provided list of venues, return only the ones that match the user's query: "${input.keyword}".
               
               Return the venues that are most relevant to the query based on their name, categories, and description.
               
               Available Venues:
               ---
-              {{{json venues}}}
+              ${JSON.stringify(venues)}
               ---
               
               Return a JSON array of the matching venue objects. If no venues match, return an empty array.
-              `,
-          });
+              `;
           
-          const { output } = await filterPrompt({ keyword: input.keyword, venues });
-          return output ? output.slice(0, input.count) : [];
+          const jsonResponse = await generateText({ prompt });
+          const filteredVenues = z.array(VenueSchema).parse(JSON.parse(jsonResponse));
+          return filteredVenues ? filteredVenues.slice(0, input.count) : [];
         }
         
         console.log(`[findVenues tool] found ${venues.length} venues.`);
         return venues;
     }
-);
+};

@@ -1,11 +1,11 @@
 'use server';
 
-import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { collection, query, where, getDocs, limit, doc, getDoc, QueryConstraint } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebase';
 import type { Event } from '@/lib/types';
 import { Timestamp } from 'firebase/firestore';
+import { generateText } from '../gemini';
 
 const findEventsSchema = z.object({
     queryText: z.string().optional().describe('A general search query to match against event titles or descriptions.'),
@@ -30,15 +30,12 @@ const EventDetailsSchema = EventSchema.extend({
     priceMax: z.number().optional(),
 });
 
-
-export const findEventsTool = ai.defineTool(
-    {
-      name: 'findEvents',
-      description: 'Finds events from the database based on various criteria like interests, category, or location.',
-      inputSchema: findEventsSchema,
-      outputSchema: z.array(EventSchema),
-    },
-    async (input) => {
+export const findEventsTool = {
+    name: 'findEvents',
+    description: 'Finds events from the database based on various criteria like interests, category, or location.',
+    inputSchema: findEventsSchema,
+    outputSchema: z.array(EventSchema),
+    run: async (input: z.infer<typeof findEventsSchema>) => {
       console.log(`[findEvents tool] called with input: ${JSON.stringify(input)}`);
       
       const eventsRef = collection(firestore, 'events');
@@ -54,7 +51,6 @@ export const findEventsTool = ai.defineTool(
         constraints.push(where('city', '==', input.city));
       }
       
-      // If a text query is provided, fetch more results to be filtered by the LLM. Otherwise, just limit.
       constraints.push(limit(input.queryText ? 50 : input.count));
       
       const q = query(eventsRef, ...constraints);
@@ -77,40 +73,33 @@ export const findEventsTool = ai.defineTool(
       });
 
       if (input.queryText) {
-          const filterPrompt = ai.definePrompt({
-              name: 'eventFilterPrompt',
-              input: { schema: z.object({ queryText: z.string(), events: z.array(EventSchema) }) },
-              output: { schema: z.array(EventSchema) },
-              prompt: `You are an intelligent filter. From the provided list of events, return only the ones that match the user's query: "{{queryText}}".
+          const prompt = `You are an intelligent filter. From the provided list of events, return only the ones that match the user's query: "${input.queryText}".
               
               Return the events that are most relevant to the query based on their title and description.
               
               Available Events:
               ---
-              {{{json events}}}
+              ${JSON.stringify(events)}
               ---
               
-              Return a JSON array of the matching event objects. If no events match, return an empty array.
-              `,
-          });
+              Return a JSON array of the matching event objects. If no events match, return an empty array.`;
           
-          const { output } = await filterPrompt({ queryText: input.queryText, events });
-          return output ? output.slice(0, input.count) : [];
+          const jsonResponse = await generateText({ prompt });
+          const filteredEvents = z.array(EventSchema).parse(JSON.parse(jsonResponse));
+          return filteredEvents ? filteredEvents.slice(0, input.count) : [];
       }
       
       console.log(`[findEvents tool] found ${events.length} events.`);
       return events;
     }
-  );
+  };
 
-export const getEventDetailsTool = ai.defineTool(
-    {
-        name: 'getEventDetails',
-        description: 'Gets the full details for a single event by its ID.',
-        inputSchema: z.object({ eventId: z.string().describe('The ID of the event to fetch.') }),
-        outputSchema: EventDetailsSchema,
-    },
-    async ({ eventId }) => {
+export const getEventDetailsTool = {
+    name: 'getEventDetails',
+    description: 'Gets the full details for a single event by its ID.',
+    inputSchema: z.object({ eventId: z.string().describe('The ID of the event to fetch.') }),
+    outputSchema: EventDetailsSchema,
+    run: async ({ eventId }: { eventId: string }) => {
         console.log(`[getEventDetails tool] called for eventId: ${eventId}`);
         const eventRef = doc(firestore, 'events', eventId);
         const snapshot = await getDoc(eventRef);
@@ -134,4 +123,4 @@ export const getEventDetailsTool = ai.defineTool(
             priceMax: data.priceMax,
         };
     }
-);
+};

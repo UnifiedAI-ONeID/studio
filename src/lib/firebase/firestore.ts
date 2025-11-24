@@ -90,7 +90,7 @@ export const createEvent = async (
 
   if (location.address && !selectedVenue) {
     try {
-        coordinates = await getCoordinatesForAddress({ address: location.address });
+        coordinates = await getCoordinatesForAddress.run({ address: location.address });
     } catch(e) {
         console.error("Geocoding failed, creating event without coordinates.", e);
         // We can choose to either fail or continue without coordinates.
@@ -106,6 +106,7 @@ export const createEvent = async (
 
   const newEventData = {
     ...eventData,
+    priceMin: eventData.priceMin || 0,
     hostId: user.id,
     createdBy: user.id,
     city: user.homeCity || 'Taipei', 

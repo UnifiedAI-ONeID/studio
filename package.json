@@ -12,7 +12,7 @@
     "clean": "rm -rf .next out node_modules"
   },
   "dependencies": {
-    "@genkit-ai/google-genai": "^1.0.0",
+    "@google/generative-ai": "^0.15.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
     "@radix-ui/react-avatar": "^1.1.0",
@@ -39,7 +39,6 @@
     "date-fns": "^3.6.0",
     "firebase": "^11.0.0",
     "firebase-admin": "^13.6.0",
-    "genkit": "^1.0.0",
     "lucide-react": "^0.460.0",
     "next": "^14.2.33",
     "next-pwa": "^5.6.0",
